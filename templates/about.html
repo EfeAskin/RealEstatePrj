@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>About Us</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=1.2">
+    <style>
+        .about-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+            padding: 50px;
+            background: #e0f2fe; /* Görseldeki hafif mavi arka plan */
+            margin: 20px 40px;
+            border-radius: 30px;
+            min-height: 70vh;
+        }
+        .info-list {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 30px;
+            border-radius: 20px;
+            list-style: none;
+            width: 500px;
+        }
+        .info-list li {
+            background: white;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 14px;
+            border-left: 5px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div style="font-size: 1.2rem;"><b>CypInvEst</b></div>
+    <div class="nav-links">
+        <a href="/home">Home</a>
+        <a href="/search">Search</a>
+        <a href="#">AI Chat</a>
+        <a href="/about" class="active">About Us</a>
+    </div>
+    <div class="right-menu">
+        <div class="profile" style="position: relative;">
+            <button class="btn-blue">Profile</button>
+            <div class="dropdown">
+                <a href="#">Personal Info</a>
+                <a href="#">My Reservation</a>
+                <a href="#">Favorites</a>
+                <a href="#">Messages</a>    
+            </div>
+        </div>
+        <a href="/" class="exit-icon" style="text-decoration: none; color: #64748b;">🚪</a>
+    </div>
+    
+</div>
+
+<div class="about-container">
+    <div class="info-graphic">
+        <div style="background: #ef4444; width: 250px; height: 250px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 150px; font-style: italic; font-family: serif;">i</div>
+    </div>
+
+    <div class="info-list">
+        <h2 style="text-align: center; margin-bottom: 20px; background: #8b5e3c; color: white; padding: 5px; border-radius: 5px;">CypInvEst Website</h2>
+        <li>Kamil Efe Aşkın - Computer Engineering Student</li>
+        <li>Deniz Özgül Kızılbora - Artificial Intelligence Student</li>
+        <li>Begench Tekayev - Artificial Intelligence Student</li>
+        <li>Yahor Vaker - Artificial Intelligence Student</li>
+        <p style="font-size: 12px; margin-top: 10px; text-align: center;">Computer Engineering Faculty, EMU Famagusta/TRNC</p>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+            <button class="btn" style="background: #22c55e; color: white;">Text Message</button>
+            <button class="btn" style="background: #3b82f6; color: white;">Send Email</button>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileBtn = document.querySelector('.btn-blue');
+        const dropdown = document.querySelector('.dropdown');
+
+        if (profileBtn && dropdown) {
+            profileBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Menü kapalıysa aç, açıksa kapat
+                dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+            };
+
+            document.onclick = function() {
+                dropdown.style.display = 'none';
+            };
+
+            dropdown.onclick = function(e) {
+                e.stopPropagation();
+            };
+        }
+    });
+</script>
+</body>
+</html>

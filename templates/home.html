@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real Estate Home</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=1.2">
+</head>
+<body>
+
+<div class="navbar">
+    <div style="font-size: 1.2rem; letter-spacing: 1px;">
+        <b>CypInvEst</b>
+    </div>
+
+    <div class="nav-links">
+        <a href="/home" class="active">Home</a>
+        <a href="/search">Search</a>
+        <a href="#">AI Chat</a>
+        <a href="/about">About Us</a>
+    </div>  
+
+    <div class="right-menu">
+        <div class="profile" style="position: relative;">
+            <button class="btn-blue">Profile</button>
+            <div class="dropdown">
+                <a href="#">Personal Info</a>
+                <a href="#">My Reservation</a>
+                <a href="#">Favorites</a>
+                <a href="#">Messages</a>
+            </div>
+        </div>
+        <a href="/" class="exit-icon" style="text-decoration: none; color: #64748b;">🚪</a>
+    </div>
+</div>
+
+<div class="hero">
+    <p style="color: #3b82f6; font-weight: 600;">✨ AI Powered Recommendations</p>
+    <h1>Find Your Dream Home with AI</h1>
+    <p style="color: #64748b;">Smart property search powered by artificial intelligence. Search now,<br>get personalized recommendations.</p>
+
+    <div class="search-box">
+        <input type="text" placeholder="Search by location, type or keywords...">
+        <button>Search</button>
+    </div>
+</div>
+
+<h2 class="section-title">Most Popular</h2>
+<div class="grid">
+    <div class="card">
+        <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6">
+        <div class="card-content">
+            <h3>Villa - Fethiye</h3>
+            <p>35.083$ <span style="font-size: 0.8rem; color: #64748b;">/ 2 nights</span></p>
+        </div>
+    </div>
+    <div class="card">
+        <img src="https://images.unsplash.com/photo-1507089947368-19c1da9775ae">
+        <div class="card-content">
+            <h3>Sea House</h3>
+            <p>28.500$ <span style="font-size: 0.8rem; color: #64748b;">/ 2 nights</span></p>
+        </div>
+    </div>
+    <div class="card">
+        <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be">
+        <div class="card-content">
+            <h3>Modern Villa</h3>
+            <p>42.000$ <span style="font-size: 0.8rem; color: #64748b;">/ 2 nights</span></p>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileBtn = document.querySelector('.btn-blue');
+        const dropdown = document.querySelector('.dropdown');
+
+        if (profileBtn && dropdown) {
+            profileBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Menü kapalıysa aç, açıksa kapat
+                dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
+            };
+
+            document.onclick = function() {
+                dropdown.style.display = 'none';
+            };
+
+            dropdown.onclick = function(e) {
+                e.stopPropagation();
+            };
+        }
+    });
+</script>
+</body>
+</html>
