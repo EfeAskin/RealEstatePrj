@@ -73,6 +73,31 @@ CSS Standards: Maintain consistency using the glass-box effects defined in the e
 
 Version Control: Always work on the demoproject branch. Use clear commit messages (e.g., git commit -m "Add search filter logic").
 
+---
+
+## 👥 Team Collaboration (How to Contribute)
+
+To keep the `main` branch stable, all developers **must** work on the `demoproject` branch. Follow these steps:
+
+### 1. Clone the Project
+If it's your first time, clone the repository:
+```bash
+git clone [https://github.com/EfeAskin/RealEstatePrj.git](https://github.com/EfeAskin/RealEstatePrj.git)
+cd RealEstatePrj
+
+Never code on main. Always switch to demoproject:
+git checkout demoproject
+
+Before you start coding, always pull the latest changes from the team:
+git pull origin demoproject
+
+After coding, send your work to GitHub:
+git add .
+git commit -m "feat: explain what you added (e.g., added login logic)"
+git push origin demoproject
+
+⚠️ Warning: Do not merge demoproject into main without consulting the repository owner.
+
 📈 Roadmap
 [x] Base Authentication & Role Selection System.
 
