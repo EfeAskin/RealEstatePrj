@@ -1,25 +1,29 @@
-🏠 CypInvEst - Real Estate Management System
-CypInvEst is a modern, high-performance real estate platform built with FastAPI. The project implements a role-based access control (RBAC) system with three distinct user personas: User, Agent, and Admin.
+# 🏠 CypInvEst - Real Estate Management System
 
-📂 Project Structure & Architecture
+CypInvEst is a modern, high-performance real estate platform built with **FastAPI**. The project implements a role-based access control (RBAC) system with three distinct user personas: **User**, **Agent**, and **Admin**.
+
+---
+
+## 📂 Project Structure & Architecture
 The project directory is organized as follows:
 
-Plaintext
+```text
 RealEstatePrj/
-├── main.py                 # FastAPI Backend Entry Point
-├── requirements.txt        # Project Dependencies
+├── backend.py              # FastAPI Backend Entry Point
+├── .gitignore              # Files ignored by Git (venv, pycache)
 ├── README.md               # Project Documentation
 ├── static/                 # Static Assets
-│   ├── css/                # Stylesheets
+│   ├── css/                # Stylesheets (style.css)
 │   └── htmlfotos/          # Project Images & Backgrounds
 │       └── loginspage.png
 └── templates/              # Jinja2 HTML Templates
     ├── setrole.html        # Landing / Role Selection
+    ├── choose_role.html    # Alternative Role Selection
     ├── userlogin.html      # User Authentication
     ├── userregister.html   # User Registration
     ├── agentlogin.html     # Agent Authentication
     ├── agentregister.html  # Agent Registration
-    ├── adminlogin.html     # Admin Authentication (Access Only)
+    ├── adminlogin.html     # Admin Authentication
     ├── home.html           # Main Dashboard (In-Progress)
     ├── about.html          # About Page
     └── search.html         # Property Search Page
@@ -30,44 +34,44 @@ Ensure you have Python 3.8+ installed on your machine.
 2. Install Dependencies
 Run the following command to install the required libraries:
 
-Bash
 pip install fastapi uvicorn jinja2 python-multipart
 
-fastapi: Backend framework.
+▶fastapi: Backend framework.
 
-uvicorn: To run the server.
+▶uvicorn: ASGI server to run the application.
 
-jinja2: HTML templating engine.
+▶jinja2: Template engine for rendering HTML.
 
-python-multipart: To read form data (Login/Register).
+▶python-multipart: Required for parsing form data during Login/Register.
+
 3. Running the Server
 Execute the application using Uvicorn with the reload flag enabled for development:
 
-Bash
 uvicorn backend:app --reload
-The application will be available at http://127.0.0.1:8000.
+
+The application will be available at: http://127.0.0.1:8000
 
 🔑 Core Technologies & Logic
-Backend (FastAPI): Selected for high performance and asynchronous capabilities. Utilizes dynamic URL patterns (/login/{role}) to minimize code redundancy and handle multiple roles through a single logic flow.
+Backend (FastAPI): Selected for high performance. Utilizes dynamic URL patterns (/login/{role}) to minimize code redundancy.
 
-Frontend (Jinja2 & Glassmorphism): Integrated Jinja2 for dynamic error handling and data injection. The UI implements a modern Glassmorphism aesthetic with role-specific color palettes (Blue for Users, Orange for Agents, Red for Admins).
+Frontend (Jinja2 & Glassmorphism): Uses Jinja2 for dynamic data injection. The UI features a modern Glassmorphism aesthetic with role-specific color palettes (Blue: User, Orange: Agent, Red: Admin).
 
 Authentication Flow:
 
-In-Memory Store: Currently utilizes a Python dictionary (users) for user persistence. Migration to SQL (PostgreSQL/SQLite) is planned.
+In-Memory Store: Currently uses a Python dictionary for user persistence (Migration to SQL is planned).
 
-Admin Security: Registration for the Admin role is disabled on the frontend. Access is restricted to pre-defined administrative accounts within the backend.
+Admin Security: Admin registration is disabled on the frontend. Access is restricted to pre-defined accounts.
 
-Role Protection: Users are strictly restricted to their designated portals. For example, an Admin account cannot bypass security through the User login gate.
+Role Protection: Users are strictly restricted to their designated portals.
 
 👥 Team Contribution Guidelines
-Adding New Routes: When implementing a new view, ensure you define a corresponding @app.get("/route-name") decorator in main.py.
+Adding New Routes: Define a corresponding @app.get("/route-name") in backend.py.
 
-HTML Forms: Ensure the name attribute of input fields matches the FastAPI Form(...) parameters exactly (e.g., name="first_name").
+HTML Forms: The name attribute of input fields must match the FastAPI Form(...) parameters exactly.
 
-CSS Standards: Maintain design consistency. Use the shadow and transition effects (e.g., box-shadow, .glass-box) defined in setrole.html as a reference for new components.
+CSS Standards: Maintain consistency using the glass-box effects defined in the existing templates.
 
-Version Control: Maintain clear and concise commit messages in English (e.g., git commit -m "Add property search filter logic").
+Version Control: Always work on the demoproject branch. Use clear commit messages (e.g., git commit -m "Add search filter logic").
 
 📈 Roadmap
 [x] Base Authentication & Role Selection System.
