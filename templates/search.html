@@ -3,6 +3,7 @@
 <head>
     <title>Search Properties | CypInvest</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .badge-sale {
             background-color: #ef4444;
@@ -10,58 +11,111 @@
             padding: 2px 8px;
             border-radius: 4px;
             font-size: 0.75rem;
-            font-weight: bold;
+            font-weight: bold;  
             margin-left: 10px;
         }
-        .card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; background: white; border-radius: 12px; }
         .card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; padding: 20px 8%; }
         .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px 12px 0 0; }
         .card-content { padding: 15px; border: 1px solid #eee; border-top: none; border-radius: 0 0 12px 12px; }
         .filter-bar { margin: 0 8% 20px 8%; display: flex; gap: 10px; }
-        .btn-filter { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .btn-filter { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .btn-filter:hover { background: #f1f5f9; }
     </style>
 </head>
 <body>
 
-<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: relative;">
     
-    <div style="font-size: 1.5rem; letter-spacing: 1px; font-weight: bold; color: #3b82f6; cursor: pointer;" onclick="window.location.href='/home'">
-        CypInvEst
+    <div style="flex: 1; display: flex; justify-content: flex-start;">
+        <div style="font-size: 1.8rem; letter-spacing: 1px; font-weight: 800; cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
+            <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span><span style="width: 6px; height: 6px; background: #D4A373; border-radius: 50%; margin-left: 5px; margin-top: 10px;"></span>
+        </div>
     </div>
 
-    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9;">
-        <a href="/home" style="text-decoration: none; color: #64748b; font-weight: 600;">Home</a>
-        <a href="/search" style="text-decoration: none; color: #1e293b; font-weight: 500;">Search</a>
+    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9; flex: 0 1 auto;">
+        <a href="/home" style="text-decoration: none; color: #1e293b; font-weight: 500;">Home</a>
+        <a href="/search" style="text-decoration: none; color: #64748b; font-weight: 600;">Search</a>
         <a href="#" style="text-decoration: none; color: #64748b; font-weight: 500;">AI Chat</a>
         <a href="/about" style="text-decoration: none; color: #64748b; font-weight: 500;">About Us</a>
-    </div>  
+    </div>
 
-    <div class="right-menu" style="display: flex; align-items: center; gap: 20px;">
+    <div class="right-menu" style="display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;">
         <div class="profile" style="position: relative;">
-            <button class="btn-blue" style="background: #3b82f6; color: white; border: none; padding: 10px 25px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.3s;">
-                Profile
+            <button id="profileBtn" class="btn-blue" onclick="toggleDropdown(event)" style="
+                background: #3b82f6; 
+                color: white; 
+                border: none; 
+                padding: 10px 25px; 
+                border-radius: 20px; 
+                font-weight: 600; 
+                cursor: pointer; 
+                transition: 0.3s;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            ">
+                <i class="fas fa-user-circle"></i> Profile
             </button>
             
-            <div class="dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; min-width: 180px; z-index: 1000; padding: 10px 0;">
-                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Personal Info</a>
-                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">My Reservation</a>
-                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Favorites</a>
-                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Messages</a>
+            <div id="profileDropdown" class="dropdown" style="
+                display: none; 
+                position: absolute; 
+                top: calc(100% + 10px); 
+                right: 0; 
+                background: white; 
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+                border-radius: 12px; 
+                min-width: 200px; 
+                z-index: 1000; 
+                padding: 10px 0; 
+                border: 1px solid #f1f5f9;
+            ">
+                <a href="/profile" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-user-cog" style="width: 20px;"></i> Personal Info
+                </a>
+                <a href="/my_reservations" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-calendar-check" style="width: 20px;"></i> My Reservations
+                </a>
+                <a href="/favorites" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-heart" style="width: 20px;"></i> Favorites
+                </a>
+                <a href="/messages" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-envelope" style="width: 20px;"></i> Messages
+                </a>
             </div>
         </div>
-        <a href="/" class="exit-icon" style="text-decoration: none; font-size: 1.4rem; filter: grayscale(1); transition: 0.3s;" title="Log Out">🚪</a>
+
+        <a href="/" class="exit-btn" title="Log Out" style="
+            text-decoration: none; 
+            width: 42px; 
+            height: 42px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #f1f5f9; 
+            color: #64748b; 
+            border-radius: 50%; 
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        " onmouseover="this.style.background='#fee2e2'; this.style.color='#ef4444'; this.style.transform='scale(1.1)';" 
+           onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b'; this.style.transform='scale(1)';">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
     </div>
 </div>
 
-<div class="hero" style="text-align: center; padding: 60px 20px; background: #f9f9f9; border-radius: 30px; margin: 0 20px;">
-    <p style="color: #0984e3; font-size: 14px; font-weight: bold;">✨ AI Powered Recommendations</p>
-    <h1 style="font-size: 42px; margin: 10px 0;">Find Your Dream Home with AI</h1>
-    <p style="color: #636e72; max-width: 600px; margin: 0 auto 30px;">Smart property search powered by artificial intelligence. Search now, get personalized recommendations.</p>
-    
-    <div class="search-bar" style="display: flex; justify-content: space-between; background: white; padding: 10px 10px 10px 25px; border-radius: 50px; max-width: 600px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #eee;">
-        <input type="text" placeholder="Search by location, type or keywords..." style="border: none; outline: none; width: 70%; font-size: 16px;">
-        <button style="background: #0984e3; color: white; border: none; padding: 12px 35px; border-radius: 30px; cursor: pointer; font-weight: bold;">Search</button>
+<div class="hero" style="padding: 40px 20px;">
+    <div class="hero-glass-box">
+        <p style="color: #3b82f6; font-size: 14px; font-weight: bold;">✨ AI Powered Recommendations</p>
+        <h1 style="font-size: 42px; margin: 15px 0;">Find Your Dream Home with AI</h1>
+        <p style="color: #636e72; max-width: 600px; margin: 0 auto 30px;">Smart property search powered by artificial intelligence. Search now, get personalized recommendations.</p>
+        
+        <div class="search-bar" style="max-width: 600px; margin: 0 auto; display: flex; justify-content: space-between; background: white; padding: 10px; border-radius: 50px; border: 1px solid #eee;">
+            <input type="text" placeholder="Search by location, type or keywords..." style="border: none; outline: none; width: 70%; font-size: 16px; padding-left: 20px;">
+            <button style="background: #3b82f6; color: white; border: none; padding: 12px 35px; border-radius: 30px; cursor: pointer; font-weight: bold;">Search</button>
+        </div>
     </div>
 </div>
 
@@ -71,7 +125,7 @@
 </div>
 
 <div class="grid">
-    {% for id, villa in villas.items() %}
+    {% for villa in villas %}
     <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
         <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
         <div class="card-content">
@@ -79,7 +133,8 @@
             
             {% if villa.type == "sale" %}
                 <p style="color: #1e293b; font-weight: 800; margin: 0;">
-                    12.490.000 ₺ <span class="badge-sale">For Sale</span>
+                    {{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺ 
+                    <span class="badge-sale">For Sale</span>
                 </p>
             {% else %}
                 <p style="color: #1e293b; font-weight: 800; margin: 0;">
@@ -102,7 +157,6 @@
             profileBtn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
                 dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
             };
 
@@ -115,6 +169,32 @@
             };
         }
     });
+    function toggleDropdown(event) {
+    // Tıklamanın dışarıya yayılmasını engelle ki window.onclick hemen çalışmasın
+    event.stopPropagation();
+    
+    const dropdown = document.getElementById('profileDropdown');
+    const isVisible = dropdown.style.display === 'block';
+    
+    // Açıksa kapat, kapalıysa aç
+    dropdown.style.display = isVisible ? 'none' : 'block';
+}
+
+// Ekrandaki herhangi bir yere tıklandığında menüyü kapatma mantığı
+window.onclick = function(event) {
+    const dropdown = document.getElementById('profileDropdown');
+    const btn = document.getElementById('profileBtn');
+    
+    // Eğer tıklanan yer buton değilse ve dropdown şu an açıksa kapat
+    if (event.target !== btn && dropdown.style.display === 'block') {
+        // Tıklanan yer dropdown'un kendisi değilse kapat
+        if (!dropdown.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    }
+}
+
+    
 </script>
 </body>
 </html>

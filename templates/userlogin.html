@@ -2,41 +2,118 @@
 <html>
 <head>
     <title>User Login - CypInvEst</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;800&display=swap');
+        
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body, html { width: 100%; height: 100%; overflow: hidden; }
+
         .glass-container {
             height: 100vh; width: 100%; display: flex; justify-content: center; align-items: center;
-            background: linear-gradient(rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.2)), url("/static/htmlfotos/loginspage.png") no-repeat center center fixed;
+            background: linear-gradient(rgba(30, 136, 229, 0.25), rgba(30, 136, 229, 0.25)), 
+                        url("/static/htmlfotos/loginspage.png") no-repeat center center fixed;
             background-size: cover;
         }
+
         .glass-box {
-            width: 579px; height: 384px; background: rgba(255, 255, 255, 0.98);
-            border-radius: 16px; position: relative; padding: 40px;
-            box-shadow: 0 0 40px rgba(28, 115, 255, 0.4);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            width: 450px; 
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 30px; 
+            position: relative; 
+            padding: 50px 40px;
+            /* Marka Mavisi Işıltılı Gölge */
+            box-shadow: 0 0 40px rgba(30, 136, 229, 0.2), 0 20px 40px rgba(0,0,0,0.15);
+            display: flex; flex-direction: column; align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: 0.3s;
         }
-        .exit-btn { position: absolute; top: 20px; right: 25px; text-decoration: none; font-size: 20px; }
-        h2 { margin-bottom: 15px; }
-        .input-group { width: 100%; margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
-        .input-group input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ddd; outline: none; }
-        .btn-full { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; }
-        .error { color: red; font-size: 12px; margin-bottom: 10px; }
+
+        /* Elit Geri Dönüş Butonu */
+        .exit-btn { 
+            position: absolute; top: 20px; right: 20px; 
+            text-decoration: none; width: 40px; height: 40px; 
+            display: flex; align-items: center; justify-content: center; 
+            background: #f1f5f9; color: #64748b; border-radius: 50%; 
+            transition: 0.3s ease; font-size: 1rem;
+        }
+        .exit-btn:hover { background: #fee2e2; color: #ef4444; transform: scale(1.1); }
+
+        /* Başlık ve Logo */
+        .brand-logo {
+            font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 5px;
+            display: flex; align-items: center;
+        }
+        h2 { font-size: 1.2rem; color: #64748b; margin-bottom: 30px; font-weight: 500; }
+
+        /* Form Elemanları */
+        .input-group { width: 100%; margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #1e293b; }
+        
+        .input-group input { 
+            width: 100%; padding: 14px 18px; border-radius: 15px; 
+            border: 1.5px solid #e2e8f0; outline: none; font-size: 14px;
+            transition: 0.3s; background: rgba(255,255,255,0.8);
+        }
+        .input-group input:focus { 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
+        }
+
+        .btn-full { 
+            width: 100%; padding: 15px; background: #3b82f6; color: white; 
+            border: none; border-radius: 15px; font-weight: 700; font-size: 16px;
+            cursor: pointer; transition: 0.3s; margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        .btn-full:hover { 
+            background: #2563eb; transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .error { 
+            background: #fef2f2; color: #ef4444; padding: 10px; 
+            border-radius: 10px; font-size: 13px; margin-bottom: 20px; 
+            width: 100%; text-align: center; border: 1px solid #fee2e2;
+        }
+
+        .register-link { margin-top: 25px; font-size: 13px; color: #64748b; }
+        .register-link a { color: #3b82f6; text-decoration: none; font-weight: 700; }
+        .register-link a:hover { text-decoration: underline; }
+
     </style>
 </head>
 <body>
     <div class="glass-container">
         <div class="glass-box">
-            <a href="/" class="exit-btn">🚪</a>
-            <h2>User Login</h2>
-            {% if error %}<div class="error">{{ error }}</div>{% endif %}
+            <a href="/" class="exit-btn" title="Back to Welcome">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+
+            <div class="brand-logo">
+                <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span>
+                <span style="width: 8px; height: 8px; background: #D4A373; border-radius: 50%; margin-left: 5px; margin-top: 12px;"></span>
+            </div>
+            <h2>User Portal</h2>
+
+            {% if error %}<div class="error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>{% endif %}
+
             <form action="/login/user" method="POST" style="width: 100%;">
-                <div class="input-group"><label>Enter Mail</label><input type="email" name="email" required></div>
-                <div class="input-group"><label>Enter Password</label><input type="password" name="password" required></div>
+                <div class="input-group">
+                    <label><i class="fas fa-envelope" style="margin-right: 5px;"></i> Email Address</label>
+                    <input type="email" name="email" placeholder="name@example.com" required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-lock" style="margin-right: 5px;"></i> Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
                 <button type="submit" class="btn-full">LOGIN</button>
             </form>
-            <p style="margin-top: 15px; font-size: 12px;">Don't have an account? <a href="/register/user" style="color: #3b82f6; text-decoration: none; font-weight: 600;">Register</a></p>
+
+            <p class="register-link">Don't have an account? <a href="/register/user">Create one now</a></p>
         </div>
     </div>
 </body>
