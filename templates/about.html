@@ -4,6 +4,7 @@
     <title>About Us | CypInvEst</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', path='htmlfotos/favicon.png') }}">
     <style>
         body { background-color: #f8fafc; }
 
@@ -142,9 +143,13 @@
 
 <div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: relative;">
     
-    <div style="flex: 1; display: flex; justify-content: flex-start;">
-        <div style="font-size: 1.8rem; letter-spacing: 1px; font-weight: 800; cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
-            <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span><span style="width: 6px; height: 6px; background: #D4A373; border-radius: 50%; margin-left: 5px; margin-top: 10px;"></span>
+    <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
+        <div style="cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
+            <img src="/static/htmlfotos/favicon.png" alt="CIE Logo" style="width: 55px; height: 55px; margin-right: 15px; object-fit: contain;">
+            
+            <div style="font-size: 2.1rem; letter-spacing: 1px; font-weight: 800; display: flex; align-items: center;">
+                <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span><span style="width: 8px; height: 8px; background: #D4A373; border-radius: 50%; margin-left: 6px; margin-top: 12px;"></span>
+            </div>
         </div>
     </div>
 
