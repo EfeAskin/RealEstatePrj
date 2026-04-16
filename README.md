@@ -13,9 +13,10 @@ RealEstatePrj/
 ├── .gitignore              # Files ignored by Git (venv, pycache)
 ├── README.md               # Project Documentation
 ├── static/                 # Static Assets
-│   ├── css/                # Stylesheets (style.css)
-│   └── htmlfotos/          # Project Images & Backgrounds
-│       └── loginspage.png
+│   ├── css/
+│   │   └── style.css      # Stylesheets (style.css)
+│   └── htmlfotos          # Project Images & Backgrounds
+│       
 └── templates/              # Jinja2 HTML Templates
     ├── setrole.html        # Landing / Role Selection
     ├── choose_role.html    # Alternative Role Selection
