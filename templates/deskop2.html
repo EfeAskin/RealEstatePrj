@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ villa.name }} | CypInvest Detay</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #00a8ff;
+            --secondary-blue: #0097e6;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --border: #dfe6e9;
+            --bg-body: #ffffff;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --star-yellow: #f1c40f;
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--bg-body); color: var(--text-main); overflow-x: hidden; }
+
+        /* Navbar */
+        .navbar { height: 80px; display: flex; align-items: center; justify-content: space-between; padding: 0 8%; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: white; z-index: 1000; }
+        .logo { font-weight: 800; font-size: 24px; color: var(--primary-blue); cursor: pointer; text-decoration: none; }
+        .nav-links { display: flex; gap: 35px; }
+        .nav-links a { text-decoration: none; color: var(--text-main); font-weight: 500; font-size: 15px; }
+        .nav-links a:hover { color: var(--primary-blue); }
+        .profile-btn { background: var(--primary-blue); color: white; border: none; padding: 12px 28px; border-radius: 25px; cursor: pointer; font-weight: 600; }
+        .profile-btn:hover { background: var(--secondary-blue); transform: translateY(-2px); }
+
+        .main-container { max-width: 1200px; margin: 40px auto; display: flex; gap: 50px; padding: 0 20px; }
+
+        /* Sol İçerik */
+        .content-area { flex: 2; }
+        .title-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .title-header h1 { font-size: 34px; margin: 0; letter-spacing: -1px; }
+        .actions i { cursor: pointer; padding: 10px; border-radius: 50%; color: var(--text-muted); }
+        .actions i:hover { background: #f1f2f6; color: var(--primary-blue); }
+
+        .image-box { width: 100%; border-radius: 16px; overflow: hidden; margin-bottom: 30px; box-shadow: var(--shadow); }
+        .image-box img { width: 100%; height: 500px; object-fit: cover; display: block; transition: transform 0.5s; }
+        .image-box:hover img { transform: scale(1.03); }
+
+        .property-meta { display: flex; gap: 20px; font-size: 16px; color: var(--text-muted); margin-bottom: 30px; padding-bottom: 25px; border-bottom: 1px solid var(--border); }
+
+        .description-text h3 { font-size: 22px; margin-bottom: 15px; }
+        .description-text p { line-height: 1.8; color: #444; font-size: 16px; }
+
+        /* Ratings Bölümü (Geri Eklendi) */
+        .ratings-section { margin-top: 50px; padding: 30px; background: #fafafa; border-radius: 16px; }
+        .rating-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 25px; }
+        .rating-item { display: flex; align-items: center; justify-content: space-between; }
+        .bar-container { flex: 1; height: 5px; background: #e0e0e0; margin: 0 20px; border-radius: 10px; position: relative; }
+        .bar-fill { position: absolute; height: 100%; background: var(--text-main); border-radius: 10px; }
+
+        /* Yorumlar (Geri Eklendi) */
+        .comment-card { margin-top: 35px; border-bottom: 1px solid var(--border); padding-bottom: 25px; }
+        .user-info { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
+        .user-info img { width: 50px; height: 50px; border-radius: 50%; background: #eee; object-fit: cover; }
+        .comment-body { line-height: 1.6; color: #555; font-size: 15px; }
+
+        .add-review { margin-top: 30px; padding: 25px; border: 1px solid var(--border); border-radius: 16px; }
+        .star-rating { margin: 15px 0; font-size: 24px; color: #ccc; }
+        .star-rating i { cursor: pointer; transition: color 0.1s; }
+        .star-rating i.active { color: var(--star-yellow); }
+        .add-review textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 15px; outline: none; font-family: inherit; font-size: 15px; min-height: 100px; margin-top: 10px; }
+
+        /* Sağ Sidebar & Rezervasyon */
+        .sidebar { flex: 1; }
+        .booking-widget { position: sticky; top: 120px; border: 1px solid var(--border); border-radius: 20px; padding: 30px; box-shadow: var(--shadow); background: white; }
+        .price-info { font-size: 26px; font-weight: 800; margin-bottom: 25px; }
+        .selection-box { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 25px; cursor: pointer; overflow: hidden; }
+        .date-row { display: flex; border-bottom: 1px solid var(--border); }
+        .date-item { flex: 1; padding: 15px; }
+        .date-item:hover, .guest-item:hover { background: #f9f9f9; }
+        .date-item label, .guest-item label { display: block; font-size: 11px; font-weight: 800; color: #000; margin-bottom: 5px; }
+        .guest-item { padding: 15px; }
+
+        .request-button { width: 100%; background: var(--primary-blue); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,168,255,0.3); }
+        .request-button:hover { background: var(--secondary-blue); transform: translateY(-3px); }
+
+        /* Publisher (Geri Eklendi) */
+        .publisher-card { margin-top: 50px; border-top: 1px solid var(--border); padding-top: 40px; display: flex; align-items: center; justify-content: space-between; }
+        .pub-info img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary-blue); padding: 2px; }
+        .msg-btn { border: 2px solid var(--primary-blue); color: var(--primary-blue); padding: 12px 24px; border-radius: 10px; background: transparent; cursor: pointer; font-weight: 700; }
+        .msg-btn:hover { background: var(--primary-blue); color: white; }
+
+        /* MODALS & OVERLAY */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 1999; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 35px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 2000; width: 440px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .modal-header h4 { margin: 0; font-size: 18px; font-weight: 700; }
+        .close-modal { cursor: pointer; font-size: 24px; color: var(--text-muted); }
+
+        /* Takvim */
+        .nav-btn { background: none; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; padding: 5px 10px; color: var(--text-main); }
+        .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 800; font-size: 12px; margin-bottom: 10px; color: var(--text-muted); }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 2px; }
+        .day { padding: 10px; cursor: pointer; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1/1; }
+        .day:hover:not(.disabled) { background-color: #f1f2f6; }
+        .day.selected { background-color: var(--primary-blue) !important; color: white !important; font-weight: bold; }
+        .day.in-range { background-color: #e3f2fd; border-radius: 0; }
+        .day.disabled { color: #ccc; cursor: not-allowed; }
+
+        /* Guest Counter */
+        .guest-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .counter { display: flex; align-items: center; gap: 15px; }
+        .counter button { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 18px; line-height: 1; }
+
+        /* Footer */
+        .footer { background: #1e272e; color: white; padding: 70px 8%; margin-top: 100px; }
+        .footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 50px; }
+        .footer-col h4 { margin-bottom: 25px; font-size: 18px; color: var(--primary-blue); }
+        .footer-col ul { list-style: none; padding: 0; }
+        .footer-col ul li { margin-bottom: 15px; color: #bdc3c7; cursor: pointer; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+    
+    <div style="font-size: 1.5rem; letter-spacing: 1px; font-weight: bold; color: #3b82f6; cursor: pointer;" onclick="window.location.href='/home'">
+        CypInvEst
+    </div>
+
+    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9;">
+        <a href="/home" style="text-decoration: none; color: #64748b; font-weight: 600;">Home</a>
+        <a href="/search" style="text-decoration: none; color: #64748b; font-weight: 500;">Search</a>
+        <a href="#" style="text-decoration: none; color: #64748b; font-weight: 500;">AI Chat</a>
+        <a href="/about" style="text-decoration: none; color: #64748b; font-weight: 500;">About Us</a>
+    </div>  
+
+    <div class="right-menu" style="display: flex; align-items: center; gap: 20px;">
+        <div class="profile" style="position: relative;">
+            <button class="btn-blue" style="background: #3b82f6; color: white; border: none; padding: 10px 25px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.3s;">
+                Profile
+            </button>
+            
+            <div class="dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; min-width: 180px; z-index: 1000; padding: 10px 0;">
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Personal Info</a>
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">My Reservation</a>
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Favorites</a>
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Messages</a>
+            </div>
+        </div>
+        <a href="/" class="exit-icon" style="text-decoration: none; font-size: 1.4rem; filter: grayscale(1); transition: 0.3s;" title="Log Out">🚪</a>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="content-area">
+        <div class="title-header">
+            <h1>{{ villa.name }}</h1>
+            <div class="actions">
+                <i class="fa-solid fa-arrow-up-from-bracket" title="Share"></i>
+                <i class="fa-regular fa-heart" title="Save"></i>
+            </div>
+        </div>
+
+        <div class="image-box">
+            <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
+        </div>
+
+        <div class="property-meta">
+            <span><i class="fa-solid fa-user-group"></i> {{ villa.guests }} Guests</span>
+            <span><i class="fa-solid fa-bed"></i> {{ villa.beds }} Beds</span>
+            <span><i class="fa-solid fa-bath"></i> {{ villa.baths }} Bathrooms</span>
+        </div>
+
+        <div class="description-text">
+            <h3>{{ villa.name }} - {{ villa.location }}</h3>
+            <p>{{ villa.desc }}</p>
+        </div>
+
+        <div class="ratings-section">
+            <h3>★ 5.0 · 4 reviews</h3>
+            <div class="rating-grid">
+                <div class="rating-item"><span>Cleanliness</span><div class="bar-container"><div class="bar-fill" style="width: 100%;"></div></div><span>5.0</span></div>
+                <div class="rating-item"><span>Accuracy</span><div class="bar-container"><div class="bar-fill" style="width: 100%;"></div></div><span>5.0</span></div>
+                <div class="rating-item"><span>Communication</span><div class="bar-container"><div class="bar-fill" style="width: 95%;"></div></div><span>4.8</span></div>
+                <div class="rating-item"><span>Location</span><div class="bar-container"><div class="bar-fill" style="width: 100%;"></div></div><span>5.0</span></div>
+                <div class="rating-item"><span>Check-in</span><div class="bar-container"><div class="bar-fill" style="width: 100%;"></div></div><span>5.0</span></div>
+                <div class="rating-item"><span>Value</span><div class="bar-container"><div class="bar-fill" style="width: 90%;"></div></div><span>4.5</span></div>
+            </div>
+        </div>
+
+        <div class="comments-list">
+            <div class="comment-card">
+                <div class="user-info">
+                    <img src="https://avatars.mds.yandex.net/i?id=68a297665a9cfe8654fb182984a1f1cda01962b5-5234700-images-thumbs&n=13" alt="Halime">
+                    <div><strong>Halime Eda</strong><br><small>September 2023</small></div>
+                </div>
+                <p class="comment-body">Evin manzarası fotoğraflardan çok daha güzel. Havuz tertemizdi ve ihtiyacımız olan her şey düşünülmüştü. Ev sahibi çok ilgiliydi.</p>
+            </div>
+            <div class="comment-card">
+                <div class="user-info">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrZ4_NPSjb1xQSW1oQshIA6o_-04dXK1KESw&s" alt="Beyza">
+                    <div><strong>Beyza</strong><br><small>August 2023</small></div>
+                </div>
+                <p class="comment-body">Harika bir konaklama deneyimiydi. Villa oldukça hijyenikti. Kesinlikle tavsiye ederim!</p>
+            </div>
+        </div>
+
+        <div class="add-review">
+            <h3>Write a review</h3>
+            <div class="star-rating" id="star-rating">
+                <i class="fa-solid fa-star" data-value="1"></i>
+                <i class="fa-solid fa-star" data-value="2"></i>
+                <i class="fa-solid fa-star" data-value="3"></i>
+                <i class="fa-solid fa-star" data-value="4"></i>
+                <i class="fa-solid fa-star" data-value="5"></i>
+            </div>
+            <textarea placeholder="Tell others about your experience..."></textarea>
+            <button class="profile-btn" style="margin-top: 15px;">Send Review</button>
+        </div>
+
+        <div class="publisher-card">
+            <div class="pub-info" style="display:flex; align-items:center; gap:20px;">
+                <img src="https://img.freepik.com/premium-fotograf/takim-elbiseli-amerikali-kadin-emlakci_1106493-267934.jpg" alt="Agent">
+                <div>
+                    <strong style="font-size:18px;">Mina (Real Estate Company)</strong><br>
+                    <small style="color:var(--text-muted);">Partner for 4 Years · ★ 4.9</small>
+                </div>
+            </div>
+            <button class="msg-btn">Message Agent</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="booking-widget">
+            <div class="price-info">
+                {{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺ 
+                {% if villa.type == "rent" %}
+                <span style="font-weight:400; font-size:16px; color:var(--text-muted);">/ 30 nights</span>
+                {% endif %}
+            </div>
+            
+            {% if villa.type == "rent" %}
+            <form action="/calculate-booking" method="POST" id="mainBookingForm">
+                <input type="hidden" name="villa_id" value="{{ villa.id }}">
+                <input type="hidden" name="check_in" id="final_check_in">
+                <input type="hidden" name="check_out" id="final_check_out">
+                <input type="hidden" name="nights" id="final_nights" value="0">
+                <input type="hidden" name="guest_info" id="final_guests" value="1 Adult">
+
+                <div class="selection-box">
+                    <div class="date-row" onclick="openModal('calendar')">
+                        <div class="date-item" style="border-right: 1px solid var(--border);">
+                            <label>CHECK-IN</label>
+                            <span id="checkin-val">Choose Date</span>
+                        </div>
+                        <div class="date-item">
+                            <label>CHECK-OUT</label>
+                            <span id="checkout-val">Choose Date</span>
+                        </div>
+                    </div>
+                    <div class="guest-item" onclick="openModal('guests')">
+                        <label>GUESTS</label>
+                        <span id="guest-count">1 Adult</span>
+                    </div>
+                </div>
+                <button type="submit" class="request-button">Request to Book</button>
+            </form>
+            {% else %}
+            <p style="color:var(--secondary-blue); font-weight:700;">This property is for SALE.</p>
+            <button class="request-button" style="background:#1e272e;" onclick="alert('Contacting...')">Contact Agent</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="calendar">
+    <div class="modal-header">
+        <h4 id="calendar-month-year">May 2026</h4>
+        <div style="display: flex; gap: 8px;">
+            <button onclick="changeMonth(-1)" class="nav-btn"><</button>
+            <button onclick="changeMonth(1)" class="nav-btn">></button>
+            <span class="close-modal" onclick="closeAll()">&times;</span>
+        </div>
+    </div>
+    <div class="weekdays">
+        <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+    </div>
+    <div id="days-grid" class="days-grid"></div>
+    <button class="request-button" style="margin-top:15px;" onclick="closeAll()">Apply</button>
+</div>
+
+<div class="modal" id="guests">
+    <div class="modal-header">
+        <h4>Guests</h4>
+        <span class="close-modal" onclick="closeAll()">&times;</span>
+    </div>
+    <div class="guest-control">
+        <div><strong>Adults</strong><br><small>Age 13+</small></div>
+        <div class="counter">
+            <button type="button" onclick="changeGuest('adult', -1)">-</button>
+            <span id="adult-num">1</span>
+            <button type="button" onclick="changeGuest('adult', 1)">+</button>
+        </div>
+    </div>
+    <div class="guest-control">
+        <div><strong>Children</strong><br><small>Ages 2–12</small></div>
+        <div class="counter">
+            <button type="button" onclick="changeGuest('child', -1)">-</button>
+            <span id="child-num">0</span>
+            <button type="button" onclick="changeGuest('child', 1)">+</button>
+        </div>
+    </div>
+    <button class="request-button" onclick="closeAll()" style="margin-top:10px;">Save</button>
+</div>
+
+<footer class="footer">
+    <div class="footer-grid">
+        <div class="footer-col"><h4>Support</h4><ul><li>Help Center</li></ul></div>
+        <div class="footer-col"><h4>Community</h4><ul><li>Blog</li></ul></div>
+        <div class="footer-col"><h4>Hosting</h4><ul><li>Become a Partner</li></ul></div>
+        <div class="footer-col"><h4>Company</h4><ul><li>About Us</li></ul></div>
+    </div>
+</footer>
+
+<script>
+    const overlay = document.getElementById('overlay');
+    const modals = document.querySelectorAll('.modal');
+    let counts = { adult: 1, child: 0, infant: 0, pet: 0 };
+    let checkInDate = null, checkOutDate = null;
+    let currentViewDate = new Date();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    function openModal(id) {
+        closeAll();
+        document.getElementById(id).style.display = 'block';
+        overlay.style.display = 'block';
+        if(id === 'calendar') renderCalendar();
+    }
+
+    function closeAll() {
+        modals.forEach(m => m.style.display = 'none');
+        overlay.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    overlay.onclick = closeAll;
+
+    function changeGuest(type, val) {
+        const min = type === 'adult' ? 1 : 0;
+        if (counts[type] + val >= min) {
+            counts[type] += val;
+            document.getElementById(type + '-num').innerText = counts[type];
+            updateGuestUI();
+        }
+    }
+
+    function updateGuestUI() {
+        let parts = [];
+        if (counts.adult > 0) parts.push(counts.adult + " Adult");
+        if (counts.child > 0) parts.push(counts.child + " Child");
+        if (counts.infant > 0) parts.push(counts.infant + " Infant");
+        if (counts.pet > 0) parts.push(counts.pet + " Pet");
+        document.getElementById('guest-count').innerText = parts.join(", ") || "1 Adults";
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('days-grid');
+        const label = document.getElementById('calendar-month-year');
+        grid.innerHTML = '';
+        const year = currentViewDate.getFullYear();
+        const month = currentViewDate.getMonth();
+        label.innerText = new Intl.DateTimeFormat('tr-TR', { month: 'long', year: 'numeric' }).format(currentViewDate);
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let offset = firstDay === 0 ? 6 : firstDay - 1;
+
+        for (let i = 0; i < offset; i++) grid.innerHTML += '<div></div>';
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateObj = new Date(year, month, d);
+            let cls = "day";
+            if (dateObj < today) cls += " disabled";
+            if (checkInDate && dateObj.getTime() === checkInDate.getTime()) cls += " selected";
+            if (checkOutDate && dateObj.getTime() === checkOutDate.getTime()) cls += " selected";
+            if (checkInDate && checkOutDate && dateObj > checkInDate && dateObj < checkOutDate) cls += " in-range";
+            grid.innerHTML += `<div class="${cls}" onclick="handleDateClick(${year}, ${month}, ${d})">${d}</div>`;
+        }
+    }
+
+    function handleDateClick(y, m, d) {
+        const clicked = new Date(y, m, d);
+        if (clicked < today) return;
+        if (!checkInDate || (checkInDate && checkOutDate)) {
+            checkInDate = clicked; checkOutDate = null;
+            document.getElementById('checkin-val').innerText = clicked.toLocaleDateString('tr-TR');
+            document.getElementById('checkout-val').innerText = "Choose Date";
+            document.getElementById('final_check_in').value = clicked.toISOString().split('T')[0];
+        } else if (clicked > checkInDate) {
+            checkOutDate = clicked;
+            document.getElementById('checkout-val').innerText = clicked.toLocaleDateString('tr-TR');
+            document.getElementById('final_check_out').value = clicked.toISOString().split('T')[0];
+            const diffTime = Math.abs(checkOutDate - checkInDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            document.getElementById('final_nights').value = diffDays;
+        }
+        renderCalendar();
+    }
+
+    function changeMonth(step) {
+        currentViewDate.setMonth(currentViewDate.getMonth() + step);
+        renderCalendar();
+    }
+
+    // YILDIZ SİSTEMİ (GERİ KOYULDU)
+    const stars = document.querySelectorAll('#star-rating i');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const val = parseInt(star.getAttribute('data-value'));
+            stars.forEach((s, index) => {
+                if (index < val) s.classList.add('active');
+                else s.classList.remove('active');
+            });
+        });
+    });
+</script>
+</body>
+</html>

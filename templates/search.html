@@ -1,58 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Search Properties</title>
-    <link rel="stylesheet" href="/static/css/style.css?v=1.2">
+    <title>Search Properties | CypInvest</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <style>
+        .badge-sale {
+            background-color: #ef4444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; padding: 20px 8%; }
+        .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px 12px 0 0; }
+        .card-content { padding: 15px; border: 1px solid #eee; border-top: none; border-radius: 0 0 12px 12px; }
+        .filter-bar { margin: 0 8% 20px 8%; display: flex; gap: 10px; }
+        .btn-filter { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+    </style>
 </head>
 <body>
 
-<div class="navbar">
-    <div style="font-size: 1.2rem;"><b>CypInvEst</b></div>
-    <div class="nav-links">
-        <a href="/home">Home</a>
-        <a href="/search" class="active">Search</a>
-        <a href="#">AI Chat</a>
-        <a href="/about">About</a>
+<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+    
+    <div style="font-size: 1.5rem; letter-spacing: 1px; font-weight: bold; color: #3b82f6; cursor: pointer;" onclick="window.location.href='/home'">
+        CypInvEst
     </div>
-    <div class="right-menu">
+
+    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9;">
+        <a href="/home" style="text-decoration: none; color: #64748b; font-weight: 600;">Home</a>
+        <a href="/search" style="text-decoration: none; color: #1e293b; font-weight: 500;">Search</a>
+        <a href="#" style="text-decoration: none; color: #64748b; font-weight: 500;">AI Chat</a>
+        <a href="/about" style="text-decoration: none; color: #64748b; font-weight: 500;">About Us</a>
+    </div>  
+
+    <div class="right-menu" style="display: flex; align-items: center; gap: 20px;">
         <div class="profile" style="position: relative;">
-            <button class="btn-blue">Profile</button>
-            <div class="dropdown">
-                <a href="#">Personal Info</a>
-                <a href="#">My Reservation</a>
-                <a href="#">Favorites</a>
-                <a href="#">Messages</a>
+            <button class="btn-blue" style="background: #3b82f6; color: white; border: none; padding: 10px 25px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.3s;">
+                Profile
+            </button>
+            
+            <div class="dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; min-width: 180px; z-index: 1000; padding: 10px 0;">
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Personal Info</a>
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">My Reservation</a>
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Favorites</a>
+                <a href="#" style="display: block; padding: 10px 20px; color: #334155; text-decoration: none; font-size: 14px;">Messages</a>
             </div>
         </div>
-        <a href="/" class="exit-icon" style="text-decoration: none; color: #64748b;">🚪</a>
+        <a href="/" class="exit-icon" style="text-decoration: none; font-size: 1.4rem; filter: grayscale(1); transition: 0.3s;" title="Log Out">🚪</a>
     </div>
 </div>
 
-<div class="hero" style="padding: 40px;">
-    <h2>Featured Properties</h2>
-    <p style="color: #64748b;">Hand-picked properties for you in TRNC</p>
-    <div class="search-box">
-        <input type="text" placeholder="Type here...">
-        <button>Search</button>
+<div class="hero" style="text-align: center; padding: 60px 20px; background: #f9f9f9; border-radius: 30px; margin: 0 20px;">
+    <p style="color: #0984e3; font-size: 14px; font-weight: bold;">✨ AI Powered Recommendations</p>
+    <h1 style="font-size: 42px; margin: 10px 0;">Find Your Dream Home with AI</h1>
+    <p style="color: #636e72; max-width: 600px; margin: 0 auto 30px;">Smart property search powered by artificial intelligence. Search now, get personalized recommendations.</p>
+    
+    <div class="search-bar" style="display: flex; justify-content: space-between; background: white; padding: 10px 10px 10px 25px; border-radius: 50px; max-width: 600px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #eee;">
+        <input type="text" placeholder="Search by location, type or keywords..." style="border: none; outline: none; width: 70%; font-size: 16px;">
+        <button style="background: #0984e3; color: white; border: none; padding: 12px 35px; border-radius: 30px; cursor: pointer; font-weight: bold;">Search</button>
     </div>
 </div>
 
-<div style="margin: 0 50px 20px 50px; display: flex; gap: 10px;">
-    <button class="btn" style="background: white; border: 1px solid #ddd;">Filters</button>
-    <button class="btn" style="background: white; border: 1px solid #ddd;">Sort By</button>
+<div class="filter-bar">
+    <button class="btn-filter">Filters</button>
+    <button class="btn-filter">Sort By</button>
 </div>
 
 <div class="grid">
-    {% for i in range(6) %}
-    <div class="card">
-        <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6">
+    {% for id, villa in villas.items() %}
+    <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
+        <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
         <div class="card-content">
-            <h3>Villa - Fethiye</h3>
-            <p>35.083$ <span style="font-size: 0.8rem; color: #64748b;">/ 2 nights</span></p>
+            <h3 style="margin: 0 0 10px 0;">{{ villa.name }}</h3>
+            
+            {% if villa.type == "sale" %}
+                <p style="color: #1e293b; font-weight: 800; margin: 0;">
+                    12.490.000 ₺ <span class="badge-sale">For Sale</span>
+                </p>
+            {% else %}
+                <p style="color: #1e293b; font-weight: 800; margin: 0;">
+                    {{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺ 
+                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 400;">/ 30 nights</span>
+                </p>
+            {% endif %}
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">{{ villa.location }}</p>
         </div>
     </div>
     {% endfor %}
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const profileBtn = document.querySelector('.btn-blue');
@@ -62,7 +102,7 @@
             profileBtn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                // Menü kapalıysa aç, açıksa kapat
+                
                 dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
             };
 
