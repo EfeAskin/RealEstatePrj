@@ -1,234 +1,204 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Real Estate Home | CypInvest</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="{{ url_for('static', path='htmlfotos/favicon.png') }}">
-    <style>
-        /* --- GENEL DÜZELTMELER --- */
-        body { margin: 0; padding: 0; background-color: #f8fafc; }
-        
-        /* Navbar'ın bozulmaması için sabit yapı */
-        .navbar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 40px; background: white; border-radius: 50px;
-            margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            position: relative; z-index: 1000;
-        }
+{% extends "base.html" %}
 
-        /* Hero ve Search Bar'ın eski haline dönüşü */
-        .hero { text-align: center; padding: 80px 20px; }
-        .hero h1 { font-size: 48px; font-weight: 700; margin: 10px 0; color: #1e293b; }
-        
-        .search-container {
-            display: flex; align-items: center; background: white;
-            max-width: 650px; margin: 30px auto; padding: 8px 10px 8px 25px;
-            border-radius: 100px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-        .search-container input {
-            border: none; outline: none; flex: 1; font-size: 16px; color: #64748b;
-        }
-        .search-container button {
-            background: #3b82f6; color: white; border: none;
-            padding: 12px 30px; border-radius: 100px; cursor: pointer;
-            font-weight: 600; transition: 0.3s;
-        }
-        .search-container button:hover { background: #2563eb; }
+{% block title %}Real Estate Home | CypInvest{% endblock %}
 
-        /* --- SLIDER VE OKLAR (Kusursuz Hizalama) --- */
-        .most-popular-section {
-            padding: 0 5%; margin-top: 20px; position: relative;
-        }
-        .most-popular-section h2 { margin-left: 20px; margin-bottom: 20px; color: #1e293b; }
+{% block extra_css %}
+<style>
+    /* --- HERO GLASS BOX TASARIMI --- */
+    .hero-glass-box {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        padding: 50px;
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+        max-width: 850px;
+        margin: 0 auto;
+        transition: transform 0.3s ease;
+    }
 
-        .slider-outer-wrapper { overflow: hidden; width: 100%; padding: 10px 0; }
-        
-        .slider-track { 
-            display: flex; gap: 25px; transition: transform 0.5s ease-in-out;
-        }
+    .hero-glow {
+        color: var(--theme-color);
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        display: inline-block;
+        margin-bottom: 15px;
+        padding: 5px 15px;
+        background: var(--theme-light);
+        border-radius: 20px;
+    }
 
-        .card { 
-            flex: 0 0 calc(33.333% - 17px); /* 3 kart yan yana */
-            background: white; border-radius: 16px; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); cursor: pointer;
-            transition: 0.3s; border: 1px solid #f1f5f9;
-        }
-        .card:hover { transform: translateY(-10px); box-shadow: 0 12px 25px rgba(0,0,0,0.1); }
-        .card img { width: 100%; height: 240px; object-fit: cover; }
-        .card-content { padding: 20px; }
-        .card-content h3 { margin: 0 0 10px; font-size: 18px; color: #1e293b; }
-
-        .badge-sale {
-            background: #fee2e2; color: #ef4444; padding: 4px 10px;
-            border-radius: 6px; font-size: 12px; font-weight: 700; margin-left: 10px;
-        }
-
-        /* Oklar - Tam İstediğin Gibi */
-        .nav-btn {
-            position: absolute; top: 55%; transform: translateY(-50%);
-            width: 55px; height: 55px; background: white; border: none;
-            border-radius: 50%; cursor: pointer; display: flex;
-            align-items: center; justify-content: center; font-size: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 50;
-            transition: 0.3s; color: #1e293b;
-        }
-        .nav-btn:hover { background: #3b82f6; color: white; scale: 1.1; }
-        .nav-btn.prev { left: 10px; }
-        .nav-btn.next { right: 10px; }
-
-    </style>
-</head>
-<body>
-
-<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: relative;">
+    /* --- SEARCH CONTAINER --- */
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        background: white;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 6px 8px 6px 22px;
+        border-radius: 100px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        border: 1px solid #edf2f7;
+    }
     
-    <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
-        <div style="cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
-            <img src="/static/htmlfotos/favicon.png" alt="CIE Logo" style="width: 55px; height: 55px; margin-right: 15px; object-fit: contain;">
+    .search-wrapper input {
+        border: none;
+        outline: none;
+        flex: 1;
+        font-size: 16px;
+        color: #475569;
+        background: transparent;
+    }
+
+    /* --- SLIDER OKLARI VE KARTLAR --- */
+    .nav-btn {
+        position: absolute;
+        top: 55%;
+        transform: translateY(-50%);
+        width: 50px;
+        height: 50px;
+        background: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        z-index: 100;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #1e293b;
+    }
+    .nav-btn:hover {
+        background: var(--theme-color);
+        color: white;
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    /* Villa Kartı Sabitleme */
+    .card {
+        min-width: calc((100% / 3) - 16px);
+        background: white;
+        border-radius: 25px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .card:hover { transform: translateY(-5px); }
+</style>
+{% endblock %}
+
+{% block content %}
+<main>
+    <section class="hero" style="text-align: center; padding: 70px 20px;">
+        <div class="hero-glass-box">
+            <span class="hero-glow">✨ AI Powered Recommendations</span>
             
-            <div style="font-size: 2.1rem; letter-spacing: 1px; font-weight: 800; display: flex; align-items: center;">
-                <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span><span style="width: 8px; height: 8px; background: #D4A373; border-radius: 50%; margin-left: 6px; margin-top: 12px;"></span>
+            <h1 style="font-size: 46px; font-weight: 800; margin: 15px 0; color: #0f172a; line-height: 1.2;">
+                {% if role == 'agent' %}
+                    Give Your Dream Home Ads with AI
+                {% else %}
+                    Find Your Dream Home with AI
+                {% endif %}
+            </h1>
+            
+            <p style="color: #64748b; font-size: 18px; margin-bottom: 35px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                {% if role == 'agent' %}
+                    Manage your listings effectively with our smart property tools.
+                {% else %}
+                    Experience the future of property search with our intelligent matching system.
+                {% endif %}
+            </p>
+            
+            <div class="search-wrapper">
+                <input type="text" placeholder="Search location, villa name or type...">
+                <button class="btn-main" onclick="window.location.href='/search'">
+                    <i class="fas fa-search"></i> Search
+                </button>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9; flex: 0 1 auto;">
-        <a href="/home" style="text-decoration: none; color: #1e293b; font-weight: 500;">Home</a>
-        <a href="/search" style="text-decoration: none; color: #64748b; font-weight: 600;">Search</a>
-        <a href="#" style="text-decoration: none; color: #64748b; font-weight: 500;">AI Chat</a>
-        <a href="/about" style="text-decoration: none; color: #64748b; font-weight: 500;">About Us</a>
-    </div>
-
-    <div class="right-menu" style="display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;">
-        <div class="profile" style="position: relative;">
-            <button id="profileBtn" class="btn-blue" onclick="toggleDropdown(event)" style="
-                background: #3b82f6; 
-                color: white; 
-                border: none; 
-                padding: 10px 25px; 
-                border-radius: 20px; 
-                font-weight: 600; 
-                cursor: pointer; 
-                transition: 0.3s;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                <i class="fas fa-user-circle"></i> Profile
-            </button>
-            
-            <div id="profileDropdown" class="dropdown" style="
-                display: none; 
-                position: absolute; 
-                top: calc(100% + 10px); 
-                right: 0; 
-                background: white; 
-                box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-                border-radius: 12px; 
-                min-width: 200px; 
-                z-index: 1000; 
-                padding: 10px 0; 
-                border: 1px solid #f1f5f9;
-            ">
-                <a href="/profile" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-user-cog" style="width: 20px;"></i> Personal Info
-                </a>
-                <a href="/my_reservations" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-calendar-check" style="width: 20px;"></i> My Reservations
-                </a>
-                <a href="/favorites" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-heart" style="width: 20px;"></i> Favorites
-                </a>
-                <a href="/messages" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-envelope" style="width: 20px;"></i> Messages
-                </a>
-            </div>
+    <section class="most-popular-section" style="padding: 0 6%; position: relative; margin-bottom: 80px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 20px;">
+            <h2 style="color: #1e293b; font-size: 28px; font-weight: 700; margin: 0;">Most Popular</h2>
+            <a href="/search" style="color: var(--theme-color); text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
-
-        <a href="/" class="exit-btn" title="Log Out" style="
-            text-decoration: none; 
-            width: 42px; 
-            height: 42px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: #f1f5f9; 
-            color: #64748b; 
-            border-radius: 50%; 
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-        " onmouseover="this.style.background='#fee2e2'; this.style.color='#ef4444'; this.style.transform='scale(1.1)';" 
-           onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b'; this.style.transform='scale(1)';">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
-    </div>
-</div>
-
-<div class="hero" style="padding: 40px 20px;"> <div class="hero-glass-box">
-        <p style="color: #3b82f6; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">✨ AI Powered Recommendations</p>
-        <h1 style="margin: 15px 0;">Find Your Dream Home with AI</h1>
-        <p style="color: #64748b; font-size: 18px; margin-bottom: 30px;">Smart property search powered by artificial intelligence.</p>
         
-        <div class="search-container" style="margin: 0 auto;"> <input type="text" placeholder="Search by location, type or keywords...">
-            <button onclick="window.location.href='/search'">Search</button>
-        </div>
-    </div>
-</div>
+        <button class="nav-btn prev" style="left: 0;" onclick="moveSlider(-1)"><i class="fas fa-chevron-left"></i></button>
+        <button class="nav-btn next" style="right: 0;" onclick="moveSlider(1)"><i class="fas fa-chevron-right"></i></button>
 
-<div class="most-popular-section">
-    <h2>Most Popular</h2>
-    
-    <button class="nav-btn prev" onclick="moveSlider(-1)"><i class="fas fa-chevron-left"></i></button>
-    <button class="nav-btn next" onclick="moveSlider(1)"><i class="fas fa-chevron-right"></i></button>
-
-    <div class="slider-outer-wrapper">
-        <div class="slider-track" id="sliderTrack">
-            {% for villa in villas %}
-            <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
-                <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
-                <div class="card-content">
-                    <h3>{{ villa.name }}</h3>
-                    <div style="display: flex; align-items: center;">
-                        <span style="font-weight: 800; font-size: 18px;">{{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺</span>
-                        {% if villa.type == "sale" %}<span class="badge-sale">For Sale</span>{% endif %}
+        <div class="slider-outer-wrapper" style="overflow: hidden; padding: 15px 0;">
+            <div class="slider-track" id="sliderTrack" style="display: flex; gap: 24px; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);">
+                {% for villa in villas %}
+                <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
+                    <div style="position: relative;">
+                        <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}" style="width: 100%; height: 250px; object-fit: cover;">
+                        {% if villa.type == "sale" %}
+                        <div style="position: absolute; top: 15px; right: 15px; background: white; padding: 5px 12px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                            <span style="color: #ef4444; font-weight: 700; font-size: 11px;">FOR SALE</span>
+                        </div>
+                        {% endif %}
                     </div>
-                    <p style="color: #94a3b8; font-size: 14px; margin-top: 8px;"><i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>{{ villa.location }}</p>
+                    <div class="card-content" style="padding: 22px;">
+                        <h3 style="margin: 0 0 12px; font-size: 19px; color: #1e293b; font-weight: 700;">{{ villa.name }}</h3>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-weight: 800; font-size: 20px; color: var(--theme-color);">{{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺</span>
+                            <span style="color: #94a3b8; font-size: 13px;"><i class="fas fa-bed"></i> {{ villa.beds }} Beds</span>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
+                            <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #94a3b8;"></i>{{ villa.location }}
+                        </div>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-    </div>
-</div>
+    </section>
+</main>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const track = document.getElementById('sliderTrack');
     const cards = Array.from(track.children);
-    const visibleCards = 3;
-    const gap = 25;
+    if(cards.length === 0) return;
 
-    // Klonlama (Seamless Sonsuz Döngü için)
+    const visibleCards = 3;
+    const gap = 24;
+
+    // --- SONSUZ DÖNGÜ MANTIĞI ---
     const firstClones = cards.slice(0, visibleCards).map(node => node.cloneNode(true));
     const lastClones = cards.slice(-visibleCards).map(node => node.cloneNode(true));
+    
     firstClones.forEach(clone => track.appendChild(clone));
     lastClones.reverse().forEach(clone => track.insertBefore(clone, track.firstChild));
 
     let currentIndex = visibleCards;
     
     const updatePosition = () => {
-        const cardWidth = track.querySelector('.card').offsetWidth;
+        const firstCard = track.querySelector('.card');
+        if (!firstCard) return;
+        const cardWidth = firstCard.offsetWidth;
         track.style.transform = `translateX(-${currentIndex * (cardWidth + gap)}px)`;
     };
 
-    track.style.transition = 'none';
-    updatePosition();
+    setTimeout(() => {
+        track.style.transition = 'none';
+        updatePosition();
+    }, 10);
 
     window.moveSlider = function(direction) {
-        const cardWidth = track.querySelector('.card').offsetWidth;
         currentIndex += direction;
-        track.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        track.style.transition = 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)';
         updatePosition();
 
         track.addEventListener('transitionend', () => {
@@ -246,32 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.addEventListener('resize', updatePosition);
-    });
-    function toggleDropdown(event) {
-    // Tıklamanın dışarıya yayılmasını engelle ki window.onclick hemen çalışmasın
-    event.stopPropagation();
-    
-    const dropdown = document.getElementById('profileDropdown');
-    const isVisible = dropdown.style.display === 'block';
-    
-    // Açıksa kapat, kapalıysa aç
-    dropdown.style.display = isVisible ? 'none' : 'block';
-}
-
-// Ekrandaki herhangi bir yere tıklandığında menüyü kapatma mantığı
-window.onclick = function(event) {
-    const dropdown = document.getElementById('profileDropdown');
-    const btn = document.getElementById('profileBtn');
-    
-    // Eğer tıklanan yer buton değilse ve dropdown şu an açıksa kapat
-    if (event.target !== btn && dropdown.style.display === 'block') {
-        // Tıklanan yer dropdown'un kendisi değilse kapat
-        if (!dropdown.contains(event.target)) {
-            dropdown.style.display = 'none';
-        }
-    }
-}
+});
 </script>
-
-</body>
-</html>
+{% endblock %}

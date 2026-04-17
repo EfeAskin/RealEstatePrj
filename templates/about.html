@@ -1,230 +1,133 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>About Us | CypInvEst</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="{{ url_for('static', path='htmlfotos/favicon.png') }}">
-    <style>
-        body { background-color: #f8fafc; }
+{% extends "base.html" %}
 
-        /* Arka Plan Efekti */
-        .about-section {
-            min-height: 85vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
+{% block title %}About Us | CypInvEst{% endblock %}
 
-        /* Hero Glass Box ile Uyumlu Ana Kapsayıcı */
-        .premium-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 0 50px rgba(59, 130, 246, 0.15);
-            display: flex;
-            align-items: center;
-            gap: 60px;
-            padding: 60px;
-            max-width: 1100px;
-            width: 100%;
-            transition: 0.4s;
-        }
+{% block extra_css %}
+<style>
+    /* Arka Plan Efekti */
+    .about-section {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
 
-        /* Teknolojik "i" Logosu */
-        .info-graphic {
-            position: relative;
-            flex-shrink: 0;
-        }
+    /* Hero Glass Box ile Uyumlu Ana Kapsayıcı */
+    .premium-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 50px var(--theme-light);
+        display: flex;
+        align-items: center;
+        gap: 60px;
+        padding: 60px;
+        max-width: 1100px;
+        width: 100%;
+        transition: 0.4s;
+    }
 
-        .ai-glow-circle {
-            width: 280px;
-            height: 280px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 40px rgba(59, 130, 246, 0.4);
-            position: relative;
-            animation: pulse 4s infinite;
-        }
+    /* Teknolojik "i" Logosu */
+    .info-graphic {
+        position: relative;
+        flex-shrink: 0;
+    }
 
-        .ai-glow-circle i {
-            font-size: 140px;
-            color: white;
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
-        }
+    .ai-glow-circle {
+        width: 280px;
+        height: 280px;
+        /* Renkler var(--theme-color)'a göre değişir */
+        background: linear-gradient(135deg, var(--theme-color) 0%, #2dd4bf 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 40px var(--theme-light);
+        position: relative;
+        animation: pulse 4s infinite;
+    }
 
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 40px rgba(59, 130, 246, 0.4); }
-            50% { transform: scale(1.03); box-shadow: 0 0 60px rgba(59, 130, 246, 0.6); }
-            100% { transform: scale(1); box-shadow: 0 0 40px rgba(59, 130, 246, 0.4); }
-        }
+    .ai-glow-circle i {
+        font-size: 140px;
+        color: white;
+        filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+    }
 
-        /* Liste Tasarımı */
-        .info-content { flex: 1; }
+    @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 40px var(--theme-light); }
+        50% { transform: scale(1.03); box-shadow: 0 0 60px var(--theme-light); }
+        100% { transform: scale(1); box-shadow: 0 0 40px var(--theme-light); }
+    }
 
-        .info-content h2 {
-            font-size: 32px;
-            font-weight: 800;
-            color: #1e293b;
-            margin-bottom: 5px;
-            background: linear-gradient(to right, #3b82f6, #2dd4bf);
-            -webkit-background-clip: text;
-            background-clip: text; /* Standart hali */
-            -webkit-text-fill-color: transparent;
-        }        
+    /* Liste Tasarımı */
+    .info-content { flex: 1; }
 
+    .info-content h2 {
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 5px;
+        background: linear-gradient(to right, var(--theme-color), #2dd4bf);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }        
 
-        .university-tag {
-            color: #64748b;
-            font-weight: 600;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .university-tag {
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-        .team-list {
-            list-style: none;
-            padding: 0;
-        }
+    .team-list { list-style: none; padding: 0; }
 
-        .team-member {
-            background: white;
-            margin-bottom: 12px;
-            padding: 18px 25px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-            border-left: 6px solid #3b82f6;
-            transition: 0.3s;
-        }
+    .team-member {
+        background: white;
+        margin-bottom: 12px;
+        padding: 18px 25px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        border-left: 6px solid var(--theme-color);
+        transition: 0.3s;
+    }
 
-        .team-member:hover {
-            transform: translateX(10px);
-            background: #f0f9ff;
-        }
+    .team-member:hover {
+        transform: translateX(10px);
+        background: var(--theme-light);
+    }
 
-        .team-member .name { font-weight: 700; color: #1e293b; }
-        .team-member .role { font-size: 13px; color: #64748b; margin-left: auto; font-style: italic;}
+    .team-member .name { font-weight: 700; color: #1e293b; }
+    .team-member .role { font-size: 13px; color: #64748b; margin-left: auto; font-style: italic;}
 
-        .action-btns {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
+    .action-btns { display: flex; gap: 15px; margin-top: 30px; }
 
-        .btn-modern {
-            padding: 12px 25px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .btn-modern {
+        padding: 12px 25px;
+        border-radius: 12px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-        .btn-msg { background: #1e293b; color: white; }
-        .btn-email { background: #3b82f6; color: white; }
-        .btn-modern:hover { opacity: 0.9; transform: translateY(-3px); }
+    .btn-msg { background: #1e293b; color: white; }
+    .btn-email { background: var(--theme-color); color: white; }
+    .btn-modern:hover { opacity: 0.9; transform: translateY(-3px); }
+</style>
+{% endblock %}
 
-    </style>
-</head>
-<body>
-
-<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: relative;">
-    
-    <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
-        <div style="cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
-            <img src="/static/htmlfotos/favicon.png" alt="CIE Logo" style="width: 55px; height: 55px; margin-right: 15px; object-fit: contain;">
-            
-            <div style="font-size: 2.1rem; letter-spacing: 1px; font-weight: 800; display: flex; align-items: center;">
-                <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span><span style="width: 8px; height: 8px; background: #D4A373; border-radius: 50%; margin-left: 6px; margin-top: 12px;"></span>
-            </div>
-        </div>
-    </div>
-
-    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9; flex: 0 1 auto;">
-        <a href="/home" style="text-decoration: none; color: #1e293b; font-weight: 500;">Home</a>
-        <a href="/search" style="text-decoration: none; color: #64748b; font-weight: 600;">Search</a>
-        <a href="#" style="text-decoration: none; color: #64748b; font-weight: 500;">AI Chat</a>
-        <a href="/about" style="text-decoration: none; color: #64748b; font-weight: 500;">About Us</a>
-    </div>
-
-    <div class="right-menu" style="display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;">
-        <div class="profile" style="position: relative;">
-            <button id="profileBtn" class="btn-blue" onclick="toggleDropdown(event)" style="
-                background: #3b82f6; 
-                color: white; 
-                border: none; 
-                padding: 10px 25px; 
-                border-radius: 20px; 
-                font-weight: 600; 
-                cursor: pointer; 
-                transition: 0.3s;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                <i class="fas fa-user-circle"></i> Profile
-            </button>
-            
-            <div id="profileDropdown" class="dropdown" style="
-                display: none; 
-                position: absolute; 
-                top: calc(100% + 10px); 
-                right: 0; 
-                background: white; 
-                box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-                border-radius: 12px; 
-                min-width: 200px; 
-                z-index: 1000; 
-                padding: 10px 0; 
-                border: 1px solid #f1f5f9;
-            ">
-                <a href="/profile" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-user-cog" style="width: 20px;"></i> Personal Info
-                </a>
-                <a href="/my_reservations" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-calendar-check" style="width: 20px;"></i> My Reservations
-                </a>
-                <a href="/favorites" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-heart" style="width: 20px;"></i> Favorites
-                </a>
-                <a href="/messages" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-envelope" style="width: 20px;"></i> Messages
-                </a>
-            </div>
-        </div>
-
-        <a href="/" class="exit-btn" title="Log Out" style="
-            text-decoration: none; 
-            width: 42px; 
-            height: 42px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: #f1f5f9; 
-            color: #64748b; 
-            border-radius: 50%; 
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-        " onmouseover="this.style.background='#fee2e2'; this.style.color='#ef4444'; this.style.transform='scale(1.1)';" 
-           onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b'; this.style.transform='scale(1)';">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
-    </div>
-</div>
-
+{% block content %}
 <div class="about-section">
     <div class="premium-card">
         <div class="info-graphic">
@@ -242,7 +145,7 @@
 
             <ul class="team-list">
                 <li class="team-member">
-                    <i class="fas fa-microchip" style="color: #3b82f6;"></i>
+                    <i class="fas fa-microchip" style="color: var(--theme-color);"></i>
                     <span class="name">Kamil Efe Aşkın</span>
                     <span class="role">Computer Engineering Student</span>
                 </li>
@@ -252,7 +155,7 @@
                     <span class="role">Artificial Intelligence Student</span>
                 </li>
                 <li class="team-member">
-                    <i class="fas fa-code-branch" style="color: #3b82f6;"></i>
+                    <i class="fas fa-code-branch" style="color: var(--theme-color);"></i>
                     <span class="name">Begench Tekayev</span>
                     <span class="role">Artificial Intelligence Student</span>
                 </li>
@@ -270,32 +173,4 @@
         </div>
     </div>
 </div>
-
-<script>
-    function toggleDropdown(event) {
-    // Tıklamanın dışarıya yayılmasını engelle ki window.onclick hemen çalışmasın
-    event.stopPropagation();
-    
-    const dropdown = document.getElementById('profileDropdown');
-    const isVisible = dropdown.style.display === 'block';
-    
-    // Açıksa kapat, kapalıysa aç
-    dropdown.style.display = isVisible ? 'none' : 'block';
-}
-
-// Ekrandaki herhangi bir yere tıklandığında menüyü kapatma mantığı
-window.onclick = function(event) {
-    const dropdown = document.getElementById('profileDropdown');
-    const btn = document.getElementById('profileBtn');
-    
-    // Eğer tıklanan yer buton değilse ve dropdown şu an açıksa kapat
-    if (event.target !== btn && dropdown.style.display === 'block') {
-        // Tıklanan yer dropdown'un kendisi değilse kapat
-        if (!dropdown.contains(event.target)) {
-            dropdown.style.display = 'none';
-        }
-    }
-}
-</script>
-</body>
-</html>
+{% endblock %}

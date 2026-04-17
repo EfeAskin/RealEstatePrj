@@ -1,198 +1,328 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Search Properties | CypInvest</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="{{ url_for('static', path='htmlfotos/favicon.png') }}">
-    <style>
-        .badge-sale {
-            background-color: #ef4444;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: bold;  
-            margin-left: 10px;
-        }
-        .card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; background: white; border-radius: 12px; }
-        .card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; padding: 20px 8%; }
-        .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px 12px 0 0; }
-        .card-content { padding: 15px; border: 1px solid #eee; border-top: none; border-radius: 0 0 12px 12px; }
-        .filter-bar { margin: 0 8% 20px 8%; display: flex; gap: 10px; }
-        .btn-filter { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; }
-        .btn-filter:hover { background: #f1f5f9; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: sticky; top: 10px; z-index: 2000;">
-    
-    <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
-        <div style="cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
-            <img src="/static/htmlfotos/favicon.png" alt="CIE Logo" style="width: 55px; height: 55px; margin-right: 15px; object-fit: contain;">
+{% block title %}Search Properties | CypInvest{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Glass Box Arama Sayfası İçin Özel */
+    .hero-glass-box {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        padding: 40px;
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    /* Grid ve Kart Tasarımı */
+    .grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+        gap: 30px; 
+        padding: 40px 8%; 
+    }
+
+    .card { 
+        cursor: pointer; 
+        transition: all 0.3s ease; 
+        background: white; 
+        border-radius: 16px; 
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+    }
+    .card:hover { 
+        transform: translateY(-10px); 
+        box-shadow: 0 20px 30px rgba(0,0,0,0.08); 
+    }
+    .card img { 
+        width: 100%; 
+        height: 220px; 
+        object-fit: cover; 
+    }
+    .card-content { 
+        padding: 20px; 
+    }
+
+    /* Filtreleme Çubuğu */
+    .filter-bar { 
+        margin: 30px 8% 10px 8%; 
+        display: flex; 
+        gap: 12px; 
+    }
+    .btn-filter { 
+        background: white; 
+        border: 1px solid #e2e8f0; 
+        padding: 10px 20px; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        transition: 0.3s; 
+        font-weight: 500;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-filter:hover { 
+        background: var(--theme-light); 
+        color: var(--theme-color);
+        border-color: var(--theme-color);
+    }
+
+    .badge-sale {
+        background-color: #fee2e2;
+        color: #ef4444;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 800;  
+    }
+
+    /* --- FILTER PANEL & CHIPS --- */
+    .filter-chip {
+        padding: 8px 18px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 100px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-weight: 500;
+        color: #64748b;
+    }
+    .filter-chip:hover {
+        border-color: var(--theme-color);
+        color: var(--theme-color);
+    }
+    .active-chip {
+        background: var(--theme-color) !important;
+        color: white !important;
+        border-color: var(--theme-color) !important;
+    }
+
+    /* --- SORT DROPDOWN --- */
+    .sort-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        width: 220px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        border: 1px solid #f1f5f9;
+        z-index: 2000;
+        padding: 8px;
+    }
+    .sort-item {
+        padding: 12px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.2s;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+        text-align: left;
+    }
+    .sort-item:hover {
+        background: var(--theme-light);
+        color: var(--theme-color);
+    }
+    .sort-item.active {
+        background: var(--theme-light);
+        color: var(--theme-color);
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main>
+    <div class="hero" style="padding: 50px 20px;">
+        <div class="hero-glass-box">
+            <p style="color: var(--theme-color); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">✨ AI Intelligence Tool</p>
             
-            <div style="font-size: 2.1rem; letter-spacing: 1px; font-weight: 800; display: flex; align-items: center;">
-                <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span><span style="width: 8px; height: 8px; background: #D4A373; border-radius: 50%; margin-left: 6px; margin-top: 12px;"></span>
+            <h1 style="font-size: 38px; font-weight: 800; margin: 0 0 15px; color: #1e293b;">
+                {% if role == 'agent' %}
+                    Analyze Your Listings with AI
+                {% else %}
+                    Find Your Dream Home with AI
+                {% endif %}
+            </h1>
+            
+            <p style="color: #64748b; margin-bottom: 30px;">
+                {% if role == 'agent' %}
+                    Optimize your properties and reach the right audience using our smart matching algorithms.
+                {% else %}
+                    Smart property search powered by artificial intelligence. Search now, get personalized recommendations.
+                {% endif %}
+            </p>
+            
+            <div style="max-width: 600px; margin: 0 auto; display: flex; align-items: center; background: white; padding: 8px; border-radius: 50px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <input type="text" placeholder="Location, villa name, price range..." style="border: none; outline: none; flex: 1; font-size: 16px; padding-left: 25px; color: #475569;">
+                <button class="btn-main">Search</button>
             </div>
         </div>
     </div>
 
-    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9; flex: 0 1 auto;">
-        <a href="/home" style="text-decoration: none; color: #1e293b; font-weight: 500;">Home</a>
-        <a href="/search" style="text-decoration: none; color: #64748b; font-weight: 600;">Search</a>
-        <a href="#" style="text-decoration: none; color: #64748b; font-weight: 500;">AI Chat</a>
-        <a href="/about" style="text-decoration: none; color: #64748b; font-weight: 500;">About Us</a>
-    </div>
-
-    <div class="right-menu" style="display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;">
-        <div class="profile" style="position: relative;">
-            <button id="profileBtn" class="btn-blue" onclick="toggleDropdown(event)" style="
-                background: #3b82f6; 
-                color: white; 
-                border: none; 
-                padding: 10px 25px; 
-                border-radius: 20px; 
-                font-weight: 600; 
-                cursor: pointer; 
-                transition: 0.3s;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                <i class="fas fa-user-circle"></i> Profile
-            </button>
-            
-            <div id="profileDropdown" class="dropdown" style="
-                display: none; 
-                position: absolute; 
-                top: calc(100% + 10px); 
-                right: 0; 
-                background: white; 
-                box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-                border-radius: 12px; 
-                min-width: 200px; 
-                z-index: 2001; 
-                padding: 10px 0; 
-                border: 1px solid #f1f5f9;
-            ">
-                <a href="/profile" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-user-cog" style="width: 20px;"></i> Personal Info
-                </a>
-                <a href="/my_reservations" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-calendar-check" style="width: 20px;"></i> My Reservations
-                </a>
-                <a href="/favorites" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-heart" style="width: 20px;"></i> Favorites
-                </a>
-                <a href="/messages" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-envelope" style="width: 20px;"></i> Messages
-                </a>
-            </div>
-        </div>
-
-        <a href="/" class="exit-btn" title="Log Out" style="
-            text-decoration: none; 
-            width: 42px; 
-            height: 42px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: #f1f5f9; 
-            color: #64748b; 
-            border-radius: 50%; 
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-        " onmouseover="this.style.background='#fee2e2'; this.style.color='#ef4444'; this.style.transform='scale(1.1)';" 
-           onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b'; this.style.transform='scale(1)';">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
-    </div>
-</div>
-
-<div class="hero" style="padding: 40px 20px;">
-    <div class="hero-glass-box">
-        <p style="color: #3b82f6; font-size: 14px; font-weight: bold;">✨ AI Powered Recommendations</p>
-        <h1 style="font-size: 42px; margin: 15px 0;">Find Your Dream Home with AI</h1>
-        <p style="color: #636e72; max-width: 600px; margin: 0 auto 30px;">Smart property search powered by artificial intelligence. Search now, get personalized recommendations.</p>
+    <div class="filter-bar">
+        <button class="btn-filter" onclick="toggleFilters()"><i class="fas fa-sliders-h"></i> All Filters</button>
         
-        <div class="search-bar" style="max-width: 600px; margin: 0 auto; display: flex; justify-content: space-between; background: white; padding: 10px; border-radius: 50px; border: 1px solid #eee;">
-            <input type="text" placeholder="Search by location, type or keywords..." style="border: none; outline: none; width: 70%; font-size: 16px; padding-left: 20px;">
-            <button style="background: #3b82f6; color: white; border: none; padding: 12px 35px; border-radius: 30px; cursor: pointer; font-weight: bold;">Search</button>
+        <div style="position: relative;">
+            <button class="btn-filter" id="sortBtn" onclick="toggleSortMenu(event)">
+                <i class="fas fa-sort-amount-down"></i> Sort By: <span id="currentSort">Latest</span>
+            </button>
+            <div id="sortMenu" class="sort-dropdown">
+                <div class="sort-item active" onclick="selectSort('Latest', this)">Latest</div>
+                <div class="sort-item" onclick="selectSort('Price: Low to High', this)">Price: Low to High</div>
+                <div class="sort-item" onclick="selectSort('Price: High to Low', this)">Price: High to Low</div>
+                <div class="sort-item" onclick="selectSort('Most Popular', this)">Most Popular</div>
+            </div>
+        </div>
+
+        <button class="btn-filter"><i class="fas fa-map-marked-alt"></i> View on Map</button>
+    </div>
+
+    <div class="grid">
+        {% for villa in villas %}
+        <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
+            <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
+            <div class="card-content">
+                <h3 style="margin: 0 0 12px 0; font-size: 20px; color: #1e293b; font-weight: 700;">{{ villa.name }}</h3>
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <p style="color: #1e293b; font-weight: 800; font-size: 1.2rem; margin: 0;">
+                        {{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺ 
+                    </p>
+                    {% if villa.type == "sale" %}
+                        <span class="badge-sale">FOR SALE</span>
+                    {% else %}
+                        <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">/ 30 nights</span>
+                    {% endif %}
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 15px; color: #94a3b8; font-size: 0.9rem; margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9;">
+                    <span><i class="fas fa-bed"></i> {{ villa.beds }} Beds</span>
+                    <span><i class="fas fa-bath"></i> {{ villa.baths }} Baths</span>
+                    <span style="margin-left: auto;"><i class="fas fa-map-marker-alt" style="color: var(--theme-color);"></i> {{ villa.location }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="filterOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; backdrop-filter: blur(4px);"></div>
+
+    <div id="filterPanel" style="position: fixed; top: 0; right: -450px; width: 400px; height: 100%; background: white; z-index: 3001; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+        <div style="padding: 25px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 20px; color: #1e293b;">All Filters</h2>
+            <button onclick="toggleFilters()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; padding: 25px;">
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #1e293b;">Price Range (₺)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" placeholder="Min" style="width: 50%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                    <input type="number" placeholder="Max" style="width: 50%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #1e293b;">Bedrooms</label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="filter-chip active-chip">Any</button>
+                    <button class="filter-chip">1+</button>
+                    <button class="filter-chip">2+</button>
+                    <button class="filter-chip">3+</button>
+                    <button class="filter-chip">4+</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #1e293b;">Property Type</label>
+                <select style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: white;">
+                    <option>All Types</option>
+                    <option>Villa</option>
+                    <option>Apartment</option>
+                    <option>Penthouse</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #1e293b;">Amenities</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #64748b;"><input type="checkbox"> Swimming Pool</label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #64748b;"><input type="checkbox"> Garden</label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #64748b;"><input type="checkbox"> Sea View</label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #64748b;"><input type="checkbox"> Furnished</label>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding: 20px 25px; border-top: 1px solid #f1f5f9; display: flex; gap: 15px;">
+            <button onclick="toggleFilters()" style="flex: 1; padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; font-weight: 600; cursor: pointer;">Clear All</button>
+            <button class="btn-main" style="flex: 2; justify-content: center;" onclick="applyFilters()">Show Results</button>
         </div>
     </div>
-</div>
+</main>
+{% endblock %}
 
-<div class="filter-bar">
-    <button class="btn-filter">Filters</button>
-    <button class="btn-filter">Sort By</button>
-</div>
-
-<div class="grid">
-    {% for villa in villas %}
-    <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
-        <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
-        <div class="card-content">
-            <h3 style="margin: 0 0 10px 0;">{{ villa.name }}</h3>
-            
-            {% if villa.type == "sale" %}
-                <p style="color: #1e293b; font-weight: 800; margin: 0;">
-                    {{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺ 
-                    <span class="badge-sale">For Sale</span>
-                </p>
-            {% else %}
-                <p style="color: #1e293b; font-weight: 800; margin: 0;">
-                    {{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺ 
-                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 400;">/ 30 nights</span>
-                </p>
-            {% endif %}
-            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">{{ villa.location }}</p>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
+{% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const profileBtn = document.querySelector('.btn-blue');
-        const dropdown = document.querySelector('.dropdown');
-
-        if (profileBtn && dropdown) {
-            profileBtn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropdown.style.display = (dropdown.style.display === 'block') ? 'none' : 'block';
-            };
-
-            document.onclick = function() {
-                dropdown.style.display = 'none';
-            };
-
-            dropdown.onclick = function(e) {
-                e.stopPropagation();
-            };
-        }
-    });
-    function toggleDropdown(event) {
-    event.stopPropagation();
-    
-    const dropdown = document.getElementById('profileDropdown');
-    const isVisible = dropdown.style.display === 'block';
-    
-    dropdown.style.display = isVisible ? 'none' : 'block';
-}
-
-window.onclick = function(event) {
-    const dropdown = document.getElementById('profileDropdown');
-    const btn = document.getElementById('profileBtn');
-    
-    if (event.target !== btn && dropdown.style.display === 'block') {
-        if (!dropdown.contains(event.target)) {
-            dropdown.style.display = 'none';
+    /* --- FILTER PANEL JS --- */
+    function toggleFilters() {
+        const panel = document.getElementById('filterPanel');
+        const overlay = document.getElementById('filterOverlay');
+        
+        if (panel.style.right === '0px') {
+            panel.style.right = '-450px';
+            overlay.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        } else {
+            panel.style.right = '0px';
+            overlay.style.display = 'block';
+            document.body.style.overflow = 'hidden';
         }
     }
-}
+
+    document.getElementById('filterOverlay').onclick = toggleFilters;
+
+    function applyFilters() {
+        toggleFilters();
+        // Backend entegrasyonu buraya gelecek
+    }
+
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.onclick = function() {
+            this.parentElement.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active-chip'));
+            this.classList.add('active-chip');
+        };
+    });
+
+    /* --- SORT DROPDOWN JS --- */
+    function toggleSortMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('sortMenu');
+        const isVisible = menu.style.display === 'block';
+        menu.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function selectSort(sortText, element) {
+        document.getElementById('currentSort').innerText = sortText;
+        document.querySelectorAll('.sort-item').forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+        document.getElementById('sortMenu').style.display = 'none';
+    }
+
+    // Menü dışına tıklandığında her şeyi kapat
+    window.onclick = function(event) {
+        const sortMenu = document.getElementById('sortMenu');
+        if (sortMenu && sortMenu.style.display === 'block') {
+            sortMenu.style.display = 'none';
+        }
+    }
 </script>
-</body>
-</html>
+{% endblock %}

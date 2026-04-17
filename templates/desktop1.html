@@ -1,211 +1,114 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ villa.name }} | CypInvest Detay</title>
+{% extends "base.html" %}
+
+{% block title %}{{ villa.name }} | CypInvest Detay{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        /* Renkler base.html'den gelen temaya göre dinamikleşti */
+        --primary-blue: var(--theme-color);
+        --secondary-blue: var(--theme-color-dark, #1e88e5); 
+        --text-main: #2d3436;
+        --text-muted: #636e72;
+        --border: #dfe6e9;
+        --bg-body: #ffffff;
+        --shadow: 0 10px 30px rgba(0,0,0,0.08);
+        --star-yellow: #f1c40f;
+    }
+
+    * { box-sizing: border-box; transition: all 0.2s ease; }
     
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="{{ url_for('static', path='htmlfotos/favicon.png') }}">
-    <style>
-        :root {
-            --primary-blue: #00a8ff;
-            --secondary-blue: #0097e6;
-            --text-main: #2d3436;
-            --text-muted: #636e72;
-            --border: #dfe6e9;
-            --bg-body: #ffffff;
-            --shadow: 0 10px 30px rgba(0,0,0,0.08);
-            --star-yellow: #f1c40f;
-        }
+    /* Body ve Genel Yapı */
+    .main-container { max-width: 1200px; margin: 40px auto; display: flex; gap: 50px; padding: 0 20px; }
 
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--bg-body); color: var(--text-main); overflow-x: hidden; }
+    /* Sol İçerik */
+    .content-area { flex: 2; }
+    .title-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .title-header h1 { font-size: 34px; margin: 0; letter-spacing: -1px; }
+    .actions i { cursor: pointer; padding: 10px; border-radius: 50%; color: var(--text-muted); }
+    .actions i:hover { background: #f1f2f6; color: var(--primary-blue); }
 
-        /* Navbar */
-        .navbar { height: 80px; display: flex; align-items: center; justify-content: space-between; padding: 0 8%; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: white; z-index: 1000; }
-        .logo { font-weight: 800; font-size: 24px; color: var(--primary-blue); cursor: pointer; text-decoration: none; }
-        .nav-links { display: flex; gap: 35px; }
-        .nav-links a { text-decoration: none; color: var(--text-main); font-weight: 500; font-size: 15px; }
-        .nav-links a:hover { color: var(--primary-blue); }
-        .profile-btn { background: var(--primary-blue); color: white; border: none; padding: 12px 28px; border-radius: 25px; cursor: pointer; font-weight: 600; }
-        .profile-btn:hover { background: var(--secondary-blue); transform: translateY(-2px); }
+    .image-box { width: 100%; border-radius: 16px; overflow: hidden; margin-bottom: 30px; box-shadow: var(--shadow); }
+    .image-box img { width: 100%; height: 500px; object-fit: cover; display: block; transition: transform 0.5s; }
+    .image-box:hover img { transform: scale(1.03); }
 
-        .main-container { max-width: 1200px; margin: 40px auto; display: flex; gap: 50px; padding: 0 20px; }
+    .property-meta { display: flex; gap: 20px; font-size: 16px; color: var(--text-muted); margin-bottom: 30px; padding-bottom: 25px; border-bottom: 1px solid var(--border); }
 
-        /* Sol İçerik */
-        .content-area { flex: 2; }
-        .title-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .title-header h1 { font-size: 34px; margin: 0; letter-spacing: -1px; }
-        .actions i { cursor: pointer; padding: 10px; border-radius: 50%; color: var(--text-muted); }
-        .actions i:hover { background: #f1f2f6; color: var(--primary-blue); }
+    .description-text h3 { font-size: 22px; margin-bottom: 15px; }
+    .description-text p { line-height: 1.8; color: #444; font-size: 16px; }
 
-        .image-box { width: 100%; border-radius: 16px; overflow: hidden; margin-bottom: 30px; box-shadow: var(--shadow); }
-        .image-box img { width: 100%; height: 500px; object-fit: cover; display: block; transition: transform 0.5s; }
-        .image-box:hover img { transform: scale(1.03); }
+    /* Ratings Bölümü */
+    .ratings-section { margin-top: 50px; padding: 30px; background: #fafafa; border-radius: 16px; }
+    .rating-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 25px; }
+    .rating-item { display: flex; align-items: center; justify-content: space-between; }
+    .bar-container { flex: 1; height: 5px; background: #e0e0e0; margin: 0 20px; border-radius: 10px; position: relative; }
+    .bar-fill { position: absolute; height: 100%; background: var(--text-main); border-radius: 10px; }
 
-        .property-meta { display: flex; gap: 20px; font-size: 16px; color: var(--text-muted); margin-bottom: 30px; padding-bottom: 25px; border-bottom: 1px solid var(--border); }
+    /* Yorumlar */
+    .comment-card { margin-top: 35px; border-bottom: 1px solid var(--border); padding-bottom: 25px; }
+    .user-info { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
+    .user-info img { width: 50px; height: 50px; border-radius: 50%; background: #eee; object-fit: cover; }
+    .comment-body { line-height: 1.6; color: #555; font-size: 15px; }
 
-        .description-text h3 { font-size: 22px; margin-bottom: 15px; }
-        .description-text p { line-height: 1.8; color: #444; font-size: 16px; }
+    .add-review { margin-top: 30px; padding: 25px; border: 1px solid var(--border); border-radius: 16px; }
+    .star-rating { margin: 15px 0; font-size: 24px; color: #ccc; display: flex; gap: 5px; }
+    .star-rating i { cursor: pointer; transition: all 0.2s ease; }
+    .add-review textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 15px; outline: none; font-family: inherit; font-size: 15px; min-height: 100px; margin-top: 10px; }
 
-        /* Ratings Bölümü */
-        .ratings-section { margin-top: 50px; padding: 30px; background: #fafafa; border-radius: 16px; }
-        .rating-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 25px; }
-        .rating-item { display: flex; align-items: center; justify-content: space-between; }
-        .bar-container { flex: 1; height: 5px; background: #e0e0e0; margin: 0 20px; border-radius: 10px; position: relative; }
-        .bar-fill { position: absolute; height: 100%; background: var(--text-main); border-radius: 10px; }
+    /* Sağ Sidebar & Rezervasyon */
+    .sidebar { flex: 1; }
+    .booking-widget { position: sticky; top: 120px; border: 1px solid var(--border); border-radius: 20px; padding: 30px; box-shadow: var(--shadow); background: white; }
+    .price-info { font-size: 26px; font-weight: 800; margin-bottom: 25px; }
+    .selection-box { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 25px; cursor: pointer; overflow: hidden; }
+    .date-row { display: flex; border-bottom: 1px solid var(--border); }
+    .date-item { flex: 1; padding: 15px; }
+    .date-item:hover, .guest-item:hover { background: #f9f9f9; }
+    .date-item label, .guest-item label { display: block; font-size: 11px; font-weight: 800; color: #000; margin-bottom: 5px; }
+    .guest-item { padding: 15px; }
 
-        /* Yorumlar */
-        .comment-card { margin-top: 35px; border-bottom: 1px solid var(--border); padding-bottom: 25px; }
-        .user-info { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
-        .user-info img { width: 50px; height: 50px; border-radius: 50%; background: #eee; object-fit: cover; }
-        .comment-body { line-height: 1.6; color: #555; font-size: 15px; }
+    .request-button { width: 100%; background: var(--primary-blue); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 4px 15px var(--theme-light); }
+    .request-button:hover { filter: brightness(1.1); transform: translateY(-3px); }
 
-        .add-review { margin-top: 30px; padding: 25px; border: 1px solid var(--border); border-radius: 16px; }
-        .star-rating { margin: 15px 0; font-size: 24px; color: #ccc; display: flex; gap: 5px; }
-        .star-rating i { cursor: pointer; transition: all 0.2s ease; }
-        .add-review textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 15px; outline: none; font-family: inherit; font-size: 15px; min-height: 100px; margin-top: 10px; }
+    /* Publisher */
+    .publisher-card { margin-top: 50px; border-top: 1px solid var(--border); padding-top: 40px; display: flex; align-items: center; justify-content: space-between; }
+    .pub-info img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary-blue); padding: 2px; }
+    .msg-btn { border: 2px solid var(--primary-blue); color: var(--primary-blue); padding: 12px 24px; border-radius: 10px; background: transparent; cursor: pointer; font-weight: 700; }
+    .msg-btn:hover { background: var(--primary-blue); color: white; }
 
-        /* Sağ Sidebar & Rezervasyon */
-        .sidebar { flex: 1; }
-        .booking-widget { position: sticky; top: 120px; border: 1px solid var(--border); border-radius: 20px; padding: 30px; box-shadow: var(--shadow); background: white; }
-        .price-info { font-size: 26px; font-weight: 800; margin-bottom: 25px; }
-        .selection-box { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 25px; cursor: pointer; overflow: hidden; }
-        .date-row { display: flex; border-bottom: 1px solid var(--border); }
-        .date-item { flex: 1; padding: 15px; }
-        .date-item:hover, .guest-item:hover { background: #f9f9f9; }
-        .date-item label, .guest-item label { display: block; font-size: 11px; font-weight: 800; color: #000; margin-bottom: 5px; }
-        .guest-item { padding: 15px; }
+    /* MODALS & OVERLAY */
+    .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 1999; }
+    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 35px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 2000; width: 440px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .modal-header h4 { margin: 0; font-size: 18px; font-weight: 700; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-muted); }
 
-        .request-button { width: 100%; background: var(--primary-blue); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,168,255,0.3); }
-        .request-button:hover { background: var(--secondary-blue); transform: translateY(-3px); }
+    /* Takvim */
+    .nav-btn { background: none; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; padding: 5px 10px; color: var(--text-main); }
+    .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 800; font-size: 12px; margin-bottom: 10px; color: var(--text-muted); }
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 2px; }
+    .day { padding: 10px; cursor: pointer; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1/1; }
+    .day:hover:not(.disabled) { background-color: #f1f2f6; }
+    .day.selected { background-color: var(--primary-blue) !important; color: white !important; font-weight: bold; }
+    .day.in-range { background-color: var(--theme-light); border-radius: 0; }
+    .day.disabled { color: #ccc; cursor: not-allowed; }
 
-        /* Publisher */
-        .publisher-card { margin-top: 50px; border-top: 1px solid var(--border); padding-top: 40px; display: flex; align-items: center; justify-content: space-between; }
-        .pub-info img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary-blue); padding: 2px; }
-        .msg-btn { border: 2px solid var(--primary-blue); color: var(--primary-blue); padding: 12px 24px; border-radius: 10px; background: transparent; cursor: pointer; font-weight: 700; }
-        .msg-btn:hover { background: var(--primary-blue); color: white; }
+    /* Guest Counter */
+    .guest-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+    .counter { display: flex; align-items: center; gap: 15px; }
+    .counter button { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 18px; line-height: 1; }
 
-        /* MODALS & OVERLAY */
-        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 1999; }
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 35px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 2000; width: 440px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .modal-header h4 { margin: 0; font-size: 18px; font-weight: 700; }
-        .close-modal { cursor: pointer; font-size: 24px; color: var(--text-muted); }
+    /* Footer */
+    .footer { background: #1e272e; color: white; padding: 70px 8%; margin-top: 100px; }
+    .footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 50px; }
+    .footer-col h4 { margin-bottom: 25px; font-size: 18px; color: var(--primary-blue); }
+    .footer-col ul { list-style: none; padding: 0; }
+    .footer-col ul li { margin-bottom: 15px; color: #bdc3c7; cursor: pointer; font-size: 14px; }
+</style>
+{% endblock %}
 
-        /* Takvim */
-        .nav-btn { background: none; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; padding: 5px 10px; color: var(--text-main); }
-        .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: 800; font-size: 12px; margin-bottom: 10px; color: var(--text-muted); }
-        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 2px; }
-        .day { padding: 10px; cursor: pointer; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1/1; }
-        .day:hover:not(.disabled) { background-color: #f1f2f6; }
-        .day.selected { background-color: var(--primary-blue) !important; color: white !important; font-weight: bold; }
-        .day.in-range { background-color: #e3f2fd; border-radius: 0; }
-        .day.disabled { color: #ccc; cursor: not-allowed; }
-
-        /* Guest Counter */
-        .guest-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .counter { display: flex; align-items: center; gap: 15px; }
-        .counter button { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 18px; line-height: 1; }
-
-        /* Footer */
-        .footer { background: #1e272e; color: white; padding: 70px 8%; margin-top: 100px; }
-        .footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 50px; }
-        .footer-col h4 { margin-bottom: 25px; font-size: 18px; color: var(--primary-blue); }
-        .footer-col ul { list-style: none; padding: 0; }
-        .footer-col ul li { margin-bottom: 15px; color: #bdc3c7; cursor: pointer; font-size: 14px; }
-    </style>
-</head>
-<body>
-
+{% block content %}
 <div class="overlay" id="overlay"></div>
-
-<div class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-radius: 50px; margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: relative;">
-    
-    <div style="flex: 1; display: flex; justify-content: flex-start; align-items: center;">
-        <div style="cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
-            <img src="/static/htmlfotos/favicon.png" alt="CIE Logo" style="width: 55px; height: 55px; margin-right: 15px; object-fit: contain;">
-            
-            <div style="font-size: 2.1rem; letter-spacing: 1px; font-weight: 800; display: flex; align-items: center;">
-                <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span><span style="width: 8px; height: 8px; background: #D4A373; border-radius: 50%; margin-left: 6px; margin-top: 12px;"></span>
-            </div>
-        </div>
-    </div>
-
-    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9; flex: 0 1 auto;">
-        <a href="/home" style="text-decoration: none; color: #1e293b; font-weight: 500;">Home</a>
-        <a href="/search" style="text-decoration: none; color: #64748b; font-weight: 600;">Search</a>
-        <a href="#" style="text-decoration: none; color: #64748b; font-weight: 500;">AI Chat</a>
-        <a href="/about" style="text-decoration: none; color: #64748b; font-weight: 500;">About Us</a>
-    </div>
-
-    <div class="right-menu" style="display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;">
-        <div class="profile" style="position: relative;">
-            <button id="profileBtn" class="btn-blue" onclick="toggleDropdown(event)" style="
-                background: #3b82f6; 
-                color: white; 
-                border: none; 
-                padding: 10px 25px; 
-                border-radius: 20px; 
-                font-weight: 600; 
-                cursor: pointer; 
-                transition: 0.3s;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                <i class="fas fa-user-circle"></i> Profile
-            </button>
-            
-            <div id="profileDropdown" class="dropdown" style="
-                display: none; 
-                position: absolute; 
-                top: calc(100% + 10px); 
-                right: 0; 
-                background: white; 
-                box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-                border-radius: 12px; 
-                min-width: 200px; 
-                z-index: 1000; 
-                padding: 10px 0; 
-                border: 1px solid #f1f5f9;
-            ">
-                <a href="/profile" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-user-cog" style="width: 20px;"></i> Personal Info
-                </a>
-                <a href="/my_reservations" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-calendar-check" style="width: 20px;"></i> My Reservations
-                </a>
-                <a href="/favorites" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-heart" style="width: 20px;"></i> Favorites
-                </a>
-                <a href="/messages" style="display: block; padding: 12px 20px; color: #334155; text-decoration: none; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-envelope" style="width: 20px;"></i> Messages
-                </a>
-            </div>
-        </div>
-
-        <a href="/" class="exit-btn" title="Log Out" style="
-            text-decoration: none; 
-            width: 42px; 
-            height: 42px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: #f1f5f9; 
-            color: #64748b; 
-            border-radius: 50%; 
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-        " onmouseover="this.style.background='#fee2e2'; this.style.color='#ef4444'; this.style.transform='scale(1.1)';" 
-           onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b'; this.style.transform='scale(1)';">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
-    </div>
-</div>
 
 <div class="main-container">
     <div class="content-area">
@@ -271,7 +174,7 @@
                 <i class="fa-regular fa-star" data-value="5"></i>
             </div>
             <textarea placeholder="Tell others about your experience..."></textarea>
-            <button class="profile-btn" style="margin-top: 15px;">Send Review</button>
+            <button class="request-button" style="margin-top: 15px; width: auto; padding: 12px 30px;">Send Review</button>
         </div>
 
         <div class="publisher-card">
@@ -322,7 +225,7 @@
                 <button type="submit" class="request-button">Request to Book</button>
             </form>
             {% else %}
-            <p style="color:var(--secondary-blue); font-weight:700;">This property is for SALE.</p>
+            <p style="color:var(--primary-blue); font-weight:700;">This property is for SALE.</p>
             <button class="request-button" style="background:#1e272e;" onclick="alert('Contacting...')">Contact Agent</button>
             {% endif %}
         </div>
@@ -393,8 +296,12 @@
         <div class="footer-col"><h4>Company</h4><ul><li>About Us</li></ul></div>
     </div>
 </footer>
+{% endblock %}
 
+{% block extra_js %}
 <script>
+    // Takvim, Misafir Sayacı ve Yıldız scriptlerini buraya taşıdım 
+    // (Orijinal script içeriğin birebir aynısı, sadece base.html düzenine alındı)
     const overlay = document.getElementById('overlay');
     const modals = document.querySelectorAll('.modal');
     let counts = { adult: 1, child: 0, infant: 0, pet: 0 };
@@ -484,7 +391,6 @@
         renderCalendar();
     }
 
-    /* AKIŞKAN YILDIZ SİSTEMİ */
     const stars = document.querySelectorAll('#star-rating i');
     let finalRating = 0;
 
@@ -510,31 +416,5 @@
             }
         });
     }
-
-    function toggleDropdown(event) {
-    // Tıklamanın dışarıya yayılmasını engelle ki window.onclick hemen çalışmasın
-    event.stopPropagation();
-    
-    const dropdown = document.getElementById('profileDropdown');
-    const isVisible = dropdown.style.display === 'block';
-    
-    // Açıksa kapat, kapalıysa aç
-    dropdown.style.display = isVisible ? 'none' : 'block';
-}
-
-// Ekrandaki herhangi bir yere tıklandığında menüyü kapatma mantığı
-window.onclick = function(event) {
-    const dropdown = document.getElementById('profileDropdown');
-    const btn = document.getElementById('profileBtn');
-    
-    // Eğer tıklanan yer buton değilse ve dropdown şu an açıksa kapat
-    if (event.target !== btn && dropdown.style.display === 'block') {
-        // Tıklanan yer dropdown'un kendisi değilse kapat
-        if (!dropdown.contains(event.target)) {
-            dropdown.style.display = 'none';
-        }
-    }
-}
 </script>
-</body>
-</html>
+{% endblock %}

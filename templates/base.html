@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" class="{{ 'theme-agent' if role == 'agent' else 'theme-user' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CypInvEst{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', path='htmlfotos/favicon.png') }}">
+    
+    <style>
+        /* --- DİNAMİK TEMA DEĞİŞKENLERİ --- */
+        :root {
+            /* User Modu (Mavi) */
+            --theme-color: #1BA7FF;
+            --theme-hover: #008CFF;
+            --theme-light: rgba(27, 167, 255, 0.1);
+            --theme-shadow: rgba(27, 167, 255, 0.2);
+        }
+
+        .theme-agent {
+            /* Agent Modu (Turuncu) */
+            --theme-color: #FF7226;
+            --theme-hover: #E65A10;
+            --theme-light: rgba(255, 114, 38, 0.1);
+            --theme-shadow: rgba(255, 114, 38, 0.2);
+        }
+
+        body { 
+            margin: 0; padding: 0; background-color: #f8fafc; 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+        }
+        
+        /* Navbar */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background: white; border-radius: 50px;
+            margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            position: sticky; top: 10px; z-index: 2000;
+        }
+
+        /* Profil Butonu */
+        .btn-main {
+            background: var(--theme-color); color: white; border: none;
+            padding: 12px 28px; border-radius: 100px; cursor: pointer;
+            font-weight: 600; transition: all 0.3s ease; display: flex; 
+            align-items: center; gap: 10px; box-shadow: 0 4px 12px var(--theme-shadow);
+        }
+        .btn-main:hover { 
+            background: var(--theme-hover); transform: translateY(-2px);
+        }
+
+        /* Dropdown Menü */
+        .dropdown {
+            display: none; position: absolute; top: calc(100% + 15px); right: 0;
+            background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            border-radius: 18px; min-width: 240px; z-index: 3000; padding: 12px 0;
+            border: 1px solid #f1f5f9; overflow: hidden;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .drop-item {
+            display: flex; align-items: center; gap: 14px; padding: 14px 22px;
+            color: #475569; text-decoration: none; font-size: 14.5px; 
+            font-weight: 500; transition: 0.2s;
+        }
+        .drop-item:hover { background: var(--theme-light); color: var(--theme-color); }
+        .drop-item i { width: 20px; text-align: center; color: #94a3b8; }
+        .drop-item:hover i { color: var(--theme-color); }
+
+        .nav-links a { text-decoration: none; color: #64748b; font-weight: 500; transition: 0.2s; }
+        .nav-links a:hover { color: var(--theme-color); }
+        
+        /* Aktif Sayfa Stili */
+        .nav-links a.active { color: #1e293b; font-weight: 700; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="navbar">
+    <div style="flex: 1; display: flex; align-items: center;">
+        <div style="cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
+            <img src="/static/htmlfotos/favicon.png" style="width: 50px; height: 50px; margin-right: 12px;">
+            <div style="font-size: 1.8rem; font-weight: 800; display: flex; align-items: center;">
+                <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9;">
+        <a href="/home" class="{{ 'active' if page_id == 'home' }}">Home</a>
+        <a href="/search" class="{{ 'active' if page_id == 'search' }}">Search</a>
+        <a href="/aichat" class="{{ 'active' if page_id == 'aichat' }}">AI Chat</a>
+        <a href="/about" class="{{ 'active' if page_id == 'about' }}">About Us</a>
+    </div>
+
+    <div class="right-menu" style="display: flex; align-items: center; gap: 15px; flex: 1; justify-content: flex-end;">
+        <div class="profile" style="position: relative;">
+            <button id="profileBtn" class="btn-main" onclick="toggleDropdown(event)">
+                <i class="fas fa-user-circle"></i> Profile
+            </button>
+            
+            <div id="profileDropdown" class="dropdown">
+                {% if role == 'agent' %}
+                    <a href="/profile/personal-info" class="drop-item"><i class="fas fa-id-card"></i> Personal Info</a>
+                    <a href="/profile/properties" class="drop-item"><i class="fas fa-building"></i> Properties</a>
+                    <a href="/profile/requests" class="drop-item"><i class="fas fa-clipboard-list"></i> Requests</a>
+                    <a href="/profile/favorites" class="drop-item"><i class="fas fa-heart"></i> Favourites</a>
+                    <a href="/profile/messages" class="drop-item"><i class="fas fa-envelope"></i> Messages</a>
+                    <a href="/profile/payment" class="drop-item"><i class="fas fa-credit-card"></i> Payment</a>
+                {% else %}
+                    <a href="/profile/personal-info" class="drop-item"><i class="fas fa-user-circle"></i> Personal Info</a>
+                    <a href="/profile/my_reservations" class="drop-item"><i class="fas fa-calendar-check"></i> My Reservations</a>
+                    <a href="/profile/favorites" class="drop-item"><i class="fas fa-heart"></i> Favourites</a>
+                    <a href="/profile/messages" class="drop-item"><i class="fas fa-envelope"></i> Messages</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <a href="/" title="Log Out" style="text-decoration: none; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #64748b; border-radius: 50%; transition: 0.3s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</div>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<script>
+    function toggleDropdown(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('profileDropdown');
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
+    window.onclick = function(event) {
+        const dropdown = document.getElementById('profileDropdown');
+        const btn = document.getElementById('profileBtn');
+        if (dropdown && !btn.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    }
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

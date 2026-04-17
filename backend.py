@@ -61,13 +61,19 @@ villas = {
     }     
 }
 
-# Kullanıcı Verileri
+# --- KULLANICI VERİLERİ (GÜNCELLENDİ) ---
 users = {
     "efe@cypinvest.com": {"password": "123", "role": "admin", "first_name": "Efe", "last_name": "One"},
     "begench@cypinvest.com": {"password": "456", "role": "admin", "first_name": "Begench", "last_name": "Two"},
     "yahor@cypinvest.com": {"password": "789", "role": "admin", "first_name": "Yahor", "last_name": "Three"},
-    "deniz@cypinvest.com": {"password": "312", "role": "admin", "first_name": "Deniz", "last_name": "Four"}
+    "deniz@cypinvest.com": {"password": "312", "role": "admin", "first_name": "Deniz", "last_name": "Four"},
+    # YENİ EKLENEN TEST KULLANICILARI
+    "agent@test.com": {"password": "123", "role": "agent", "first_name": "Ahmet", "last_name": "Emlakçı"},
+    "user@test.com": {"password": "123", "role": "user", "first_name": "Mehmet", "last_name": "Müşteri"}
 }
+
+# Mevcut oturumdaki rolü basitçe takip etmek için (Session sistemi kurulana kadar geçici çözüm)
+current_user_role = "user"
 
 # --- AUTH (KAYIT & GİRİŞ) ROTALARI ---
 
@@ -81,8 +87,10 @@ async def login_page(request: Request, role: str):
 
 @app.post("/login/{role}")
 async def login(request: Request, role: str, email: str = Form(...), password: str = Form(...)):
+    global current_user_role
     if email in users and users[email]["password"] == password:
         if users[email]["role"] == role:
+            current_user_role = users[email]["role"] # Rolü belleğe al
             return RedirectResponse(url="/home", status_code=status.HTTP_303_SEE_OTHER)
         else:
             error_msg = f"Bu hesap bir {users[email]['role']} hesabıdır!"
@@ -123,23 +131,56 @@ async def register(
 
 @app.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
-    # Vitrinde duracak sabit 6 ilan (Ödeme yapan veya öne çıkanlar)
     popular_ids = ["1", "3", "5", "6", "8", "9"]
     popular_villas = [villas[vid] for vid in popular_ids if vid in villas]
-    return templates.TemplateResponse(request, "home.html", {"villas": popular_villas})
+    return templates.TemplateResponse(request, "home.html", {
+        "villas": popular_villas, 
+        "role": current_user_role,
+        "page_id": "home"  # Navbar'da 'Home'u koyu yapar
+    })
 
 @app.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request):
     villa_list = list(villas.values())
-    # Search sayfasında 12 kart sınırı
-    return templates.TemplateResponse(request, "search.html", {"villas": villa_list[:12]})
+    return templates.TemplateResponse(request, "search.html", {
+        "villas": villa_list[:12], 
+        "role": current_user_role,
+        "page_id": "search" # Navbar'da 'Search'ü koyu yapar
+    })
+
+@app.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request):
+    # Hazır olan about.html dosyanı render eder
+    return templates.TemplateResponse(request, "about.html", {
+        "role": current_user_role,
+        "page_id": "about"  # Navbar'da 'About Us'ı koyu yapar
+    })
+
+@app.get("/aichat", response_class=HTMLResponse)
+async def aichat_page(request: Request):
+    # Sayfa henüz yoksa bile Navbar'da 'AI Chat'in koyu kalması için
+    return templates.TemplateResponse(request, "search.html", {
+        "villas": [], 
+        "role": current_user_role,
+        "page_id": "aichat" 
+    })
+
+@app.get("/villa/{villa_id}", response_class=HTMLResponse)
+async def villa_detail(request: Request, villa_id: str):
+    villa = villas.get(villa_id)
+    return templates.TemplateResponse(request, "desktop1.html", {
+        "villa": villa, 
+        "role": current_user_role,
+        "page_id": "search" # Detaydayken Search linki aktif kalsın
+    })
 
 @app.get("/villa/{villa_id}", response_class=HTMLResponse)
 async def villa_detail(request: Request, villa_id: str):
     villa = villas.get(villa_id)
     if not villa:
         return RedirectResponse(url="/home")
-    return templates.TemplateResponse(request, "desktop1.html", {"villa": villa})
+    # desktop1.html artık role bilgisini alarak agent temasına bürünebilir
+    return templates.TemplateResponse(request, "desktop1.html", {"villa": villa, "role": current_user_role})
 
 # --- HESAPLAMA MOTORU ---
 
@@ -162,12 +203,13 @@ async def calculate_booking(
         "check_out": check_out,
         "nights": nights,
         "total_price": total_price,
-        "guest_info": guest_info
+        "guest_info": guest_info,
+        "role": current_user_role
     })
 
 @app.get("/about", response_class=HTMLResponse)
 async def about_page(request: Request):
-    return templates.TemplateResponse(request, "about.html")
+    return templates.TemplateResponse(request, "about.html", {"role": current_user_role})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
