@@ -84,6 +84,7 @@
 </head>
 <body>
 
+{% block navbar %}
 <div class="navbar">
     <div style="flex: 1; display: flex; align-items: center;">
         <div style="cursor: pointer; display: flex; align-items: center;" onclick="window.location.href='/home'">
@@ -117,7 +118,7 @@
                     <a href="/profile/payment" class="drop-item"><i class="fas fa-credit-card"></i> Payment</a>
                 {% else %}
                     <a href="/profile/personal-info" class="drop-item"><i class="fas fa-user-circle"></i> Personal Info</a>
-                    <a href="/profile/my_reservations" class="drop-item"><i class="fas fa-calendar-check"></i> My Reservations</a>
+                    <a href="/profile/transactions" class="drop-item"><i class="fas fa-calendar-check"></i>My Transactions</a>
                     <a href="/profile/favorites" class="drop-item"><i class="fas fa-heart"></i> Favourites</a>
                     <a href="/profile/messages" class="drop-item"><i class="fas fa-envelope"></i> Messages</a>
                 {% endif %}
@@ -129,6 +130,7 @@
         </a>
     </div>
 </div>
+{% endblock %}
 
 <main>
     {% block content %}{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+    {% if role == 'admin' %}
+        <nav style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;">
+            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.location.href='/profile/personal-info'">
+                <img src="/static/htmlfotos/favicon.png" style="width: 50px; height: 50px;">
+                <div style="font-size: 1.8rem; font-weight: 800; display: flex; align-items: center;">
+                    <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span>
+                </div>
+            </div>
+
+            <a href="/logout" style="text-decoration: none; color: #64748b; font-weight: 700; display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; transition: all 0.3s; background: #f1f5f9;" onmouseover="this.style.color='#ef4444'; this.style.background='#fef2f2'" onmouseout="this.style.color='#64748b'; this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                LOGOUT
+            </a>
+        </nav>
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        --user-color: #1BA7FF;
+        --agent-color: #FF7226;
+        --admin-color: #A4161A;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .profile-container[data-role="user"] { --active-color: var(--user-color); --bg-soft: #f0f9ff; }
+    .profile-container[data-role="agent"] { --active-color: var(--agent-color); --bg-soft: #fff7ed; }
+    .profile-container[data-role="admin"] { --active-color: var(--admin-color); --bg-soft: #fef2f2; }
+
+    .profile-wrapper { display: flex; min-height: 100vh; background-color: #f8fafc; }
+    .p-sidebar { width: 280px; background: white; padding: 30px 20px; display: flex; flex-direction: column; border-right: 1px solid #e2e8f0; position: sticky; top: 0; height: 100vh; z-index: 10; }
+    .p-nav-item { display: flex; align-items: center; padding: 14px 18px; margin-bottom: 8px; border-radius: 12px; color: #64748b; text-decoration: none; font-weight: 500; transition: var(--transition); border: 1px solid transparent; }
+    .p-nav-item i { width: 25px; margin-right: 12px; font-size: 1.1rem; text-align: center; }
+    .p-nav-item:hover { color: var(--active-color); background: var(--bg-soft); transform: translateX(5px); }
+    .p-nav-item.active { background: white; color: var(--active-color); border-color: var(--active-color); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 0 15px var(--active-color); font-weight: 700; transform: translateX(8px); }
+    .p-content { flex: 1; padding: 40px; background: linear-gradient(135deg, var(--bg-soft) 0%, #ffffff 100%); overflow-y: auto; }
+    .p-glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 25px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid white; min-height: 80vh; }
+    
+    /* Buton stilleri */
+    .btn-bottom { margin-top: auto; padding: 15px; color: white; text-align: center; border-radius: 12px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition); }
+    .btn-back-main { background: #64748b; }
+    .btn-logout { background: #ef4444; }
+    .btn-bottom:hover { opacity: 0.9; transform: scale(1.02); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container" data-role="{{ role }}">
+    <div class="profile-wrapper">
+        <aside class="p-sidebar">
+            <div class="profile-user-card" style="text-align: center; margin-bottom: 35px;">
+                <div style="width: 90px; height: 90px; background: #f1f5f9; border-radius: 50%; margin: 0 auto 15px; border: 3px solid var(--active-color); display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-user-tie" style="font-size: 3rem; color: #cbd5e1;"></i>
+                </div>
+                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b;">{{ first_name }} {{ last_name }}</h3>
+                <span style="font-size: 0.8rem; color: var(--active-color); font-weight: 700; text-transform: uppercase;">{{ role }}</span>
+            </div>
+            <nav>
+                <a href="/profile/personal-info" class="p-nav-item {% if p_page == 'info' %}active{% endif %}">
+                    <i class="fa-solid fa-address-card"></i> Personal Info
+                </a>
+                
+                {% if role == 'user' %}
+                    <a href="/profile/transactions" class="p-nav-item {% if p_page == 'transactions' %}active{% endif %}">
+                        <i class="fa-solid fa-receipt"></i> My Transactions
+                    </a>
+                    <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
+                        <i class="fa-solid fa-heart"></i> Favourites
+                    </a>
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}">
+                        <i class="fa-solid fa-envelope"></i> Messages
+                    </a>
+                
+                {% elif role == 'agent' %}
+                    <a href="/profile/properties" class="p-nav-item {% if p_page == 'properties' %}active{% endif %}">
+                        <i class="fa-solid fa-house-chimney"></i> Properties
+                    </a>
+                    <a href="/profile/requests" class="p-nav-item {% if p_page == 'requests' %}active{% endif %}">
+                        <i class="fa-solid fa-bell"></i> Requests
+                    </a>
+                    <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
+                        <i class="fa-solid fa-heart"></i> Favourites
+                    </a>
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}">
+                        <i class="fa-solid fa-envelope"></i> Messages
+                    </a>
+                    <a href="/profile/payment" class="p-nav-item {% if p_page == 'payment' %}active{% endif %}">
+                        <i class="fa-solid fa-credit-card"></i> Payment
+                    </a>
+
+                {% elif role == 'admin' %}
+                    <a href="/profile/all-properties" class="p-nav-item {% if p_page == 'all-properties' %}active{% endif %}">
+                        <i class="fa-solid fa-building-user"></i> All Properties
+                    </a>
+                    <a href="/profile/users" class="p-nav-item {% if p_page == 'users' %}active{% endif %}">
+                        <i class="fa-solid fa-users-gear"></i> Users
+                    </a>
+                    <a href="/profile/approving" class="p-nav-item {% if p_page == 'approving' %}active{% endif %}">
+                        <i class="fa-solid fa-circle-check"></i> Approving
+                    </a>
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}">
+                        <i class="fa-solid fa-inbox"></i> Messages
+                    </a>
+                    <a href="/profile/dashboard" class="p-nav-item {% if p_page == 'dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-chart-line"></i> Dashboard
+                    </a>
+                    <a href="/profile/system-logs" class="p-nav-item {% if p_page == 'system-logs' %}active{% endif %}">
+                        <i class="fa-solid fa-gears"></i> System Logs
+                    </a>
+                    <a href="/profile/sales-logs" class="p-nav-item {% if p_page == 'sales-logs' %}active{% endif %}">
+                        <i class="fa-solid fa-list-ul"></i> Sales Logs
+                    </a>        
+                {% endif %}
+            </nav>
+            
+            {% if role == 'admin' %}
+                <a href="/logout" class="btn-bottom btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> LOG OUT
+                </a>
+            {% else %}
+                <a href="/home" class="btn-bottom btn-back-main">
+                    <i class="fa-solid fa-arrow-left"></i> BACK TO MAIN
+                </a>
+            {% endif %}
+        </aside>
+        <main class="p-content">
+            <div class="p-glass-card">
+                {% block profile_subcontent %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

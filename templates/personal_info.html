@@ -1,0 +1,203 @@
+{% extends "profile_base.html" %}
+
+{% block profile_subcontent %}
+<div class="info-container" style="padding: 10px; color: #1e293b; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 3px solid var(--active-color); padding-bottom: 5px;">
+        <h2 style="margin: 0;">
+            <i class="fa-solid fa-user-gear" style="margin-right: 10px; color: var(--active-color);"></i>Kişisel Bilgiler
+        </h2>
+        <button type="button" onclick="enableEdit()" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s;">
+            <i class="fa-solid fa-user-pen"></i> Edit Profile Information
+        </button>
+    </div>
+    
+    {% if role != 'admin' %}
+    <div style="background: white; padding: 20px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="background: var(--bg-soft); padding: 10px; border-radius: 12px;">
+                <i class="fa-solid fa-people-arrows" style="font-size: 1.2rem; color: var(--active-color);"></i>
+            </div>
+            <div>
+                <span style="display: block; font-weight: 700;">Hesap Türünü Değiştir</span>
+                <small style="color: #64748b;">İlan vermek için Agent moduna geçebilirsiniz.</small>
+            </div>
+        </div>
+        
+        <div class="role-switch-container">
+            <span class="role-label {{ 'active' if role == 'user' }}" style="color: #1BA7FF; font-weight: 700; margin-right: 10px;">USER</span>
+            <label class="role-switch">
+                <input type="checkbox" id="roleToggle" {% if role == 'agent' %}checked{% endif %} onchange="handleRoleSwitch(this)">
+                <span class="role-slider"></span>
+            </label>
+            <span class="role-label {{ 'active' if role == 'agent' }}" style="color: #FF7226; font-weight: 700; margin-left: 10px;">AGENT</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="info-card" style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        <form action="/profile/update-info" method="POST" id="profileForm">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <div class="input-group">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Adınız</label>
+                    <input type="text" value="{{ first_name }}" name="first_name" class="p-input" disabled>
+                </div>
+                <div class="input-group">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Soyadınız</label>
+                    <input type="text" value="{{ last_name }}" name="last_name" class="p-input" disabled>
+                </div>
+
+                <div class="input-group" style="grid-column: span 2;">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">E-posta Adresiniz</label>
+                    <input type="email" value="{{ email }}" readonly style="width: 100%; padding: 12px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #94a3b8; border-radius: 10px; cursor: not-allowed;">
+                </div>
+
+                <div class="input-group">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Telefon Numarası</label>
+                    <input type="tel" value="{{ phone or '' }}" name="phone" placeholder="+90 5xx" class="p-input" disabled>
+                </div>
+                <div class="input-group">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Cinsiyet</label>
+                    <select name="gender" class="p-input" disabled style="width: 100%; height: 45px;">
+                        <option value="">Seçiniz</option>
+                        <option value="male" {% if gender == 'male' %}selected{% endif %}>Erkek</option>
+                        <option value="female" {% if gender == 'female' %}selected{% endif %}>Kadın</option>
+                        <option value="other" {% if gender == 'other' %}selected{% endif %}>Diğer</option>
+                    </select>
+                </div>
+
+                {% if role == 'agent' %}
+                <div style="grid-column: span 2; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
+                    <h4 style="color: #FF7226; margin-bottom: 15px;"><i class="fa-solid fa-briefcase"></i> Agent Bilgileri</h4>
+                </div>
+
+                <div class="input-group">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Kimlik (ID) No</label>
+                    <input type="text" value="{{ id_no }}" name="id_no" class="p-input" disabled>
+                </div>
+
+                <div class="input-group">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Şirket Adı</label>
+                    <input type="text" value="{{ company_name }}" name="company_name" class="p-input" disabled>
+                </div>
+
+                <div class="input-group" style="grid-column: span 2;">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">IBAN Adresi</label>
+                    <input type="text" value="{{ iban }}" name="iban" placeholder="TR..." class="p-input" disabled>
+                </div>
+                {% endif %}
+
+                <div class="input-group" style="grid-column: span 2;">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Yeni Şifre (Değiştirmek istemiyorsanız boş bırakın)</label>
+                    <input type="password" name="new_password" placeholder="••••••••" class="p-input" disabled>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--bg-soft); border-radius: 12px;">
+                <div>
+                    <span style="display: block; font-weight: 700; color: #1e293b;">İki Adımlı Doğrulama</span>
+                    <small style="color: #64748b;">Hesap güvenliğini artırmak için aktifleştirin.</small>
+                </div>
+                <label class="p-switch">
+                    <input type="checkbox" checked disabled id="twoStepToggle">
+                    <span class="p-slider"></span>
+                </label>
+            </div>
+            
+            <div style="margin-top: 35px; display: flex; justify-content: flex-end;">
+                <button type="submit" id="saveBtn" style="background: var(--active-color); color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: 700; opacity: 0.5; pointer-events: none; transition: 0.3s;">
+                    Değişiklikleri Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="agentModal" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);">
+    <div style="background: white; width: 450px; margin: 10% auto; padding: 30px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <h3 style="color: #FF7226; margin-top: 0;"><i class="fa-solid fa-briefcase"></i> Agent Bilgilerini Tamamla</h3>
+        <p style="color: #64748b; font-size: 0.9rem;">Emlak ilanları vermek için aşağıdaki bilgileri doldurmanız gerekmektedir.</p>
+        
+        <form action="/profile/upgrade-to-agent" method="POST">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">IBAN</label>
+                <input type="text" name="iban" required placeholder="TR00..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">Kimlik (ID) No</label>
+                <input type="text" name="id_no" required style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">Şirket Adı (Opsiyonel)</label>
+                <input type="text" name="company_name" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeAgentModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">İptal</button>
+                <button type="submit" style="flex: 2; padding: 12px; background: #FF7226; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">Kaydet ve Geçiş Yap</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Ortak Input Stili */
+    .p-input { width: 100%; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; transition: 0.3s; }
+    .p-input:focus { border-color: var(--active-color); outline: none; background: white; }
+    .p-input:disabled { background: #f1f5f9; cursor: not-allowed; }
+
+    /* İki Adımlı Doğrulama Switch */
+    .p-switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+    .p-switch input { opacity: 0; width: 0; height: 0; }
+    .p-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px; }
+    .p-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .p-slider { background-color: var(--active-color); }
+    input:checked + .p-slider:before { transform: translateX(22px); }
+
+    /* ROL SWITCH ÖZEL STİL */
+    .role-switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+    .role-switch input { opacity: 0; width: 0; height: 0; }
+    .role-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #1BA7FF; transition: .4s; border-radius: 34px; }
+    .role-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    input:checked + .role-slider { background-color: #FF7226; } /* Agent olunca Turuncu */
+    input:checked + .role-slider:before { transform: translateX(30px); }
+</style>
+
+<script>
+    // Düzenlemeyi Aktif Etme
+    function enableEdit() {
+        const inputs = document.querySelectorAll('.p-input, #twoStepToggle');
+        const saveBtn = document.getElementById('saveBtn');
+        
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+        
+        saveBtn.style.opacity = "1";
+        saveBtn.style.pointerEvents = "auto";
+        alert("Profil bilgileri artık düzenlenebilir.");
+    }
+
+    // Rol Değiştirme Mantığı
+    function handleRoleSwitch(checkbox) {
+        const currentRole = "{{ role }}";
+        
+        if (checkbox.checked) {
+            // Agent'a geçmek istiyor
+            if (currentRole === 'user') {
+                document.getElementById('agentModal').style.display = 'block';
+                checkbox.checked = false; // Form dolana kadar switch'i çek
+            }
+        } else {
+            // User'a dönmek istiyor
+            if (confirm("Kullanıcı moduna geri dönmek istediğinize emin misiniz?")) {
+                window.location.href = "/profile/switch-to-user";
+            } else {
+                checkbox.checked = true;
+            }
+        }
+    }
+
+    function closeAgentModal() {
+        document.getElementById('agentModal').style.display = 'none';
+    }
+</script>
+{% endblock %}
