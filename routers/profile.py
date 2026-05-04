@@ -10,10 +10,8 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/personal-info", response_class=HTMLResponse)
 async def personal_info(request: Request):
-    """Kişisel Bilgiler Sayfası - E-posta hatası giderildi"""
-    # Statik "test@user.com" yerine giriş yapan kullanıcının mailini alıyoruz
+    """Kişisel Bilgiler Sayfası - Veriyi db.users içinden çekiyoruz"""
     user_email = db.current_user_email 
-    # Veriyi db.users içinden çekiyoruz ki güncellemeler anlık yansısın
     user_data = db.users.get(user_email, db.current_user_data)
     
     return templates.TemplateResponse(request, "personal_info.html", {
@@ -21,10 +19,10 @@ async def personal_info(request: Request):
         "role": db.current_user_role,
         "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
-        "email": user_email, # HTML'deki {{ email }} burayı okuyacak
+        "email": user_email,
         "phone": user_data.get("phone", ""),
         "gender": user_data.get("gender", ""),
-        # --- AGENT ÖZEL BİLGİLERİ (EKLENDİ) ---
+        # --- AGENT ÖZEL BİLGİLERİ ---
         "iban": user_data.get("iban", ""),
         "id_no": user_data.get("id_no", ""),
         "company_name": user_data.get("company_name", ""),
@@ -38,7 +36,6 @@ async def update_info(
     last_name: str = Form(...),
     phone: str = Form(None),
     gender: str = Form(None),
-    # Agent alanlarını da formdan opsiyonel olarak bekliyoruz
     iban: str = Form(None),
     id_no: str = Form(None),
     company_name: str = Form(None),
@@ -53,7 +50,7 @@ async def update_info(
         db.users[user_email]["phone"] = phone
         db.users[user_email]["gender"] = gender
         
-        # --- AGENT BİLGİLERİNİ GÜNCELLE (EKLENDİ) ---
+        # --- AGENT BİLGİLERİNİ GÜNCELLE ---
         if db.current_user_role == "agent":
             db.users[user_email]["iban"] = iban
             db.users[user_email]["id_no"] = id_no
@@ -63,7 +60,6 @@ async def update_info(
         if new_password and new_password.strip() != "":
             db.users[user_email]["password"] = db.hash_password(new_password)
         
-        # Mevcut session verisini de güncelle
         db.current_user_data = db.users[user_email]
         
     return RedirectResponse(url="/profile/personal-info", status_code=303)
@@ -90,7 +86,26 @@ async def my_favourites(request: Request):
         "p_page": "favourites"
     })
 
-# --- ROL DEĞİŞTİRME ROTALARI (USER <-> AGENT) ---
+# --- ROL DEĞİŞTİRME ROTALARI (GÜNCEL MANTIK) ---
+
+@router.get("/switch-to-agent")
+async def switch_to_agent(request: Request):
+    """
+    User -> Agent geçiş kontrolü. 
+    Eğer kullanıcı zaten daha önce Agent bilgilerini girdiyse form sormaz.
+    """
+    user_email = db.current_user_email
+    user_data = db.users.get(user_email, {})
+
+    # Eğer IBAN ve ID bilgisi varsa, daha önce upgrade olmuştur
+    if user_data.get("iban") and user_data.get("id_no"):
+        db.current_user_role = "agent"
+        db.users[user_email]["role"] = "agent"
+        db.current_user_data = db.users[user_email]
+        return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
+    
+    # Bilgiler yoksa, rol seçme/bilgi girme ekranına (setrole) yönlendir
+    return templates.TemplateResponse(request, "choose_role.html", {"request": request, "role": "user"})
 
 @router.post("/upgrade-to-agent")
 async def upgrade_to_agent(
@@ -98,7 +113,7 @@ async def upgrade_to_agent(
     id_no: str = Form(...),
     company_name: str = Form(None)
 ):
-    """Kullanıcıyı Agent rolüne yükseltir ve db.users'a işler"""
+    """Kullanıcıyı ilk kez Agent rolüne yükseltir ve bilgileri kaydeder"""
     user_email = db.current_user_email
     db.current_user_role = "agent"
     
@@ -113,7 +128,7 @@ async def upgrade_to_agent(
 
 @router.get("/switch-to-user")
 async def switch_to_user():
-    """Agent'ı tekrar User rolüne döndürür ve db.users'a işler"""
+    """Agent'ı tekrar User rolüne döndürür (Bilgileri silmez)"""
     user_email = db.current_user_email
     db.current_user_role = "user"
     

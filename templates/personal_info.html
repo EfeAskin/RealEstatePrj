@@ -139,12 +139,10 @@
 </div>
 
 <style>
-    /* Ortak Input Stili */
     .p-input { width: 100%; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; transition: 0.3s; }
     .p-input:focus { border-color: var(--active-color); outline: none; background: white; }
     .p-input:disabled { background: #f1f5f9; cursor: not-allowed; }
 
-    /* İki Adımlı Doğrulama Switch */
     .p-switch { position: relative; display: inline-block; width: 46px; height: 24px; }
     .p-switch input { opacity: 0; width: 0; height: 0; }
     .p-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px; }
@@ -152,42 +150,39 @@
     input:checked + .p-slider { background-color: var(--active-color); }
     input:checked + .p-slider:before { transform: translateX(22px); }
 
-    /* ROL SWITCH ÖZEL STİL */
     .role-switch { position: relative; display: inline-block; width: 60px; height: 30px; }
     .role-switch input { opacity: 0; width: 0; height: 0; }
     .role-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #1BA7FF; transition: .4s; border-radius: 34px; }
     .role-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    input:checked + .role-slider { background-color: #FF7226; } /* Agent olunca Turuncu */
+    input:checked + .role-slider { background-color: #FF7226; }
     input:checked + .role-slider:before { transform: translateX(30px); }
 </style>
 
 <script>
-    // Düzenlemeyi Aktif Etme
     function enableEdit() {
         const inputs = document.querySelectorAll('.p-input, #twoStepToggle');
         const saveBtn = document.getElementById('saveBtn');
-        
-        inputs.forEach(input => {
-            input.disabled = false;
-        });
-        
+        inputs.forEach(input => { input.disabled = false; });
         saveBtn.style.opacity = "1";
         saveBtn.style.pointerEvents = "auto";
-        alert("Profil bilgileri artık düzenlenebilir.");
     }
 
-    // Rol Değiştirme Mantığı
     function handleRoleSwitch(checkbox) {
         const currentRole = "{{ role }}";
-        
+        const hasIban = "{{ iban }}"; // Jinja2 ile IBAN var mı kontrol et
+
         if (checkbox.checked) {
-            // Agent'a geçmek istiyor
+            // Agent'a geçiş: Eğer bilgiler zaten varsa (hasIban doluysa) direkt backend'e git
             if (currentRole === 'user') {
-                document.getElementById('agentModal').style.display = 'block';
-                checkbox.checked = false; // Form dolana kadar switch'i çek
+                if (hasIban && hasIban !== "None" && hasIban !== "") {
+                    window.location.href = "/profile/switch-to-agent";
+                } else {
+                    document.getElementById('agentModal').style.display = 'block';
+                    checkbox.checked = false; 
+                }
             }
         } else {
-            // User'a dönmek istiyor
+            // User'a dönüş
             if (confirm("Kullanıcı moduna geri dönmek istediğinize emin misiniz?")) {
                 window.location.href = "/profile/switch-to-user";
             } else {
