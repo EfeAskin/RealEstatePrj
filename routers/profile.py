@@ -17,6 +17,7 @@ async def personal_info(request: Request):
     return templates.TemplateResponse(request, "personal_info.html", {
         "request": request,
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "email": user_email,
@@ -70,6 +71,7 @@ async def my_messages(request: Request):
     return templates.TemplateResponse(request, "messages.html", {
         "request": request,
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": db.current_user_data.get("first_name", ""),
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "messages"
@@ -81,31 +83,26 @@ async def my_favourites(request: Request):
     return templates.TemplateResponse(request, "favourites.html", {
         "request": request,
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": db.current_user_data.get("first_name", ""),
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "favourites"
     })
 
-# --- ROL DEĞİŞTİRME ROTALARI (GÜNCEL MANTIK) ---
+# --- ROL DEĞİŞTİRME ROTALARI ---
 
 @router.get("/switch-to-agent")
 async def switch_to_agent(request: Request):
-    """
-    User -> Agent geçiş kontrolü. 
-    Eğer kullanıcı zaten daha önce Agent bilgilerini girdiyse form sormaz.
-    """
     user_email = db.current_user_email
     user_data = db.users.get(user_email, {})
 
-    # Eğer IBAN ve ID bilgisi varsa, daha önce upgrade olmuştur
     if user_data.get("iban") and user_data.get("id_no"):
         db.current_user_role = "agent"
         db.users[user_email]["role"] = "agent"
         db.current_user_data = db.users[user_email]
         return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
     
-    # Bilgiler yoksa, rol seçme/bilgi girme ekranına (setrole) yönlendir
-    return templates.TemplateResponse(request, "choose_role.html", {"request": request, "role": "user"})
+    return templates.TemplateResponse(request, "choose_role.html", {"request": request, "role": "user", "is_admin": False})
 
 @router.post("/upgrade-to-agent")
 async def upgrade_to_agent(
@@ -113,7 +110,6 @@ async def upgrade_to_agent(
     id_no: str = Form(...),
     company_name: str = Form(None)
 ):
-    """Kullanıcıyı ilk kez Agent rolüne yükseltir ve bilgileri kaydeder"""
     user_email = db.current_user_email
     db.current_user_role = "agent"
     
@@ -128,7 +124,6 @@ async def upgrade_to_agent(
 
 @router.get("/switch-to-user")
 async def switch_to_user():
-    """Agent'ı tekrar User rolüne döndürür (Bilgileri silmez)"""
     user_email = db.current_user_email
     db.current_user_role = "user"
     
@@ -142,10 +137,10 @@ async def switch_to_user():
 
 @router.get("/transactions", response_class=HTMLResponse)
 async def my_transactions(request: Request):
-    """Kullanıcı İşlemleri Sayfası"""
     return templates.TemplateResponse(request, "transactions.html", {
         "request": request,
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": db.current_user_data.get("first_name", ""),
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "transactions"
@@ -155,10 +150,10 @@ async def my_transactions(request: Request):
 
 @router.get("/properties", response_class=HTMLResponse)
 async def agent_properties(request: Request):
-    """Emlakçı İlanları"""
     return templates.TemplateResponse(request, "properties.html", {
         "request": request,
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": db.current_user_data.get("first_name", ""),
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "properties"
@@ -166,10 +161,10 @@ async def agent_properties(request: Request):
 
 @router.get("/requests", response_class=HTMLResponse)
 async def agent_requests(request: Request):
-    """Emlakçı Talepleri"""
     return templates.TemplateResponse(request, "requests.html", {
         "request": request,
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": db.current_user_data.get("first_name", ""),
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "requests"
@@ -177,22 +172,23 @@ async def agent_requests(request: Request):
 
 @router.get("/payment", response_class=HTMLResponse)
 async def agent_payment_page(request: Request):
-    """Emlakçı Ödeme Sayfası"""
     return templates.TemplateResponse(request, "payment.html", {
         "request": request,
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": db.current_user_data.get("first_name", ""),
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "payment"
     })
 
-# --- ADMIN ÖZEL ROTALARI ---
+# --- ADMIN ÖZEL ROTALARI (Footer Gizleme Aktif) ---
 
 @router.get("/all-properties", response_class=HTMLResponse)
 async def admin_all_properties(request: Request):
     return templates.TemplateResponse(request, "all_properties.html", {
         "request": request, 
         "role": db.current_user_role, 
+        "is_admin": True,  # Footer gizlenir
         "p_page": "all-properties",
         "first_name": db.current_user_data.get("first_name", ""), 
         "last_name": db.current_user_data.get("last_name", "")
@@ -203,6 +199,7 @@ async def admin_users(request: Request):
     return templates.TemplateResponse(request, "users.html", {
         "request": request, 
         "role": db.current_user_role, 
+        "is_admin": True,  # Footer gizlenir
         "p_page": "users",
         "first_name": db.current_user_data.get("first_name", ""), 
         "last_name": db.current_user_data.get("last_name", "")
@@ -213,6 +210,7 @@ async def admin_approving(request: Request):
     return templates.TemplateResponse(request, "approving.html", {
         "request": request, 
         "role": db.current_user_role, 
+        "is_admin": True,  # Footer gizlenir
         "p_page": "approving",
         "first_name": db.current_user_data.get("first_name", ""), 
         "last_name": db.current_user_data.get("last_name", "")
@@ -223,6 +221,7 @@ async def admin_dashboard(request: Request):
     return templates.TemplateResponse(request, "dashboard.html", {
         "request": request, 
         "role": db.current_user_role, 
+        "is_admin": True,  # Footer gizlenir
         "p_page": "dashboard",
         "first_name": db.current_user_data.get("first_name", ""), 
         "last_name": db.current_user_data.get("last_name", "")
@@ -233,6 +232,7 @@ async def admin_system_logs(request: Request):
     return templates.TemplateResponse(request, "system_logs.html", {
         "request": request, 
         "role": db.current_user_role, 
+        "is_admin": True,  # Footer gizlenir
         "p_page": "system-logs",
         "first_name": db.current_user_data.get("first_name", ""), 
         "last_name": db.current_user_data.get("last_name", "")
@@ -243,6 +243,7 @@ async def admin_sales_logs(request: Request):
     return templates.TemplateResponse(request, "sales_logs.html", {
         "request": request, 
         "role": db.current_user_role, 
+        "is_admin": True,  # Footer gizlenir
         "p_page": "sales-logs",
         "first_name": db.current_user_data.get("first_name", ""), 
         "last_name": db.current_user_data.get("last_name", "")
@@ -275,6 +276,7 @@ async def calculate_booking(
         "total_price": total_price, 
         "guest_info": guest_info, 
         "role": db.current_user_role,
+        "is_admin": False,
         "first_name": db.current_user_data.get("first_name", ""),
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "payment"

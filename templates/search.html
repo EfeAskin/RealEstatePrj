@@ -33,6 +33,7 @@
         border-radius: 16px; 
         overflow: hidden;
         border: 1px solid #f1f5f9;
+        position: relative; /* Badge konumlandırması için kritik */
     }
     .card:hover { 
         transform: translateY(-10px); 
@@ -72,6 +73,7 @@
         border-color: var(--theme-color);
     }
 
+    /* BADGE STİLLERİ */
     .badge-sale {
         background-color: #fee2e2;
         color: #ef4444;
@@ -79,6 +81,15 @@
         border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 800;  
+    }
+
+    .badge-rent {
+        background-color: #dcfce7; /* Soft Yeşil arka plan */
+        color: #10b981; /* Canlı Yeşil yazı */
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 800;
     }
 
     /* --- FILTER PANEL & CHIPS --- */
@@ -188,7 +199,18 @@
     <div class="grid">
         {% for villa in villas %}
         <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
-            <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
+            <div style="position: relative;">
+                <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}">
+                
+                <div style="position: absolute; top: 15px; right: 15px; z-index: 10;">
+                    {% if villa.type == "sale" %}
+                        <span class="badge-sale">FOR SALE</span>
+                    {% else %}
+                        <span class="badge-rent">FOR RENT</span>
+                    {% endif %}
+                </div>
+            </div>
+
             <div class="card-content">
                 <h3 style="margin: 0 0 12px 0; font-size: 20px; color: #1e293b; font-weight: 700;">{{ villa.name }}</h3>
                 
@@ -196,9 +218,8 @@
                     <p style="color: #1e293b; font-weight: 800; font-size: 1.2rem; margin: 0;">
                         {{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺ 
                     </p>
-                    {% if villa.type == "sale" %}
-                        <span class="badge-sale">FOR SALE</span>
-                    {% else %}
+                    
+                    {% if villa.type != "sale" %}
                         <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">/ 30 nights</span>
                     {% endif %}
                 </div>

@@ -11,8 +11,8 @@
 body, html {
     width: 100%;
     height: 100%;
-    overflow-x: hidden; /* Slider dışarı taşmasın diye kritik */
-    background-color: #f4f7fe; /* Arka plan resmi yüklenene kadar boş kalmasın */
+    overflow-x: hidden;
+    background-color: #f4f7fe;
 }
 
 /* --- GİRİŞ SAYFALARI ARKA PLAN --- */
@@ -25,14 +25,13 @@ body, html {
     background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
                 url("/static/htmlfotos/loginspage.png") no-repeat center center fixed;
     background-size: cover;
-    padding: 20px; /* Mobil cihazlarda kutu kenarlara yapışmasın */
+    padding: 20px;
 }
 
-/* --- CAM KUTU (%98 Opaklık) --- */
 .glass-box {
     width: 100%;
-    max-width: 579px; /* Masaüstünde sabit genişlik, mobilde tam genişlik */
-    min-height: 384px; /* Login için ideal, Register için genişleyebilir */
+    max-width: 579px;
+    min-height: 384px;
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     border-radius: 20px;
@@ -46,7 +45,6 @@ body, html {
     position: relative;
 }
 
-/* --- HATA MESAJI STİLİ --- */
 .error-msg {
     background: #fee2e2;
     color: #ef4444;
@@ -80,11 +78,10 @@ body, html {
 .btn-blue { background: #3b82f6; color: white; }
 .btn-orange { background: #f97316; color: white; }
 .btn-red { background: #ef4444; color: white; }
-
 .btn-full {
     width: 100%;
     margin-top: 15px;
-    border-radius: 25px; /* Login/Register butonları daha yuvarlak olsun */
+    border-radius: 25px;
 }
 
 /* --- FORM ELEMANLARI --- */
@@ -93,7 +90,6 @@ body, html {
     text-align: left; 
     margin-bottom: 20px; 
 }
-
 .input-group label {
     display: block;
     font-size: 12px;
@@ -101,7 +97,6 @@ body, html {
     color: #4b5563;
     margin-bottom: 6px;
 }
-
 .input-group input { 
     width: 100%; 
     padding: 12px 15px; 
@@ -110,7 +105,6 @@ body, html {
     outline: none;
     transition: 0.3s;
 }
-
 .input-group input:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -126,7 +120,7 @@ body, html {
     margin: 20px;
     border-radius: 50px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    position: sticky; /* Sayfa kaydıkça üstte kalması için */
+    position: sticky;
     top: 20px;
     z-index: 1001;
 }
@@ -154,16 +148,10 @@ body, html {
     font-size: 14px;
     transition: 0.2s;
 }
-
 .dropdown a:hover {
     background: #f8fafc;
     color: #3b82f6;
 }
-
-/* DİKKAT: .profile:hover .dropdown kuralı 
-   çakışmayı önlemek için buradan kaldırıldı. 
-   Açma/Kapama artık JS üzerinden yürüyor.
-*/
 
 .star-rating i {
     cursor: pointer;
@@ -173,17 +161,14 @@ body, html {
     display: inline-block; 
 }
 
-/* --- YENİ EKLENENLER: SLIDER VE GRID SİSTEMİ --- */
-
-/* Sonsuz Tekerlek (Slider) Akıcılığı */
+/* --- SLIDER VE GRID SİSTEMİ --- */
 .slider-track {
     display: flex;
     gap: 25px;
-    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); /* Yumuşak ve ivmeli kayış */
+    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     will-change: transform;
 }
 
-/* Arama Sayfası Grid (12 İlan Sınırı İçin) */
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -193,7 +178,6 @@ body, html {
     margin: 0 auto;
 }
 
-/* Kartların Resimlerini Sabitleme */
 .card img {
     width: 100%;
     height: 220px;
@@ -201,7 +185,6 @@ body, html {
     border-radius: 12px 12px 0 0;
 }
 
-/* Başlıkların Taşmasını Önleme (3 Nokta) */
 .card-content h3 {
     white-space: nowrap;
     overflow: hidden;
@@ -210,33 +193,167 @@ body, html {
     font-size: 1.2rem;
 }
 
-/* Slider dış kutusu için ek koruma */
 .slider-wrapper {
     overflow: hidden;
     width: 100%;
     padding: 20px 0;
 }
 
-/* Hero Buzlu Cam Kapsayıcı */
 .hero-glass-box {
-    background: rgba(255, 255, 255, 0.7); /* Yarı şeffaf beyaz */
-    backdrop-filter: blur(15px); /* Buzlu cam efekti */
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border-radius: 40px;
     padding: 60px 40px;
     margin: 20px auto;
-    max-width: 900px; /* Genişliği buradan ayarlayabilirsin */
+    max-width: 900px;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    
-    /* Mavi Işıltılı Gölge (Neon Glow) */
-    box-shadow: 0 0 40px rgba(59, 130, 246, 0.15), 
-                0 0 15px rgba(59, 130, 246, 0.1);
-    
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
     transition: all 0.4s ease;
 }
 
-.hero-glass-box:hover {
-    box-shadow: 0 0 60px rgba(59, 130, 246, 0.25), 
-                0 0 20px rgba(59, 130, 246, 0.15);
-    transform: translateY(-5px);
+.property-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: white;
+    padding: 5px 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.badge-sale { color: #ef4444; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+.badge-rent { color: #10b981; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+
+.card-content { padding: 22px; }
+.price-tag { font-weight: 800; font-size: 20px; color: var(--theme-color); }
+.location-tag {
+    margin-top: 15px; padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+    color: #64748b; font-size: 14px;
+}
+
+/* --- GÜNCELLENMİŞ PATRIOTIC FOOTER --- */
+/* --- FOOTER KESİN ÇÖZÜM BLOKLARI --- */
+
+/* --- PROFESYONEL ZENGİN FOOTER --- */
+/* --- PREMIUM ZENGİN FOOTER VE DEV BAR --- */
+.patriotic-footer {
+    width: 100% !important;
+    background-color: #ffffff !important;
+    margin-top: 80px !important;
+    border-top: 1px solid #f1f5f9 !important;
+}
+
+/* Üst Bilgi Alanı (Menü, İletişim, Newsletter) */
+.footer-top {
+    padding: 40px 5% !important;
+    background: #fafafa !important;
+}
+
+.footer-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: 40px !important;
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+}
+
+.footer-col h4 {
+    color: #1e293b !important;
+    margin-bottom: 25px !important;
+    font-size: 18px !important;
+    border-left: 4px solid #1BA7FF !important;
+    padding-left: 12px !important;
+    font-weight: 700 !important;
+}
+
+.footer-col ul { list-style: none !important; padding: 0 !important; }
+.footer-col ul li { margin-bottom: 12px !important; }
+.footer-col ul li a { text-decoration: none !important; color: #64748b !important; transition: 0.3s; font-size: 15px !important; }
+.footer-col ul li a:hover { color: #1BA7FF !important; padding-left: 5px !important; }
+
+/* Newsletter Kutusu */
+.subscribe-box {
+    display: flex !important;
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02) !important;
+}
+.subscribe-box input { border: none !important; padding: 12px 15px !important; outline: none !important; flex: 1 !important; font-size: 14px !important; }
+.subscribe-box button { background: #1BA7FF !important; color: white !important; border: none !important; padding: 0 20px !important; cursor: pointer; transition: 0.3s; }
+.subscribe-box button:hover { background: #008ae6 !important; }
+
+/* --- DEVASA ALT BAR (150PX) --- */
+.footer-bottom-bar {
+    height: 150px !important; /* Yükseklik 150px'e yükseltildi */
+    background: white !important;
+    border-top: 3px solid #f1f5f9 !important;
+    display: flex !important;
+    justify-content: center !important;
+    box-shadow: 0 -8px 25px rgba(0,0,0,0.04) !important;
+}
+
+.footer-inner {
+    width: 92% !important;
+    max-width: 1400px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+/* Sol Taraf: Telif ve Sosyal Medya */
+.footer-copyright { 
+    font-size: 18px !important; 
+    color: #1e293b !important; 
+    font-weight: 500 !important;
+}
+.footer-copyright .origin { font-weight: 800 !important; color: #0f172a !important; }
+
+.footer-socials { display: flex !important; gap: 25px !important; margin-top: 12px !important; }
+.footer-socials a { font-size: 28px !important; color: #94a3b8 !important; transition: 0.3s ease; }
+.footer-socials a:hover { color: #1BA7FF !important; transform: translateY(-3px) scale(1.1); }
+
+/* --- SAĞ TARAF: DEV SEMBOLLER --- */
+.footer-right-symbols {
+    display: flex !important;
+    align-items: center !important;
+    gap: 25px !important;
+}
+
+/* Bayrak Çerçeveleri */
+.symbol-frame {
+    width: 120px !important;   /* Genişlik artırıldı */
+    height: 80px !important;    /* Yükseklik artırıldı */
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px !important; /* Daha yumuşak köşeler */
+    overflow: hidden !important;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.07) !important;
+    background: #fff !important;
+}
+
+/* ATATÜRK ÖZEL DEV ÇERÇEVE */
+.ata-special-frame {
+    width: 100px !important;    /* 75px'den 100px'e çıktı */
+    height: 135px !important;   /* 100px'den 135px'e çıktı (Barın yıldızı) */
+    border: 3px solid #334155 !important; /* Daha belirgin koyu çerçeve */
+}
+
+.symbol-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+/* Mobil Tasarım (Görsellerin üst üste binmemesi için) */
+@media (max-width: 768px) {
+    .footer-bottom-bar { height: auto !important; padding: 40px 0 !important; }
+    .footer-inner { flex-direction: column !important; gap: 35px !important; text-align: center !important; }
+    .footer-socials { justify-content: center !important; }
+    .symbol-frame { width: 100px !important; height: 65px !important; }
+    .ata-special-frame { width: 85px !important; height: 115px !important; }
 }
