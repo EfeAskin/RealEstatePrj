@@ -238,6 +238,12 @@ body, html {
 /* --- FOOTER KESİN ÇÖZÜM BLOKLARI --- */
 
 /* --- PROFESYONEL ZENGİN FOOTER --- */
+/* ... (Dosyanın ilk 250-260 satırı: Navbar, Grid, Slider vb. aynen kalıyor) ... */
+
+/* --- GÜNCELLENMİŞ PATRIOTIC FOOTER --- */
+/* --- FOOTER KESİN ÇÖZÜM BLOKLARI --- */
+
+/* --- PROFESYONEL ZENGİN FOOTER --- */
 /* --- PREMIUM ZENGİN FOOTER VE DEV BAR --- */
 .patriotic-footer {
     width: 100% !important;
@@ -250,6 +256,13 @@ body, html {
 .footer-top {
     padding: 40px 5% !important;
     background: #fafafa !important;
+    /* ÖNEMLİ: Burada sabit 'display: grid !important' vardı, o kaldırıldı. 
+       Böylece HTML'deki {% if %} bloğu çalıştığında alan tamamen kapanabilecek. */
+}
+
+/* Admin paneli için ekstra garanti sınıfı (Dosyaya eklendi, bir şey silinmedi) */
+.hide-admin-footer {
+    display: none !important;
 }
 
 .footer-grid {
@@ -289,7 +302,7 @@ body, html {
 
 /* --- DEVASA ALT BAR (150PX) --- */
 .footer-bottom-bar {
-    height: 150px !important; /* Yükseklik 150px'e yükseltildi */
+    height: 150px !important; 
     background: white !important;
     border-top: 3px solid #f1f5f9 !important;
     display: flex !important;
@@ -326,10 +339,10 @@ body, html {
 
 /* Bayrak Çerçeveleri */
 .symbol-frame {
-    width: 120px !important;   /* Genişlik artırıldı */
-    height: 80px !important;    /* Yükseklik artırıldı */
+    width: 120px !important;
+    height: 80px !important;
     border: 2px solid #e2e8f0 !important;
-    border-radius: 12px !important; /* Daha yumuşak köşeler */
+    border-radius: 12px !important;
     overflow: hidden !important;
     box-shadow: 0 6px 15px rgba(0,0,0,0.07) !important;
     background: #fff !important;
@@ -337,9 +350,9 @@ body, html {
 
 /* ATATÜRK ÖZEL DEV ÇERÇEVE */
 .ata-special-frame {
-    width: 100px !important;    /* 75px'den 100px'e çıktı */
-    height: 135px !important;   /* 100px'den 135px'e çıktı (Barın yıldızı) */
-    border: 3px solid #334155 !important; /* Daha belirgin koyu çerçeve */
+    width: 100px !important;
+    height: 135px !important;
+    border: 3px solid #334155 !important;
 }
 
 .symbol-img {
@@ -349,11 +362,27 @@ body, html {
     display: block !important;
 }
 
-/* Mobil Tasarım (Görsellerin üst üste binmemesi için) */
+/* Mobil Tasarım */
 @media (max-width: 768px) {
     .footer-bottom-bar { height: auto !important; padding: 40px 0 !important; }
     .footer-inner { flex-direction: column !important; gap: 35px !important; text-align: center !important; }
     .footer-socials { justify-content: center !important; }
     .symbol-frame { width: 100px !important; height: 65px !important; }
     .ata-special-frame { width: 85px !important; height: 115px !important; }
+}
+
+/* Admin panelinde footer üst kısmını tamamen yok et */
+/* Admin panelinde footer üst kısmını ve grid boşluğunu tamamen yok eder */
+.admin-footer-gizle {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Admin panelindeyken içeriğin footer'a çok yapışmasını engelle */
+.patriotic-footer {
+    margin-top: 50px !important;
 }

@@ -38,7 +38,6 @@
             position: sticky; top: 10px; z-index: 2000;
         }
 
-        /* Profil Butonu */
         .btn-main {
             background: var(--theme-color); color: white; border: none;
             padding: 12px 28px; border-radius: 100px; cursor: pointer;
@@ -49,7 +48,6 @@
             background: var(--theme-hover); transform: translateY(-2px);
         }
 
-        /* Dropdown Menü */
         .dropdown {
             display: none; position: absolute; top: calc(100% + 15px); right: 0;
             background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.12);
@@ -74,9 +72,16 @@
 
         .nav-links a { text-decoration: none; color: #64748b; font-weight: 500; transition: 0.2s; }
         .nav-links a:hover { color: var(--theme-color); }
-        
         .nav-links a.active { color: #1e293b; font-weight: 700; }
     </style>
+
+    {% if is_admin %}
+    <style>
+        .footer-top { display: none !important; }
+        .patriotic-footer { padding-top: 20px !important; }
+    </style>
+    {% endif %}
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -113,9 +118,13 @@
                     <a href="/profile/favourites" class="drop-item"><i class="fas fa-heart"></i> Favourites</a>
                     <a href="/profile/messages" class="drop-item"><i class="fas fa-envelope"></i> Messages</a>
                     <a href="/profile/payment" class="drop-item"><i class="fas fa-credit-card"></i> Payment</a>
+                {% elif is_admin %}
+                    <a href="/profile/dashboard" class="drop-item"><i class="fas fa-chart-line"></i> Dashboard</a>
+                    <a href="/profile/users" class="drop-item"><i class="fas fa-users"></i> Users</a>
+                    <a href="/profile/personal-info" class="drop-item"><i class="fas fa-user-shield"></i> Personal Info</a>
                 {% else %}
                     <a href="/profile/personal-info" class="drop-item"><i class="fas fa-user-circle"></i> Personal Info</a>
-                    <a href="/profile/transactions" class="drop-item"><i class="fas fa-calendar-check"></i>My Transactions</a>
+                    <a href="/profile/transactions" class="drop-item"><i class="fas fa-calendar-check"></i> My Transactions</a>
                     <a href="/profile/favourites" class="drop-item"><i class="fas fa-heart"></i> Favourites</a>
                     <a href="/profile/messages" class="drop-item"><i class="fas fa-envelope"></i> Messages</a>
                 {% endif %}
@@ -129,27 +138,10 @@
 </div>
 {% endblock %}
 
+
 <main>
     {% block content %}{% endblock %}
 </main>
-
-<script>
-    function toggleDropdown(event) {
-        event.stopPropagation();
-        const dropdown = document.getElementById('profileDropdown');
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    }
-
-    window.onclick = function(event) {
-        const dropdown = document.getElementById('profileDropdown');
-        const btn = document.getElementById('profileBtn');
-        if (dropdown && !btn.contains(event.target)) {
-            dropdown.style.display = 'none';
-        }
-    }
-</script>
-
-{% block extra_js %}{% endblock %}
 
 <footer class="patriotic-footer">
     {% if not is_admin %}
@@ -186,7 +178,7 @@
                 <div class="footer-socials">
                     <a href="#"><i class="fab fa-instagram"></i></a>
                     <a href="#"><i class="fab fa-linkedin"></i></a>
-                    <a href="#"><i class="fab fa-x-twitter"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
                 </div>
             </div>
 
@@ -204,6 +196,24 @@
         </div>
     </div>
 </footer>
+
+<script>
+    function toggleDropdown(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('profileDropdown');
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
+    window.onclick = function(event) {
+        const dropdown = document.getElementById('profileDropdown');
+        const btn = document.getElementById('profileBtn');
+        if (dropdown && btn && !btn.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    }
+</script>
+
+{% block extra_js %}{% endblock %}
 
 </body>
 </html>
