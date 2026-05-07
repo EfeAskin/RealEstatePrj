@@ -17,7 +17,11 @@ def get_admin_status():
 async def personal_info(request: Request):
     """Kişisel Bilgiler Sayfası"""
     user_email = db.current_user_email 
-    user_data = db.users.get(user_email, db.current_user_data)
+    
+    # HİBRİT KONTROL: Önce DB'den çekmeyi dene, yoksa statik sözlüğe bak
+    user_data = db.get_user_from_db(user_email)
+    if not user_data:
+        user_data = db.users.get(user_email, db.current_user_data)
     
     return templates.TemplateResponse(request, "personal_info.html", {
         "role": db.current_user_role,
@@ -46,23 +50,34 @@ async def update_info(
     company_name: str = Form(None),
     new_password: str = Form(None)
 ):
-    """Kişisel Bilgileri db.users içinde günceller"""
+    """Kişisel Bilgileri DB ve statik yapı içinde günceller"""
     user_email = db.current_user_email
     
+    # Veritabanı Güncelleme Hazırlığı
+    update_data = {
+        "first_name": first_name,
+        "last_name": last_name,
+        "phone": phone,
+        "gender": gender,
+        "iban": iban,
+        "id_no": id_no,
+        "company_name": company_name
+    }
+    
+    # 1. CANLI DB GÜNCELLEME (Hata almaması için try-except içine alabilirsin)
+    try:
+        db.update_user_in_db(user_email, update_data)
+        if new_password and new_password.strip() != "":
+            # Şifre güncelleme fonksiyonu veritabanına eklenebilir
+            pass 
+    except:
+        pass # Bağlantı yoksa statik devam et
+
+    # 2. STATİK SÖZLÜK GÜNCELLEME (Geriye dönük uyumluluk için koruyoruz)
     if user_email in db.users:
-        db.users[user_email]["first_name"] = first_name
-        db.users[user_email]["last_name"] = last_name
-        db.users[user_email]["phone"] = phone
-        db.users[user_email]["gender"] = gender
-        
-        if db.current_user_role == "agent":
-            db.users[user_email]["iban"] = iban
-            db.users[user_email]["id_no"] = id_no
-            db.users[user_email]["company_name"] = company_name
-        
+        db.users[user_email].update(update_data)
         if new_password and new_password.strip() != "":
             db.users[user_email]["password"] = db.hash_password(new_password)
-        
         db.current_user_data = db.users[user_email]
         
     return RedirectResponse(url="/profile/personal-info", status_code=303)
@@ -94,12 +109,13 @@ async def my_favourites(request: Request):
 @router.get("/switch-to-agent")
 async def switch_to_agent(request: Request):
     user_email = db.current_user_email
-    user_data = db.users.get(user_email, {})
+    user_data = db.get_user_from_db(user_email) or db.users.get(user_email, {})
 
     if user_data.get("iban") and user_data.get("id_no"):
         db.current_user_role = "agent"
-        db.users[user_email]["role"] = "agent"
-        db.current_user_data = db.users[user_email]
+        if user_email in db.users:
+            db.users[user_email]["role"] = "agent"
+            db.current_user_data = db.users[user_email]
         return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
     
     return templates.TemplateResponse(request, "choose_role.html", {
@@ -117,11 +133,10 @@ async def upgrade_to_agent(
     user_email = db.current_user_email
     db.current_user_role = "agent"
     
+    update_data = {"role": "agent", "iban": iban, "id_no": id_no, "company_name": company_name}
+    
     if user_email in db.users:
-        db.users[user_email]["role"] = "agent"
-        db.users[user_email]["iban"] = iban
-        db.users[user_email]["id_no"] = id_no
-        db.users[user_email]["company_name"] = company_name
+        db.users[user_email].update(update_data)
         db.current_user_data = db.users[user_email]
     
     return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
@@ -254,7 +269,10 @@ async def calculate_booking(
     nights: int = Form(...), 
     guest_info: str = Form(...)
 ):
-    villa = db.villas.get(villa_id)
+    # DB'den villa çekmeyi dene, yoksa statik villas'tan al
+    villas_from_db = db.get_villas_from_db()
+    villa = next((v for v in villas_from_db if str(v['id']) == villa_id), None) if villas_from_db else db.villas.get(villa_id)
+
     if not villa:
         return {"error": "Villa bulunamadı"}
         

@@ -16,13 +16,18 @@ async def login_page(request: Request, role: str):
 
 @router.post("/login/{role}")
 async def login(request: Request, role: str, email: str = Form(...), password: str = Form(...)):
-    if email in db.users:
-        user = db.users[email]
-        # Şifre doğruluğu ve Rol kontrolü
+    # --- AKŞAM BURAYI AÇ (Yorumu Kaldır) ---
+    # user = db.get_user_from_db(email)
+    # --------------------------------------
+
+    # --- ŞİMDİLİK BURASI ÇALIŞIYOR (Hata Almamak İçin) ---
+    user = db.users.get(email) 
+    # ----------------------------------------------------
+
+    if user:
         if db.verify_password(password, user["password"]) and user["role"] == role:
-            # Oturum bilgilerini global değişkenlere aktar
             db.current_user_role = user["role"]
-            db.current_user_email = email  # Profil sayfasında mailin gözükmesini sağlayan kritik satır
+            db.current_user_email = email  
             db.current_user_data = user
             
             if user["role"] == "admin":
@@ -58,25 +63,24 @@ async def register(
     email: str = Form(...), 
     password: str = Form(...), 
     confirm_password: str = Form(...),
-    phone: str = Form(...),             # HTML'deki name="phone"
-    user_id: str = Form(None),          # Agent HTML'indeki name="user_id"
-    company_name: str = Form(None)      # Agent HTML'indeki name="company_name"
+    phone: str = Form(...),
+    user_id: str = Form(None),
+    company_name: str = Form(None)
 ):
-    # 1. Şifrelerin eşleşme kontrolü
     if password != confirm_password:
         return templates.TemplateResponse(request, f"{role}register.html", {
             "error": "Şifreler eşleşmiyor!", 
             "role": role
         })
     
-    # 2. E-posta sistemde zaten var mı?
+    # E-posta kontrolü (Hata almamak için şimdilik sadece statik kontrol)
+    # db_user = db.get_user_from_db(email) # <-- AKŞAM BURAYI AÇ
     if email in db.users:
         return templates.TemplateResponse(request, f"{role}register.html", {
             "error": "Bu e-posta adresi zaten kayıtlı!", 
             "role": role
         })
 
-    # 3. Yeni kullanıcı verisi oluşturma (Hiçbir alan eksik değil)
     user_entry = {
         "first_name": first_name,
         "last_name": last_name,
@@ -84,17 +88,12 @@ async def register(
         "password": db.hash_password(password),
         "role": role,
         "phone": phone,
-        "gender": ""  # İlk kayıt aşamasında boş, profil sayfasında güncellenebilir
+        "gender": "",
+        "id_no": user_id if role == "agent" else "",
+        "company_name": company_name if role == "agent" else "",
+        "iban": ""
     }
 
-    # Eğer Agent ise Agent'a özel HTML alanlarını ekle
-    if role == "agent":
-        user_entry["id_no"] = user_id        # HTML'deki name="user_id" (Licence No)
-        user_entry["company_name"] = company_name
-        user_entry["iban"] = ""              # Daha sonra Modal üzerinden doldurulacak
-
-    # 4. Veriyi 'veritabanına' (sözlüğe) yaz
     db.users[email] = user_entry
     
-    # Kayıt başarılı, login sayfasına gönder
     return RedirectResponse(url=f"/login/{role}", status_code=status.HTTP_303_SEE_OTHER)

@@ -267,7 +267,7 @@
             <button type="button" onclick="changeGuest('child', -1)">-</button>
             <span id="child-num">0</span>
             <button type="button" onclick="changeGuest('child', 1)">+</button>
-        </div>
+        </div>  
     </div>
     <div class="guest-control">
         <div><strong>Infants</strong><br><small>Under 2</small></div>
@@ -288,20 +288,10 @@
     <button class="request-button" onclick="closeAll()" style="margin-top:10px;">Save</button>
 </div>
 
-<footer class="footer">
-    <div class="footer-grid">
-        <div class="footer-col"><h4>Support</h4><ul><li>Help Center</li></ul></div>
-        <div class="footer-col"><h4>Community</h4><ul><li>Blog</li></ul></div>
-        <div class="footer-col"><h4>Hosting</h4><ul><li>Become a Partner</li></ul></div>
-        <div class="footer-col"><h4>Company</h4><ul><li>About Us</li></ul></div>
-    </div>
-</footer>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Takvim, Misafir Sayacı ve Yıldız scriptlerini buraya taşıdım 
-    // (Orijinal script içeriğin birebir aynısı, sadece base.html düzenine alındı)
     const overlay = document.getElementById('overlay');
     const modals = document.querySelectorAll('.modal');
     let counts = { adult: 1, child: 0, infant: 0, pet: 0 };
@@ -417,4 +407,4 @@
         });
     }
 </script>
-{% endblock %}
+{% endblock %}  

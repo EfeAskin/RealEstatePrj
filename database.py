@@ -1,20 +1,34 @@
 import bcrypt
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-# --- Şifreleme Fonksiyonları ---
+# --- VERİTABANI BAĞLANTI AYARLARI ---
+# Arkadaşının Neon Dashboard'dan kopyalayacağı link buraya gelecek
+DATABASE_URL = "postgres://alex:password@ep-cool-darkness-123456.us-east-2.aws.neon.tech/neondb"
+
+def get_db_connection():
+    """Neon PostgreSQL veritabanına canlı bağlantı açar"""
+    try:
+        # Link gerçek bir linkle değişene kadar hata verecektir
+        return psycopg2.connect(DATABASE_URL, sslmode='require')
+    except Exception as e:
+        # Bağlantı başarısız olursa None döndür, böylece sistem statik veriye geçer
+        print(f"Veritabanı bağlantı hatası: {e}")
+        return None
+
+# --- ŞİFRELEME FONKSİYONLARI ---
 def hash_password(password: str):
-    # Şifreyi byte formatına çevirip tuzluyoruz (salt)
     pwd_bytes = password.encode('utf-8')
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(pwd_bytes, salt)
-    return hashed.decode('utf-8') # Veritabanında metin olarak saklamak için decode ediyoruz
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password, hashed_password):
     password_byte = plain_password.encode('utf-8')
     hashed_byte = hashed_password.encode('utf-8')
     return bcrypt.checkpw(password_byte, hashed_byte)
 
-# --- Global Takip Değişkenleri ---
-# Uygulama başladığında varsayılan değerler
+# --- GLOBAL TAKİP DEĞİŞKENLERİ ---
 current_user_email = "user@test.com"
 current_user_role = "user"
 current_user_data = {
@@ -25,7 +39,7 @@ current_user_data = {
     "role": "user"
 }
 
-# --- VİLLALAR ---
+# --- STATİK VİLLALAR (Yedek Olarak Duruyor) ---
 villas = {
     "1": {"id": "1", "name": "Villa Shiraz", "location": "Yeşilüzümlü, Fethiye", "monthly_price": 35083, "image": "villa.png", "type": "rent", "guests": 4, "beds": 6, "baths": 2, "desc": "Fethiye'nin doğasında, modern mimari ve huzurun buluştuğu lüks kiralık villa."},
     "2": {"id": "2", "name": "Sea House", "location": "Kaş, Antalya", "monthly_price": 45000, "image": "villa2.png", "type": "rent", "guests": 2, "beds": 2, "baths": 1, "desc": "Denize sıfır konumuyla Kaş'ın eşsiz turkuaz sularına açılan kiralık tatil evi."},
@@ -38,67 +52,62 @@ villas = {
     "9": {"id": "9", "name": "Citrus Garden Villa", "location": "Lefke, Kuzey Kıbrıs", "monthly_price": 9850760, "image": "villa8.png", "type": "sale", "guests": 8, "beds": 6, "baths": 3, "desc": "Narenciye bahçeleri içerisinde, sakinlik arayanlar için ideal, modern rustik satılık villa."} 
 }
 
-# --- KULLANICI VERİLERİ (Genişletilmiş Profil Bilgileri) ---
+# --- STATİK KULLANICILAR (Yedek Olarak Duruyor) ---
 users = {
-    # ADMINLER
     "efe@cypinvest.com": {
-        "password": hash_password("123"), 
-        "role": "admin", 
-        "first_name": "Efe", 
-        "last_name": "One",
-        "phone": "+90 555 000 00 01",
-        "gender": "male",
-        "id_no": "10000000001"
+        "password": hash_password("123"), "role": "admin", "first_name": "Kamil Efe", "last_name": "Aşkın", "phone": "+90 555 000 00 01", "gender": "male", "id_no": "10000000001"
     },
     "begench@cypinvest.com": {
-        "password": hash_password("456"), 
-        "role": "admin", 
-        "first_name": "Begench", 
-        "last_name": "Two",
-        "phone": "+90 555 000 00 02",
-        "gender": "male",
-        "id_no": "10000000002"
+        "password": hash_password("456"), "role": "admin", "first_name": "Begench", "last_name": "Two", "phone": "+90 555 000 00 02", "gender": "male", "id_no": "10000000002"
     },
     "yahor@cypinvest.com": {
-        "password": hash_password("789"), 
-        "role": "admin", 
-        "first_name": "Yahor", 
-        "last_name": "Three",
-        "phone": "+90 555 000 00 03",
-        "gender": "male",
-        "id_no": "10000000003"
+        "password": hash_password("789"), "role": "admin", "first_name": "Yahor", "last_name": "Three", "phone": "+90 555 000 00 03", "gender": "male", "id_no": "10000000003"
     },
     "deniz@cypinvest.com": {
-        "password": hash_password("312"), 
-        "role": "admin", 
-        "first_name": "Deniz", 
-        "last_name": "Four",
-        "phone": "+90 555 000 00 04",
-        "gender": "male",
-        "id_no": "10000000004"
+        "password": hash_password("312"), "role": "admin", "first_name": "Deniz Özgül", "last_name": "Kızılbora", "phone": "+90 555 000 00 04", "gender": "male", "id_no": "10000000004"
     },
-
-    # AGENT (Emlakçı)
     "agent@test.com": {
-        "password": hash_password("123"), 
-        "role": "agent", 
-        "first_name": "Ahmet", 
-        "last_name": "Emlakçı",
-        "phone": "+90 532 111 22 33",
-        "gender": "male",
-        "id_no": "99988877766",
-        "iban": "TR12 0006 2000 0000 1234 5678 90",
-        "company_name": "CypInvest Gayrimenkul"
+        "password": hash_password("123"), "role": "agent", "first_name": "Ahmet", "last_name": "Emlakçı", "phone": "+90 532 111 22 33", "gender": "male", "id_no": "99988877766", "iban": "TR12 0006 2000 0000 1234 5678 90", "company_name": "CypInvest Gayrimenkul"
     },
-
-    # USER (Müşteri)
     "user@test.com": {
-        "password": hash_password("1234"), 
-        "role": "user", 
-        "first_name": "Mehmet", 
-        "last_name": "Müşteri",
-        "phone": "+90 544 333 22 11",
-        "gender": "", # Opsiyonel
-        "email": "user@test.com"
+        "password": hash_password("1234"), "role": "user", "first_name": "Mehmet", "last_name": "Müşteri", "phone": "+90 544 333 22 11", "gender": "", "email": "user@test.com"
     }
 }
+
+# --- YENİ EKLENEN CANLI VERİTABANI FONKSİYONLARI ---
+
+def get_user_from_db(email):
+    conn = get_db_connection()
+    if conn is None: # Eğer bağlantı kurulamazsa sessizce None dön
+        return None
+    
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+    return user
+
+def get_villas_from_db():
+    """Veritabanındaki tüm villaları çeker"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT * FROM villas")
+    all_villas = cur.fetchall()
+    cur.close()
+    conn.close()
+    return all_villas
+
+def update_user_in_db(email, data: dict):
+    """Kullanıcı bilgilerini günceller"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    query = """
+        UPDATE users 
+        SET first_name = %s, last_name = %s, phone = %s, gender = %s
+        WHERE email = %s
+    """
+    cur.execute(query, (data['first_name'], data['last_name'], data['phone'], data.get('gender'), email))
+    conn.commit()
+    cur.close()
+    conn.close()
