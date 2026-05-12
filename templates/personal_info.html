@@ -35,7 +35,55 @@
     {% endif %}
 
     <div class="info-card" style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-        <form action="/profile/update-info" method="POST" id="profileForm">
+        <form action="/profile/update-info" method="POST" id="profileForm" enctype="multipart/form-data">
+            
+            <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px dashed #e2e8f0;">
+                <div class="profile-upload-wrapper" style="position: relative; width: 100px; height: 100px;">
+                    
+                    <label for="profileImageInput" id="cameraBtnLabel" class="profile-label-hover" style="
+                        position: absolute; 
+                        width: 100%; 
+                        height: 100%; 
+                        border-radius: 50%; 
+                        cursor: not-allowed; 
+                        z-index: 10;
+                        transition: all 0.3s ease;
+                    ">
+                        <div id="innerCameraIcon" style="
+                            position: absolute; 
+                            bottom: 0; 
+                            right: 0; 
+                            background: var(--active-color); 
+                            width: 34px; 
+                            height: 34px; 
+                            border-radius: 50%; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            color: white; 
+                            border: 3px solid white;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+                            transition: 0.3s;
+                            opacity: 0.5;
+                        ">
+                            <i class="fa-solid fa-camera" style="font-size: 14px;"></i>
+                        </div>
+                    </label>
+
+                    <img src="{{ url_for('static', path='htmlfotos/' + (profile_image if profile_image else 'default_user.png')) }}" 
+                         id="mainProfilePreview" 
+                         style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--active-color); padding: 3px; background: white; transition: all 0.3s ease;">
+                    
+                    <input type="file" name="profile_image" id="profileImageInput" accept="image/*" disabled onchange="syncPreview(this)" 
+                           style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">
+                </div>
+                
+                <div>
+                    <h4 style="margin: 0 0 5px 0; color: #1e293b; font-weight: 700;">Profil Fotoğrafı</h4>
+                    <p style="margin: 0; color: #64748b; font-size: 0.85rem;">Değiştirmek için resmin üzerine tıklayın.<br>JPG veya PNG. Maksimum 2MB.</p>
+                </div>
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
                 <div class="input-group">
                     <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Adınız</label>
@@ -69,17 +117,14 @@
                 <div style="grid-column: span 2; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
                     <h4 style="color: #FF7226; margin-bottom: 15px;"><i class="fa-solid fa-briefcase"></i> Agent Bilgileri</h4>
                 </div>
-
                 <div class="input-group">
                     <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Kimlik (ID) No</label>
                     <input type="text" value="{{ id_no }}" name="id_no" class="p-input" disabled>
                 </div>
-
                 <div class="input-group">
                     <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Şirket Adı</label>
                     <input type="text" value="{{ company_name }}" name="company_name" class="p-input" disabled>
                 </div>
-
                 <div class="input-group" style="grid-column: span 2;">
                     <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">IBAN Adresi</label>
                     <input type="text" value="{{ iban }}" name="iban" placeholder="TR..." class="p-input" disabled>
@@ -116,7 +161,6 @@
     <div style="background: white; width: 450px; margin: 10% auto; padding: 30px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
         <h3 style="color: #FF7226; margin-top: 0;"><i class="fa-solid fa-briefcase"></i> Agent Bilgilerini Tamamla</h3>
         <p style="color: #64748b; font-size: 0.9rem;">Emlak ilanları vermek için aşağıdaki bilgileri doldurmanız gerekmektedir.</p>
-        
         <form action="/profile/upgrade-to-agent" method="POST">
             <div style="margin-bottom: 15px;">
                 <label style="display: block; font-weight: 600; margin-bottom: 5px;">IBAN</label>
@@ -156,23 +200,58 @@
     .role-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     input:checked + .role-slider { background-color: #FF7226; }
     input:checked + .role-slider:before { transform: translateX(30px); }
+
+    /* GELİŞMİŞ HOVER EFEKTLERİ */
+    .profile-label-hover.active-edit:hover {
+        transform: scale(1.05); /* Alanın tamamını kabartır */
+    }
+
+    .profile-label-hover.active-edit:hover ~ #mainProfilePreview {
+        transform: scale(1.05); /* Resmi de kabartır */
+        filter: brightness(0.9); /* Resmi hafif karartarak butonu öne çıkarır */
+    }
+
+    .profile-label-hover.active-edit:hover #innerCameraIcon {
+        background: #5a4fcf !important; /* İkon rengini değiştirir */
+        transform: scale(1.1);
+    }
 </style>
 
 <script>
     function enableEdit() {
-        const inputs = document.querySelectorAll('.p-input, #twoStepToggle');
+        const inputs = document.querySelectorAll('.p-input, #twoStepToggle, #profileImageInput');
         const saveBtn = document.getElementById('saveBtn');
+        const cameraLabel = document.getElementById('cameraBtnLabel');
+        const innerIcon = document.getElementById('innerCameraIcon');
+        
         inputs.forEach(input => { input.disabled = false; });
         saveBtn.style.opacity = "1";
         saveBtn.style.pointerEvents = "auto";
+        
+        if(cameraLabel) {
+            cameraLabel.style.cursor = "pointer";
+            cameraLabel.classList.add('active-edit'); // Hover efektini tetikleyen class
+            innerIcon.style.opacity = "1"; // Kamerayı görünür yap
+        }
+    }
+
+    function syncPreview(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const mainPrev = document.getElementById('mainProfilePreview');
+                const sidebarPrev = document.getElementById('profilePreview');
+                if(mainPrev) mainPrev.src = e.target.result;
+                if(sidebarPrev) sidebarPrev.src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
     }
 
     function handleRoleSwitch(checkbox) {
         const currentRole = "{{ role }}";
-        const hasIban = "{{ iban }}"; // Jinja2 ile IBAN var mı kontrol et
-
+        const hasIban = "{{ iban }}"; 
         if (checkbox.checked) {
-            // Agent'a geçiş: Eğer bilgiler zaten varsa (hasIban doluysa) direkt backend'e git
             if (currentRole === 'user') {
                 if (hasIban && hasIban !== "None" && hasIban !== "") {
                     window.location.href = "/profile/switch-to-agent";
@@ -182,7 +261,6 @@
                 }
             }
         } else {
-            // User'a dönüş
             if (confirm("Kullanıcı moduna geri dönmek istediğinize emin misiniz?")) {
                 window.location.href = "/profile/switch-to-user";
             } else {

@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- VERİTABANI BAĞLANTI AYARLARI ---
-# Artık şifre kodun içinde değil, güvenli bir şekilde .env'den çekiliyor.
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
@@ -43,8 +42,8 @@ current_user_email = None
 current_user_role = "guest"
 current_user_data = {}
 
-# --- STATİK PROPERTIES (Yorum Satırına Alındı) ---
-"""
+# --- STATİK PROPERTIES (Hiçbir satırı silinmeden korunmuştur) ---
+
 properties = {
     "1": {
         "id": "1", "name": "Villa Shiraz", "location": "Yeşilüzümlü, Fethiye", 
@@ -128,7 +127,7 @@ properties = {
         "is_credit": "Hayır", "deed_status": "Müstakil Koçan", "is_trade": "Evet"
     } 
 }
-"""
+
 
 # --- CANLI VERİTABANI: KULLANICI İŞLEMLERİ ---
 
@@ -155,10 +154,11 @@ def register_user_to_db(email, password, first_name, last_name, role="user"):
         cur = conn.cursor()
         hashed = hash_password(password)
         query = """
-            INSERT INTO users (email, password, first_name, last_name, role) 
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO users (email, password, first_name, last_name, role, profile_image) 
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        cur.execute(query, (email, hashed, first_name, last_name, role))
+        # Kayıt anında varsayılan profil resmi atanıyor
+        cur.execute(query, (email, hashed, first_name, last_name, role, 'default_user.png'))
         conn.commit()
         cur.close()
         conn.close()
@@ -168,17 +168,46 @@ def register_user_to_db(email, password, first_name, last_name, role="user"):
         return False
 
 def update_user_in_db(email, data: dict):
-    """Kullanıcı profilini günceller"""
+    """Kullanıcı profilini (fotoğraf dahil) günceller"""
     conn = get_db_connection()
     if not conn: return
     try:
         cur = conn.cursor()
-        query = """
-            UPDATE users 
-            SET first_name = %s, last_name = %s, phone = %s, gender = %s 
-            WHERE email = %s
-        """
-        cur.execute(query, (data['first_name'], data['last_name'], data.get('phone'), data.get('gender'), email))
+        # Dinamik şifre güncelleme desteği için kontrol eklenmiştir
+        if data.get('password'):
+            query = """
+                UPDATE users 
+                SET first_name = %s, last_name = %s, phone = %s, gender = %s, profile_image = %s, password = %s
+                WHERE email = %s
+            """
+            cur.execute(query, (
+                data['first_name'], 
+                data['last_name'], 
+                data.get('phone'), 
+                data.get('gender'), 
+                data.get('profile_image', 'default_user.png'),
+                hash_password(data['password']),
+                email
+            ))
+        else:
+            query = """
+                UPDATE users 
+                SET first_name = %s, last_name = %s, phone = %s, gender = %s, profile_image = %s
+                WHERE email = %s
+            """
+            cur.execute(query, (
+                data['first_name'], 
+                data['last_name'], 
+                data.get('phone'), 
+                data.get('gender'), 
+                data.get('profile_image', 'default_user.png'), 
+                email
+            ))
+        
+        # Agent modundaysa Agent tablosundaki resmi de senkronize et
+        if current_user_role == 'agent':
+            cur.execute("UPDATE agents SET agent_image = %s WHERE id = (SELECT id FROM users WHERE email = %s)", (data.get('profile_image'), email))
+            
         conn.commit()
         cur.close()
         conn.close()
@@ -236,6 +265,68 @@ def get_property_features(property_id):
     except Exception as e:
         print(f"Özellik çekme hatası: {e}")
         return []
+
+# --- AGENT (EMLAKÇI) İŞLEMLERİ ---
+
+def get_property_agent_info(property_id):
+    """İlan detay sayfasında o ilanın sahibini (Agent) getiren fonksiyon"""
+    conn = get_db_connection()
+    if not conn: return None
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        query = """
+            SELECT u.id, (u.first_name || ' ' || u.last_name) as full_name, u.email, 
+                   a.agency_name, a.phone_number, a.agent_image, a.is_verified, a.joined_at,
+                   u.profile_image
+            FROM properties p
+            JOIN agents a ON p.agent_id = a.id
+            JOIN users u ON a.id = u.id
+            WHERE p.id = %s
+        """
+        cur.execute(query, (property_id,))
+        agent_data = cur.fetchone()
+        cur.close()
+        conn.close()
+        return agent_data
+    except Exception as e:
+        print(f"Agent bilgisi çekme hatası: {e}")
+        return None
+
+def get_agent_with_properties(agent_id):
+    """Belirli bir emlakçının profilini ve tüm ilanlarını getirir"""
+    conn = get_db_connection()
+    if not conn: return None, []
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # 1. Agent ve User bilgilerini birleştir
+        agent_query = """
+            SELECT u.id, (u.first_name || ' ' || u.last_name) as full_name, u.email, 
+                   a.agency_name, a.phone_number, a.agent_image, a.is_verified, a.bio, a.joined_at,
+                   u.profile_image
+            FROM users u
+            JOIN agents a ON u.id = a.id
+            WHERE u.id = %s
+        """
+        cur.execute(agent_query, (agent_id,))
+        agent_info = cur.fetchone()
+        
+        if not agent_info:
+            cur.close()
+            conn.close()
+            return None, []
+            
+        # 2. Agent'ın sahip olduğu tüm ilanları çek
+        props_query = "SELECT * FROM properties WHERE agent_id = %s ORDER BY id DESC"
+        cur.execute(props_query, (agent_id,))
+        properties_list = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        return agent_info, properties_list
+    except Exception as e:
+        print(f"Agent portföyü çekme hatası: {e}")
+        return None, []
 
 # --- UYGULAMA MANTIĞI: LOGIN VE OTURUM ---
 

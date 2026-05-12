@@ -61,11 +61,53 @@
 
 <div class="publisher-card">
     <div class="pub-info" style="display:flex; align-items:center; gap:20px;">
-        <img src="https://img.freepik.com/premium-fotograf/takim-elbeseli-amerikali-kadin-emlakci_1106493-267934.jpg" alt="Agent">
-        <div>
-            <strong style="font-size:18px;">Cypinvest Global</strong><br>
-            <small style="color:var(--text-muted);">Partner for 4 Years · ★ 4.9</small>
-        </div>
+        {% if agent %}
+            {# FOTOĞRAF YOLU DÜZELTİLDİ: htmlfotos klasörü eklendi #}
+            <img src="{{ url_for('static', path='htmlfotos/' + agent.agent_image) if agent.agent_image else url_for('static', path='htmlfotos/default_agent.png') }}" 
+                 alt="Agent" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border);">
+            
+            <div>
+                <strong style="font-size:18px; display: flex; align-items: center; gap: 5px;">
+                    {{ agent.full_name }}
+                    {% if agent.is_verified %}
+                        <i class="fa-solid fa-circle-check" style="color: #3498db; font-size: 14px;" title="Verified Agent"></i>
+                    {% endif %}
+                </strong>
+                <small style="color:var(--text-muted);">
+                    {# Şirket ismi NULL ise 'Cypinvest Global' yaz #}
+                    {{ agent.agency_name if agent.agency_name else 'Cypinvest Global' }} for 
+                    {# Eğer joined_at NULL değilse yılı hesapla, NULL ise '4' yaz #}
+                    {{ (2026 - agent.joined_at.year) if agent.joined_at else '4' }} Years · ★ 4.9
+                </small>
+            </div>
+        {% else %}
+            {# AGENT VERİSİ HİÇ GELMEZSE FALLBACK #}
+            <img src="https://img.freepik.com/premium-fotograf/takim-elbeseli-amerikali-kadin-emlakci_1106493-267934.jpg" alt="Agent">
+            <div>
+                <strong style="font-size:18px;">Cypinvest Global</strong><br>
+                <small style="color:var(--text-muted);">Partner for 4 Years · ★ 4.9</small>
+            </div>
+        {% endif %}
     </div>
-    <button class="msg-btn">Message Agent</button>
+
+    {% if agent %}
+        <button class="msg-btn" onclick="openChat('{{ agent.id }}')">
+            Message Agent
+        </button>
+    {% else %}
+        <button class="msg-btn" onclick="openChat('null')" disabled>
+            Message Agent
+        </button>
+    {% endif %}
 </div>
+
+<script>
+function openChat(agentId) {
+    if (!agentId || agentId === 'null') {
+        alert("Bu ilan için emlakçı bilgisi bulunamadı.");
+        return;
+    }
+    console.log("Mesajlaşma başlatılıyor, Agent ID:", agentId);
+    // İleride buraya chat penceresini açacak kodları yazacağız
+}
+</script>

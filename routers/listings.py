@@ -211,6 +211,7 @@ async def property_detail(request: Request, property_id: str):
     property_item = None
     property_features = []
     property_images = []
+    agent_info = None  # Agent bilgisi için değişkeni tanımladık
 
     if conn:
         try:
@@ -232,6 +233,10 @@ async def property_detail(request: Request, property_id: str):
                 # 2. Resimleri çek
                 cur.execute("SELECT image_url FROM property_images WHERE property_id = %s", (property_id,))
                 property_images = [r['image_url'] for r in cur.fetchall()]
+                
+                # 3. YENİ: Agent (Emlakçı) Bilgilerini Çek (Dinamik)
+                # database.py'da yeni yazdığımız fonksiyonu çağırıyoruz
+                agent_info = db.get_property_agent_info(property_id)
             
             cur.close()
             conn.close()
@@ -261,9 +266,11 @@ async def property_detail(request: Request, property_id: str):
                 property_item[field] = 0
         
     return templates.TemplateResponse(request, "desktop1.html", {
+        "request": request,  # Request nesnesini her ihtimale karşı ekledik
         "property": property_item,
         "property_features": property_features,
         "property_images": property_images,
+        "agent": agent_info,  # HTML kartındaki Melih Nitiş verileri buradan gidecek
         "role": db.current_user_role, 
         "page_id": "search"
     })
