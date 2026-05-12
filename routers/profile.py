@@ -18,10 +18,12 @@ async def personal_info(request: Request):
     """Kişisel Bilgiler Sayfası"""
     user_email = db.current_user_email 
     
-    # HİBRİT KONTROL: Önce DB'den çekmeyi dene, yoksa statik sözlüğe bak
+    # CANLI DB KONTROL: Veriyi direkt Neon'dan çekiyoruz
     user_data = db.get_user_from_db(user_email)
+    
+    # Eğer DB'de yoksa (beklenmedik durum) global takipten al
     if not user_data:
-        user_data = db.users.get(user_email, db.current_user_data)
+        user_data = db.current_user_data
     
     return templates.TemplateResponse(request, "personal_info.html", {
         "role": db.current_user_role,
@@ -50,10 +52,10 @@ async def update_info(
     company_name: str = Form(None),
     new_password: str = Form(None)
 ):
-    """Kişisel Bilgileri DB ve statik yapı içinde günceller"""
+    """Kişisel Bilgileri DB içinde günceller"""
     user_email = db.current_user_email
     
-    # Veritabanı Güncelleme Hazırlığı
+    # Veritabanı Güncelleme Paketi
     update_data = {
         "first_name": first_name,
         "last_name": last_name,
@@ -64,22 +66,23 @@ async def update_info(
         "company_name": company_name
     }
     
-    # 1. CANLI DB GÜNCELLEME (Hata almaması için try-except içine alabilirsin)
+    # 1. CANLI DB GÜNCELLEME
     try:
         db.update_user_in_db(user_email, update_data)
-        if new_password and new_password.strip() != "":
-            # Şifre güncelleme fonksiyonu veritabanına eklenebilir
-            pass 
-    except:
-        pass # Bağlantı yoksa statik devam et
-
-    # 2. STATİK SÖZLÜK GÜNCELLEME (Geriye dönük uyumluluk için koruyoruz)
-    if user_email in db.users:
-        db.users[user_email].update(update_data)
-        if new_password and new_password.strip() != "":
-            db.users[user_email]["password"] = db.hash_password(new_password)
-        db.current_user_data = db.users[user_email]
         
+        # Eğer yeni şifre girildiyse (Neon tablonuzda 'password' sütunu varsa aktif edilebilir)
+        if new_password and new_password.strip() != "":
+            # Şifre hash'lemesi burada yapılabilir
+            pass 
+            
+        # 2. GLOBAL DEĞİŞKENLERİ TAZELE (Sayfa yenilenince doğru görünsün)
+        refreshed_user = db.get_user_from_db(user_email)
+        if refreshed_user:
+            db.current_user_data = refreshed_user
+            
+    except Exception as e:
+        print(f"Update hatası: {e}")
+
     return RedirectResponse(url="/profile/personal-info", status_code=303)
 
 @router.get("/messages", response_class=HTMLResponse)
@@ -109,13 +112,14 @@ async def my_favourites(request: Request):
 @router.get("/switch-to-agent")
 async def switch_to_agent(request: Request):
     user_email = db.current_user_email
-    user_data = db.get_user_from_db(user_email) or db.users.get(user_email, {})
+    user_data = db.get_user_from_db(user_email)
 
-    if user_data.get("iban") and user_data.get("id_no"):
+    # Eğer IBAN ve Kimlik no varsa direkt geçiş yap
+    if user_data and user_data.get("iban") and user_data.get("id_no"):
         db.current_user_role = "agent"
-        if user_email in db.users:
-            db.users[user_email]["role"] = "agent"
-            db.current_user_data = db.users[user_email]
+        # DB'de rolü güncelle
+        db.update_user_in_db(user_email, {"role": "agent"})
+        db.current_user_data["role"] = "agent"
         return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
     
     return templates.TemplateResponse(request, "choose_role.html", {
@@ -135,9 +139,10 @@ async def upgrade_to_agent(
     
     update_data = {"role": "agent", "iban": iban, "id_no": id_no, "company_name": company_name}
     
-    if user_email in db.users:
-        db.users[user_email].update(update_data)
-        db.current_user_data = db.users[user_email]
+    # DB'de güncelle
+    db.update_user_in_db(user_email, update_data)
+    # Global datayı tazele
+    db.current_user_data.update(update_data)
     
     return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -146,13 +151,13 @@ async def switch_to_user():
     user_email = db.current_user_email
     db.current_user_role = "user"
     
-    if user_email in db.users:
-        db.users[user_email]["role"] = "user"
-        db.current_user_data = db.users[user_email]
+    # DB'de rolü güncelle
+    db.update_user_in_db(user_email, {"role": "user"})
+    db.current_user_data["role"] = "user"
         
     return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
 
-# --- USER ÖZEL ROTALARI ---
+# --- DİĞER ROTALAR (İçerikleri Aynı Kaldı) ---
 
 @router.get("/transactions", response_class=HTMLResponse)
 async def my_transactions(request: Request):
@@ -163,8 +168,6 @@ async def my_transactions(request: Request):
         "last_name": db.current_user_data.get("last_name", ""),
         "p_page": "transactions"
     })
-
-# --- AGENT ÖZEL ROTALARI ---
 
 @router.get("/properties", response_class=HTMLResponse)
 async def agent_properties(request: Request):
@@ -196,7 +199,7 @@ async def agent_payment_page(request: Request):
         "p_page": "payment"
     })
 
-# --- ADMIN ÖZEL ROTALARI ---
+# --- ADMIN ROTALARI ---
 
 @router.get("/all-properties", response_class=HTMLResponse)
 async def admin_all_properties(request: Request):
@@ -258,29 +261,35 @@ async def admin_sales_logs(request: Request):
         "last_name": db.current_user_data.get("last_name", "")
     })
 
-# --- FORM VE HESAPLAMA İŞLEMLERİ ---
+# --- HESAPLAMA ---
 
 @router.post("/calculate-booking")
 async def calculate_booking(
     request: Request, 
-    villa_id: str = Form(...), 
+    property_id: str = Form(...), 
     check_in: str = Form(...), 
     check_out: str = Form(...), 
     nights: int = Form(...), 
     guest_info: str = Form(...)
 ):
-    # DB'den villa çekmeyi dene, yoksa statik villas'tan al
-    villas_from_db = db.get_villas_from_db()
-    villa = next((v for v in villas_from_db if str(v['id']) == villa_id), None) if villas_from_db else db.villas.get(villa_id)
+    properties_from_db = db.get_properties_from_db()
+    property_item = next((p for p in properties_from_db if str(p['id']) == property_id), None)
+    
+    # Eğer DB'de yoksa yedek statik listeye bak
+    if not property_item:
+        property_item = db.properties.get(property_id)
 
-    if not villa:
-        return {"error": "Villa bulunamadı"}
+    if not property_item:
+        return {"error": "Mülk bulunamadı"}
         
-    daily_price = villa["monthly_price"] / 30
+    # Not: Neon DB'de 'price' veya 'monthly_price' sütun ismine göre burayı güncellemelisin
+    # Mevcut mantık:
+    base_price = property_item.get("price", 0) or property_item.get("monthly_price", 0)
+    daily_price = base_price / 30
     total_price = round(daily_price * nights, 2)
     
     return templates.TemplateResponse(request, "payment.html", {
-        "villa": villa, 
+        "property": property_item, 
         "check_in": check_in, 
         "check_out": check_out, 
         "nights": nights, 

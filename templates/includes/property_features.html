@@ -1,0 +1,70 @@
+<div class="description-text">
+    <h3>{{ property.name }} - {{ property.city if property.city else 'Cyprus' }}, {{ property.country if property.country else 'North Cyprus' }}</h3>
+    <p>{{ property.description if property.description else 'No description available for this property.' }}</p>
+</div>
+
+<div class="property-details-grid">
+    <div class="detail-item">
+        <span class="detail-label">Listing Date:</span>
+        <span>{{ property.created_at.strftime('%B %d, %Y') if property.created_at else 'Recently' }}</span>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Property Type:</span>
+        <span>{{ (property.property_type | capitalize) if property.property_type else 'Villa' }}</span>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Gross Area:</span>
+        <span>{{ property.gross_m2 if property.gross_m2 else '0' }} m²</span>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Net Area:</span>
+        <span>{{ property.net_m2 if property.net_m2 else '0' }} m²</span>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Building Age:</span>
+        <span>{{ property.building_age if property.building_age else 'New' }}</span>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Heating:</span>
+        <span>{{ property.heating if property.heating else 'Air Conditioning' }}</span>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Deed Status:</span>
+        <span>{{ property.deed_status if property.deed_status else 'Exchange' }}</span>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Maintenance (Aidat):</span>
+        <span>
+            {# listings.py'de formatladığımız formatted_dues'u kullanıyoruz #}
+            {{ property.formatted_dues if property.formatted_dues else property.dues if property.dues else '0' }} {{ property.currency_symbol }}
+        </span>
+    </div>
+</div>
+
+<div class="features-section" style="margin-top: 30px;">
+    <h3>Features</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+        {# listings.py'den gelen property_features listesini kontrol ediyoruz #}
+        {% if property_features %}
+            {% for feature_name in property_features %}
+            <span style="background: #f1f2f6; padding: 8px 15px; border-radius: 20px; font-size: 14px; color: var(--text-main); display: flex; align-items: center; border: 1px solid var(--border);">
+                <i class="fa-solid fa-check" style="color: #2ecc71; margin-right: 7px;"></i> 
+                {{ feature_name }}
+            </span>
+            {% endfor %}
+        {% else %}
+            <span style="color: var(--text-muted); font-style: italic;">No specific features listed for this property.</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="publisher-card">
+    <div class="pub-info" style="display:flex; align-items:center; gap:20px;">
+        <img src="https://img.freepik.com/premium-fotograf/takim-elbeseli-amerikali-kadin-emlakci_1106493-267934.jpg" alt="Agent">
+        <div>
+            <strong style="font-size:18px;">Cypinvest Global</strong><br>
+            <small style="color:var(--text-muted);">Partner for 4 Years · ★ 4.9</small>
+        </div>
+    </div>
+    <button class="msg-btn">Message Agent</button>
+</div>

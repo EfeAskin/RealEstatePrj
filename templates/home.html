@@ -79,7 +79,7 @@
         transform: translateY(-50%) scale(1.1);
     }
 
-    /* Villa Kartı Sabitleme */
+    /* Property Kartı Sabitleme */
     .card {
         min-width: calc((100% / 3) - 16px);
         background: white;
@@ -116,10 +116,12 @@
             </p>
             
             <div class="search-wrapper">
-                <input type="text" placeholder="Search location, villa name or type...">
-                <button class="btn-main" onclick="window.location.href='/search'">
-                    <i class="fas fa-search"></i> Search
-                </button>
+                <form action="/search" method="GET" style="display: flex; width: 100%; align-items: center;">
+                    <input type="text" name="q" placeholder="Search location, property name or type...">
+                    <button type="submit" class="btn-main">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </form>
             </div>
         </div>
     </section>
@@ -137,27 +139,38 @@
 
         <div class="slider-outer-wrapper" style="overflow: hidden; padding: 15px 0;">
             <div class="slider-track" id="sliderTrack" style="display: flex; gap: 24px; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);">
-                {% for villa in villas %}
-                <div class="card" onclick="window.location.href='/villa/{{ villa.id }}'">
+                {% for property in properties %}
+                <div class="card" onclick="window.location.href='/property/{{ property.id }}'">
                     <div style="position: relative;">
-                        <img src="/static/htmlfotos/{{ villa.image }}" alt="{{ villa.name }}" style="width: 100%; height: 250px; object-fit: cover;">
+                        <img src="/static/htmlfotos/{{ property.image }}" alt="{{ property.name }}" style="width: 100%; height: 250px; object-fit: cover;">
                         
                         <div class="property-badge" style="position: absolute; top: 15px; right: 15px; background: white; padding: 5px 12px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                            {% if villa.type == "sale" %}
-                                <span style="color: #ef4444; font-weight: 700; font-size: 11px;">FOR SALE</span>
+                            {# DİNAMİK TİP ETİKETİ #}
+                            {% if property.is_sale %}
+                                <span style="color: #ef4444; font-weight: 700; font-size: 11px;">{{ property.display_type }}</span>
                             {% else %}
-                                <span style="color: #10b981; font-weight: 700; font-size: 11px;">FOR RENT</span>
+                                <span style="color: #10b981; font-weight: 700; font-size: 11px;">{{ property.display_type }}</span>
                             {% endif %}
                         </div>
                     </div>
                     <div class="card-content" style="padding: 22px;">
-                        <h3 style="margin: 0 0 12px; font-size: 19px; color: #1e293b; font-weight: 700;">{{ villa.name }}</h3>
+                        <h3 style="margin: 0 0 12px; font-size: 19px; color: #1e293b; font-weight: 700;">{{ property.name }}</h3>
                         <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span style="font-weight: 800; font-size: 20px; color: var(--theme-color);">{{ "{:,.0f}".format(villa.monthly_price).replace(',', '.') }} ₺</span>
-                            <span style="color: #94a3b8; font-size: 13px;"><i class="fas fa-bed"></i> {{ villa.beds }} Beds</span>
+                            {# FORMATLI FİYAT VE PARA BİRİMİ #}
+                            <span style="font-weight: 800; font-size: 20px; color: var(--theme-color);">
+                                {% if property.formatted_price %}
+                                    {{ property.currency_symbol }} {{ property.formatted_price }}
+                                    {% if not property.is_sale %}
+                                        <small style="font-size: 12px; font-weight: 500; color: #94a3b8;">/ month</small>
+                                    {% endif %}
+                                {% else %}
+                                    Price on Request
+                                {% endif %}
+                            </span>
+                            <span style="color: #94a3b8; font-size: 13px;"><i class="fas fa-bed"></i> {{ property.room_count }}</span>
                         </div>
                         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9; color: #64748b; font-size: 14px;">
-                            <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #94a3b8;"></i>{{ villa.location }}
+                            <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #94a3b8;"></i>{{ property.location }}
                         </div>
                     </div>
                 </div>

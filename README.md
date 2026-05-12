@@ -11,13 +11,14 @@ The project directory is organized into a modular structure as follows:
 RealEstatePrj/
 ├── backend.py             # FastAPI Backend Entry Point
 ├── database.py            # Data Persistence & Hash Logic
-├── requirements.txt       # Project Dependencies (bcrypt, fastapi, etc.)
-├── .gitignore             # Files ignored by Git (venv, pycache)
+├── requirements.txt       # Project Dependencies (bcrypt, fastapi, Pillow, aiofiles etc.)
+├── .gitignore             # Files ignored by Git (venv, pycache, sensitive data)
 ├── README.md              # Project Documentation
 ├── static/                # Static Assets
 │   ├── css/
 │   │   └── style.css      # Stylesheets (Glassmorphism)
-│   └── htmlfotos          # Project Images & Backgrounds
+│   ├── htmlfotos/         # Project Images, Backgrounds & Property Photos
+│   └── js/                # Client-side Logic & Modals
 ├── routers/               # Modular Route Handlers
 │   ├── __init__.py        # Makes the directory a Python package
 │   ├── auth.py            # Authentication Logic (Login/Register)
@@ -35,6 +36,7 @@ RealEstatePrj/
     ├── home.html          # Main Dashboard
     ├── about.html         # About Page
     ├── search.html        # Property Search Page
+    ├── desktop1.html      # Detailed Property View (Main)
     ├── profile_base.html  # Base Layout for Profile Pages
     ├── personal_info.html # Personal Data Management
     ├── messages.html      # Messaging System (In-Progress)
@@ -47,7 +49,12 @@ RealEstatePrj/
     ├── users.html         # Admin User Management
     ├── approving.html     # Admin Property Approval
     ├── system_logs.html   # Admin System Logs
-    └── sales_logs.html    # Admin Sales Reports
+    ├── sales_logs.html    # Admin Sales Reports
+    └── includes/          # Reusable Template Components
+        ├── property_header.html
+        ├── property_features.html
+        ├── property_reviews.html
+        └── property_sidebar.html
 
 ##🚀 Quick Start for Developers
 1. Prerequisites
@@ -69,6 +76,10 @@ Core Libraries:
 
 ➠python-multipart: Parsing form data.
 
+➠ Pillow: Image processing and optimization.
+
+➠ aiofiles: Asynchronous file operations for photo storage.
+
 3. Running the Server
 Execute the application using Uvicorn with the reload flag enabled for development:
 uvicorn backend:app --reload
@@ -76,11 +87,13 @@ uvicorn backend:app --reload
 The application will be available at: http://127.0.0.1:8000
 
 🔑 Core Technologies & Logic
-➢Backend (FastAPI): Modular architecture using APIRouter for clean code separation. Routes are organized into auth, profile, and listings.
+➢ Backend (FastAPI): Modular architecture using APIRouter for clean code separation. Routes are organized into auth, profile, and listings.
 
-➢Security: Passwords are never stored in plain text. Utilizing bcrypt for hashing and verification.
+➢ Database (Neon DB): Utilizing Neon Serverless PostgreSQL for reliable, scalable, and cloud-based data persistence. Gone are the days of in-memory storage; we now use a real-world relational database.
 
-➢Frontend (Jinja2 & Glassmorphism): Dynamic data injection. The UI features a modern Glassmorphism aesthetic with role-specific color palettes:
+➢ Security: Passwords are never stored in plain text. Utilizing bcrypt for hashing and verification.
+
+➢ Frontend (Jinja2 & Glassmorphism): Dynamic data injection with modular includes/ structure for scalable UI development. The UI features a modern Glassmorphism aesthetic with role-specific color palettes:
 
     ➥Blue: User
 
@@ -101,9 +114,11 @@ The application will be available at: http://127.0.0.1:8000
 
 2.HTML Forms: Ensure the name attribute of HTML input fields matches the FastAPI Form(...) parameter names exactly to avoid 422 Unprocessable Entity errors.
 
-3.CSS Standards: Maintain the Glassmorphism aesthetic. Use the existing classes in style.css for consistency across all dashboards.
+3.Component-Based UI: For complex pages like desktop1.html, use the includes/ directory to break down the UI into manageable parts.
 
 4.Dependency Management: If you install a new package, immediately update the requirements file: pip freeze > requirements.txt.
+
+5.Database Migrations: Since we are using Neon DB, ensure any schema changes are reflected in database.py or through migration scripts.
 
 🤝 Team Collaboration (How to Contribute)
 To maintain the stability of the main branch, all development must occur on the demoproject branch. Do not push directly to main.
@@ -140,13 +155,13 @@ git push origin demoproject
 
 [x] Secure Password Hashing (Bcrypt).
 
-[x] Dynamic Profile Management & Role Switching.
+[x] Cloud Database Integration (Neon PostgreSQL).
 
-[x] Modular Routing Architecture (Auth, Profile, Listings).
+[x] Modular Routing & Component-Based UI (Includes).
 
-[ ] SQLite / PostgreSQL Database Migration.
+[ ] Multiple Photo Upload & Infinite Image Slider. 
 
-[ ] User Dashboard & Advanced Search Engine.
+[ ] Advanced Search Engine & Property Filtering.
 
 [ ] Agent Property Upload & Management Portal.
 

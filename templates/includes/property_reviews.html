@@ -1,0 +1,66 @@
+<div class="ratings-section">
+    <div class="rating-header">
+        <div class="dynamic-stars">
+            <div class="stars-bottom">
+                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+            <div class="stars-top" id="main-stars-fill" style="width: 90%;">
+                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+            </div>
+        </div>
+        <h3 style="margin:0;"><span id="avg-rating-text">4.5</span> · {{ property.reviews|length if property.reviews else '3' }} reviews</h3>
+    </div>
+    <div class="rating-grid" id="static-rating-bars"></div>
+</div>
+
+<div class="comments-list">
+    {% for review in property.reviews %}
+    <div class="comment-card">
+        <div class="user-info">
+            <img src="{{ review.user_avatar if review.user_avatar else 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y' }}" alt="{{ review.user_name }}">
+            <div><strong>{{ review.user_name }}</strong><br><small>{{ review.created_at.strftime('%B %Y') if review.created_at else 'Recent' }}</small></div>
+        </div>
+        <p class="comment-body">{{ review.comment }}</p>
+    </div>
+    {% endfor %}
+    
+    <div class="comment-card">
+        <div class="user-info">
+            <img src="https://avatars.mds.yandex.net/i?id=68a297665a9cfe8654fb182984a1f1cda01962b5-5234700-images-thumbs&n=13" alt="Halime">
+            <div><strong>Halime Eda</strong><br><small>September 2023</small></div>
+        </div>
+        <p class="comment-body">Evin manzarası fotoğraflardan çok daha güzel. Havuz tertemizdi ve ihtiyacımız olan her şey düşünülmüştü.</p>
+    </div>
+
+    <div class="comment-card">
+        <div class="user-info">
+            <img src="https://img.freepik.com/premium-photo/portrait-beautiful-smiling-woman-white-background_1029679-66166.jpg" alt="Beyza" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+            <div><strong>Beyza</strong><br><small>August 2023</small></div>
+        </div>
+        <p class="comment-body">Harika bir konaklama deneyimiydi. Villa oldukça hijyenikti. Kesinlikle tavsiye ederim!</p>
+    </div>
+</div>
+
+<div class="add-review">
+    <h3>Write a review</h3>
+    <form action="/add-review" method="POST" id="reviewForm">
+        <input type="hidden" name="property_id" value="{{ property.id }}">
+        <input type="hidden" name="avg_rating" id="final-avg-input" value="0">
+        <div class="review-input-wrapper">
+            <div class="dynamic-stars" style="font-size: 30px;">
+                <div class="stars-bottom">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <div class="stars-top" id="form-stars-fill" style="width: 0%;">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+            </div>
+            <button type="button" class="details-btn" onclick="openModal('evaluation-modal')">
+                <i class="fa-solid fa-list-check"></i> Details
+            </button>
+            <span id="form-avg-display" style="font-weight: 700; color: var(--text-muted);">0.0</span>
+        </div>
+        <textarea name="comment" placeholder="Tell others about your experience..." required></textarea>
+        <button type="submit" class="request-button" style="margin-top: 15px; width: auto; padding: 12px 30px;">Send Review</button>
+    </form>
+</div>

@@ -1,0 +1,18 @@
+<div class="title-header">
+    <h1>{{ property.name }}</h1>
+    <div class="actions">
+        <i class="fa-solid fa-arrow-up-from-bracket" title="Share"></i>
+        <i class="fa-regular fa-heart" title="Save"></i>
+    </div>
+</div>
+
+<div class="image-box">
+    <img src="{{ property.main_image if property.main_image else '/static/htmlfotos/' + property.image }}" alt="{{ property.name }}">
+</div>
+
+<div class="property-meta">
+    <span><i class="fa-solid fa-user-group"></i> {{ property.guests if property.guests else '0' }} Guests</span>
+    <span><i class="fa-solid fa-bed"></i> {{ property.bedrooms if property.bedrooms else '0' }} Bedrooms</span>
+    <span><i class="fa-solid fa-bath"></i> {{ property.bathrooms if property.bathrooms else '0' }} Bathrooms</span>
+    <span><i class="fa-solid fa-maximize"></i> {{ property.net_m2 if property.net_m2 else '0' }} m² Net</span>
+</div>

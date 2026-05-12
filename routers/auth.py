@@ -16,15 +16,12 @@ async def login_page(request: Request, role: str):
 
 @router.post("/login/{role}")
 async def login(request: Request, role: str, email: str = Form(...), password: str = Form(...)):
-    # --- AKŞAM BURAYI AÇ (Yorumu Kaldır) ---
-    # user = db.get_user_from_db(email)
-    # --------------------------------------
-
-    # --- ŞİMDİLİK BURASI ÇALIŞIYOR (Hata Almamak İçin) ---
-    user = db.users.get(email) 
-    # ----------------------------------------------------
+    # --- CANLI VERİTABANI BAĞLANTISI AKTİF ---
+    user = db.get_user_from_db(email)
+    # -----------------------------------------
 
     if user:
+        # Şifre doğrulama ve Rol kontrolü
         if db.verify_password(password, user["password"]) and user["role"] == role:
             db.current_user_role = user["role"]
             db.current_user_email = email  
@@ -43,9 +40,7 @@ async def login(request: Request, role: str, email: str = Form(...), password: s
 
 @router.get("/logout")
 async def logout():
-    db.current_user_role = None
-    db.current_user_email = None
-    db.current_user_data = {"first_name": "", "last_name": ""}
+    db.logout_user() # database.py'daki temizleme fonksiyonunu çağırır
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 @router.get("/register/{role}", response_class=HTMLResponse)
@@ -73,27 +68,36 @@ async def register(
             "role": role
         })
     
-    # E-posta kontrolü (Hata almamak için şimdilik sadece statik kontrol)
-    # db_user = db.get_user_from_db(email) # <-- AKŞAM BURAYI AÇ
-    if email in db.users:
+    # --- CANLI VERİTABANI KONTROLÜ ---
+    db_user = db.get_user_from_db(email)
+    if db_user:
         return templates.TemplateResponse(request, f"{role}register.html", {
             "error": "Bu e-posta adresi zaten kayıtlı!", 
             "role": role
         })
 
-    user_entry = {
-        "first_name": first_name,
-        "last_name": last_name,
-        "email": email,
-        "password": db.hash_password(password),
-        "role": role,
-        "phone": phone,
-        "gender": "",
-        "id_no": user_id if role == "agent" else "",
-        "company_name": company_name if role == "agent" else "",
-        "iban": ""
-    }
-
-    db.users[email] = user_entry
+    # Yeni kullanıcıyı veritabanına kaydet
+    # database.py içindeki register_user_to_db fonksiyonunu kullanıyoruz
+    success = db.register_user_to_db(
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        role=role
+    )
     
-    return RedirectResponse(url=f"/login/{role}", status_code=status.HTTP_303_SEE_OTHER)
+    if success:
+        # Kayıt sonrası ek bilgileri (phone, company vb.) güncellemek için
+        # (Eğer veritabanı tablon bu sütunları içeriyorsa)
+        db.update_user_in_db(email, {
+            "first_name": first_name,
+            "last_name": last_name,
+            "phone": phone,
+            "gender": ""
+        })
+        return RedirectResponse(url=f"/login/{role}", status_code=status.HTTP_303_SEE_OTHER)
+    else:
+        return templates.TemplateResponse(request, f"{role}register.html", {
+            "error": "Veritabanı kayıt hatası oluştu!", 
+            "role": role
+        })

@@ -30,7 +30,7 @@
         transition: 0.4s;
     }
 
-    /* Teknolojik "i" Logosu */
+    /* Teknolojik "i" Logosu - SIVI/DALGA EFEKTİ */
     .info-graphic {
         position: relative;
         flex-shrink: 0;
@@ -39,27 +39,50 @@
     .ai-glow-circle {
         width: 280px;
         height: 280px;
-        /* Renkler var(--theme-color)'a göre değişir */
         background: linear-gradient(135deg, var(--theme-color) 0%, #fbfd92 100%);
-        border-radius: 50%;
+        /* Başlangıç için asimetrik border-radius */
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
         display: flex;
         align-items: center;
         justify-content: center;
         box-shadow: 0 0 40px var(--theme-light);
         position: relative;
-        animation: pulse 4s infinite;
+        /* Su gibi dalgalanma ve dönme animasyonu */
+        animation: liquid 8s ease-in-out infinite alternate, rotate-glow 20s linear infinite;
+        transition: 0.5s ease-in-out;
     }
 
     .ai-glow-circle i {
         font-size: 140px;
         color: white;
         filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+        /* İkonun daireyle beraber dönmesini engellemek için ters yöne sabit tutuyoruz */
+        animation: keep-upright 20s linear infinite;
     }
 
-    @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 0 40px var(--theme-light); }
-        50% { transform: scale(1.03); box-shadow: 0 0 60px var(--theme-light); }
-        100% { transform: scale(1); box-shadow: 0 0 40px var(--theme-light); }
+    /* Su Dalgalanma Animasyonu (Morphing) */
+    @keyframes liquid {
+        0% {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+        50% {
+            border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+        }
+        100% {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+    }
+
+    /* Kendi ekseninde yavaş dönüş ve parlama */
+    @keyframes rotate-glow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* İçerideki "i" harfinin baş aşağı dönmesini engeller */
+    @keyframes keep-upright {
+        from { transform: rotate(360deg); }
+        to { transform: rotate(0deg); }
     }
 
     /* Liste Tasarımı */

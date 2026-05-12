@@ -1,0 +1,42 @@
+<div class="booking-widget">
+    <div class="price-info">
+        {{ "{:,.0f}".format(property.monthly_price if property.monthly_price else 0).replace(',', '.') }} ₺ 
+        {% if property.listing_type == "rent" %}
+        <span style="font-weight:400; font-size:16px; color:var(--text-muted);">/ 30 nights</span>
+        {% endif %}
+    </div>
+    
+    {% if property.listing_type == "rent" %}
+    <form action="/calculate-booking" method="POST" id="mainBookingForm">
+        <input type="hidden" name="property_id" value="{{ property.id }}">
+        <input type="hidden" name="check_in" id="final_check_in">
+        <input type="hidden" name="check_out" id="final_check_out">
+        <input type="hidden" name="nights" id="final_nights" value="0">
+        <input type="hidden" name="guest_info" id="final_guests" value="1 Adult">
+
+        <div class="selection-box">
+            <div class="date-row" onclick="openModal('calendar')">
+                <div class="date-item" style="border-right: 1px solid var(--border);">
+                    <label>CHECK-IN</label>
+                    <span id="checkin-val">Choose Date</span>
+                </div>
+                <div class="date-item">
+                    <label>CHECK-OUT</label>
+                    <span id="checkout-val">Choose Date</span>
+                </div>
+            </div>
+            <div class="guest-item" onclick="openModal('guests')">
+                <label>GUESTS</label>
+                <span id="guest-count">1 Adult</span>
+            </div>
+        </div>
+        <button type="submit" class="request-button">Request to Book</button>
+    </form>
+    {% else %}
+    <div style="margin-bottom: 20px;">
+        <p style="color:var(--primary-blue); font-weight:700; margin-bottom: 5px;">Listing for SALE</p>
+        <small style="color: var(--text-muted);">Please contact for details & viewing.</small>
+    </div>
+    <button class="request-button" style="background:#1e272e;" onclick="location.href='tel:+905555555555'">Contact Agent</button>
+    {% endif %}
+</div>

@@ -4,3 +4,10 @@ __pycache__/
 venv/
 .env
 .vscode/
+
+# İşletim sistemi tarafından oluşturulan gereksiz dosyalar
+.DS_Store
+Thumbs.db
+
+# Eğer kullanıyorsan veri tabanı yedekleri (isteğe bağlı)
+*.bak

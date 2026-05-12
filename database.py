@@ -3,17 +3,15 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 # --- VERİTABANI BAĞLANTI AYARLARI ---
-# Arkadaşının Neon Dashboard'dan kopyalayacağı link buraya gelecek
-DATABASE_URL = "postgres://alex:password@ep-cool-darkness-123456.us-east-2.aws.neon.tech/neondb"
+DATABASE_URL = "postgresql://neondb_owner:npg_C7r0GnhzokJv@ep-icy-lab-al1z6b9l-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 def get_db_connection():
     """Neon PostgreSQL veritabanına canlı bağlantı açar"""
     try:
-        # Link gerçek bir linkle değişene kadar hata verecektir
-        return psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        return conn
     except Exception as e:
-        # Bağlantı başarısız olursa None döndür, böylece sistem statik veriye geçer
-        print(f"Veritabanı bağlantı hatası: {e}")
+        print(f"CRITICAL: Veritabanı bağlantı hatası: {e}")
         return None
 
 # --- ŞİFRELEME FONKSİYONLARI ---
@@ -24,90 +22,229 @@ def hash_password(password: str):
     return hashed.decode('utf-8')
 
 def verify_password(plain_password, hashed_password):
-    password_byte = plain_password.encode('utf-8')
-    hashed_byte = hashed_password.encode('utf-8')
-    return bcrypt.checkpw(password_byte, hashed_byte)
+    try:
+        password_byte = plain_password.encode('utf-8')
+        hashed_byte = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(password_byte, hashed_byte)
+    except Exception:
+        return False
 
 # --- GLOBAL TAKİP DEĞİŞKENLERİ ---
-current_user_email = "user@test.com"
-current_user_role = "user"
-current_user_data = {
-    "first_name": "Mehmet", 
-    "last_name": "Müşteri", 
-    "phone": "+90 544 333 22 11", 
-    "gender": "", 
-    "role": "user"
-}
+current_user_email = None
+current_user_role = "guest"
+current_user_data = {}
 
-# --- STATİK VİLLALAR (Yedek Olarak Duruyor) ---
-villas = {
-    "1": {"id": "1", "name": "Villa Shiraz", "location": "Yeşilüzümlü, Fethiye", "monthly_price": 35083, "image": "villa.png", "type": "rent", "guests": 4, "beds": 6, "baths": 2, "desc": "Fethiye'nin doğasında, modern mimari ve huzurun buluştuğu lüks kiralık villa."},
-    "2": {"id": "2", "name": "Sea House", "location": "Kaş, Antalya", "monthly_price": 45000, "image": "villa2.png", "type": "rent", "guests": 2, "beds": 2, "baths": 1, "desc": "Denize sıfır konumuyla Kaş'ın eşsiz turkuaz sularına açılan kiralık tatil evi."},
-    "3": {"id": "3", "name": "Modern Villa", "location": "Bodrum, Muğla", "monthly_price": 12490000, "image": "villa3.png", "type": "sale", "guests": 8, "beds": 10, "baths": 5, "desc": "Bodrum'un en prestijli bölgesinde, ultra lüks detaylarla donatılmış satılık modern malikane."},
-    "4": {"id": "4", "name": "Olive Grove Manor", "location": "Bellapais, Girne, Kuzey Kıbrıs", "monthly_price": 52553, "image": "villa4.png", "type": "rent", "guests": 8, "beds": 4, "baths": 3, "desc": "Tarihi Bellapais Manastırı yakınında, zeytin ağaçları içinde huzur dolu, geleneksel taş mimari."},
-    "5": {"id": "5", "name": "Sky Garden Loft", "location": "Girne, Merkez, Kuzey Kıbrıs", "monthly_price": 8500000, "image": "villa5.png", "type": "sale", "guests": 12, "beds": 9, "baths": 4, "desc": "Şehrin kalbinde, akıllı ev sistemi ve panoramik şehir manzaralı özel teras bahçesi."},
-    "6": {"id": "6", "name": "Azure Infinity Villa", "location": "Esentepe, Sahil Yolu, Kuzey Kıbrıs", "monthly_price": 45782, "image": "villa6.png", "type": "rent", "guests": 10, "beds": 5, "baths": 5, "desc": "Kesintisiz Akdeniz manzarasına açılan sonsuzluk havuzu ve özel plaj erişimi."},
-    "7": {"id": "7", "name": "Pine Valley Estate", "location": "Alsancak, Girne, Kuzey Kıbrıs", "monthly_price": 55000, "image": "villa7.png", "type": "rent", "guests": 6, "beds": 4, "baths": 2, "desc": "Çam ormanlarının içinde, temiz havası ve dağ manzarasıyla doğa tutkunları için müstakil ev."},
-    "8": {"id": "8", "name": "Golden Sands Penthouse", "location": "İskele, Long Beach, Kuzey Kıbrıs", "monthly_price": 13785600, "image": "villa9.png", "type": "sale", "guests": 10, "beds": 5, "baths": 3, "desc": "Ünlü Long Beach sahilinde, rezidans konforu ve 360 derece deniz manzaralı dev teras."},
-    "9": {"id": "9", "name": "Citrus Garden Villa", "location": "Lefke, Kuzey Kıbrıs", "monthly_price": 9850760, "image": "villa8.png", "type": "sale", "guests": 8, "beds": 6, "baths": 3, "desc": "Narenciye bahçeleri içerisinde, sakinlik arayanlar için ideal, modern rustik satılık villa."} 
+# --- STATİK PROPERTIES (Yorum Satırına Alındı) ---
+"""
+properties = {
+    "1": {
+        "id": "1", "name": "Villa Shiraz", "location": "Yeşilüzümlü, Fethiye", 
+        "price": 35083, "currency_symbol": "₺", "currency_code": "TRY",
+        "image": "villa.png", "type": "rent", "guests": 4, "beds": 6, "baths": 2, 
+        "desc": "Fethiye'nin doğasında, modern mimari ve huzurun buluştuğu lüks kiralık villa.",
+        "net_m2": 135, "gross_m2": 168, "open_m2": 30, "room_count": "3+1", "building_age": "10 ve üzeri", 
+        "heating": "Kalorifer", "dues": 4500, "is_site": "Evet", "site_name": "57. Havacılar Sitesi",
+        "is_credit": "Evet", "deed_status": "Kat İrtifaklı", "is_trade": "Evet"
+    },
+    "2": {
+        "id": "2", "name": "Sea House", "location": "Kaş, Antalya", 
+        "price": 1200, "currency_symbol": "$", "currency_code": "USD",
+        "image": "villa2.png", "type": "rent", "guests": 2, "beds": 2, "baths": 1, 
+        "desc": "Denize sıfır konumuyla Kaş'ın eşsiz turkuaz sularına açılan kiralık tatil evi.",
+        "net_m2": 135, "gross_m2": 168, "open_m2": 30, "room_count": "1+1", "building_age": "5", 
+        "heating": "Klima", "dues": 2000, "is_site": "Hayır", "site_name": "-",
+        "is_credit": "Evet", "deed_status": "Müstakil Tapu", "is_trade": "Hayır"
+    },
+    "3": {
+        "id": "3", "name": "Modern Villa", "location": "Bodrum, Muğla", 
+        "price": 12490000, "currency_symbol": "₺", "currency_code": "TRY",
+        "image": "villa3.png", "type": "sale", "guests": 8, "beds": 10, "baths": 5, 
+        "desc": "Bodrum'un en prestijli bölgesinde, ultra lüks detaylarla donatılmış satılık modern malikane.",
+        "net_m2": 450, "gross_m2": 550, "open_m2": 150, "room_count": "5+2", "building_age": "0 (Yeni)", 
+        "heating": "Yerden Isıtma", "dues": 7500, "is_site": "Evet", "site_name": "Bodrum Elite Life",
+        "is_credit": "Evet", "deed_status": "Kat Mülkiyeti", "is_trade": "Evet"
+    },
+    "4": {
+        "id": "4", "name": "Olive Grove Manor", "location": "Bellapais, Girne, Kuzey Kıbrıs", 
+        "price": 1500, "currency_symbol": "£", "currency_code": "GBP",
+        "image": "villa4.png", "type": "rent", "guests": 8, "beds": 4, "baths": 3, 
+        "desc": "Tarihi Bellapais Manastırı yakınında, zeytin ağaçları içinde huzur dolu, geleneksel taş mimari.",
+        "net_m2": 220, "gross_m2": 280, "open_m2": 100, "room_count": "4+1", "building_age": "15", 
+        "heating": "Şömine + Klima", "dues": 1500, "is_site": "Hayır", "site_name": "-",
+        "is_credit": "Hayır", "deed_status": "Eşdeğer Koçan", "is_trade": "Hayır"
+    },
+    "5": {
+        "id": "5", "name": "Sky Garden Loft", "location": "Girne, Merkez, Kuzey Kıbrıs", 
+        "price": 250000, "currency_symbol": "€", "currency_code": "EUR",
+        "image": "villa5.png", "type": "sale", "guests": 12, "beds": 9, "baths": 4, 
+        "desc": "Şehrin kalbinde, akıllı ev sistemi ve panoramik şehir manzaralı özel teras bahçesi.",
+        "net_m2": 320, "gross_m2": 380, "open_m2": 60, "room_count": "4+2", "building_age": "2", 
+        "heating": "Merkezi", "dues": 3000, "is_site": "Evet", "site_name": "Sky Loft Residence",
+        "is_credit": "Evet", "deed_status": "Türk Malı Koçan", "is_trade": "Evet"
+    },
+    "6": {
+        "id": "6", "name": "Azure Infinity Villa", "location": "Esentepe, Sahil Yolu, Kuzey Kıbrıs", 
+        "price": 45782, "currency_symbol": "₺", "currency_code": "TRY",
+        "image": "villa6.png", "type": "rent", "guests": 10, "beds": 5, "baths": 5, 
+        "desc": "Kesintisiz Akdeniz manzarasına açılan sonsuzluk havuzu ve özel plaj erişimi.",
+        "net_m2": 280, "gross_m2": 350, "open_m2": 200, "room_count": "5+1", "building_age": "3", 
+        "heating": "VRF Sistem", "dues": 5000, "is_site": "Evet", "site_name": "Azure Esentepe",
+        "is_credit": "Evet", "deed_status": "Eşdeğer Koçan", "is_trade": "Hayır"
+    },
+    "7": {
+        "id": "7", "name": "Pine Valley Estate", "location": "Alsancak, Girne, Kuzey Kıbrıs", 
+        "price": 55000, "currency_symbol": "₺", "currency_code": "TRY",
+        "image": "villa7.png", "type": "rent", "guests": 6, "beds": 4, "baths": 2, 
+        "desc": "Çam ormanlarının içinde, temiz havası ve dağ manzarasıyla doğa tutkunları için müstakil ev.",
+        "net_m2": 180, "gross_m2": 240, "open_m2": 500, "room_count": "3+1", "building_age": "8", 
+        "heating": "Klima", "dues": 500, "is_site": "Hayır", "site_name": "-",
+        "is_credit": "Evet", "deed_status": "Eşdeğer Koçan", "is_trade": "Evet"
+    },
+    "8": {
+        "id": "8", "name": "Golden Sands Penthouse", "location": "İskele, Long Beach, Kuzey Kıbrıs", 
+        "price": 350000, "currency_symbol": "£", "currency_code": "GBP",
+        "image": "villa9.png", "type": "sale", "guests": 10, "beds": 5, "baths": 3, 
+        "desc": "Ünlü Long Beach sahilinde, rezidans konforu ve 360 derece deniz manzaralı dev teras.",
+        "net_m2": 210, "gross_m2": 260, "open_m2": 90, "room_count": "3+2", "building_age": "1", 
+        "heating": "Yerden Isıtma", "dues": 3500, "is_site": "Evet", "site_name": "Long Beach Royal",
+        "is_credit": "Evet", "deed_status": "Kat İrtifaklı", "is_trade": "Evet"
+    },
+    "9": {
+        "id": "9", "name": "Citrus Garden Villa", "location": "Lefke, Kuzey Kıbrıs", 
+        "price": 9850760, "currency_symbol": "₺", "currency_code": "TRY",
+        "image": "villa8.png", "type": "sale", "guests": 8, "beds": 6, "baths": 3, 
+        "desc": "Narenciye bahçeleri içerisinde, sakinlik arayanlar için ideal, modern rustik satılık villa.",
+        "net_m2": 170, "gross_m2": 220, "open_m2": 1000, "room_count": "4+1", "building_age": "12", 
+        "heating": "Klima", "dues": 200, "is_site": "Hayır", "site_name": "-",
+        "is_credit": "Hayır", "deed_status": "Müstakil Koçan", "is_trade": "Evet"
+    } 
 }
+"""
 
-# --- STATİK KULLANICILAR (Yedek Olarak Duruyor) ---
-users = {
-    "efe@cypinvest.com": {
-        "password": hash_password("123"), "role": "admin", "first_name": "Kamil Efe", "last_name": "Aşkın", "phone": "+90 555 000 00 01", "gender": "male", "id_no": "10000000001"
-    },
-    "begench@cypinvest.com": {
-        "password": hash_password("456"), "role": "admin", "first_name": "Begench", "last_name": "Two", "phone": "+90 555 000 00 02", "gender": "male", "id_no": "10000000002"
-    },
-    "yahor@cypinvest.com": {
-        "password": hash_password("789"), "role": "admin", "first_name": "Yahor", "last_name": "Three", "phone": "+90 555 000 00 03", "gender": "male", "id_no": "10000000003"
-    },
-    "deniz@cypinvest.com": {
-        "password": hash_password("312"), "role": "admin", "first_name": "Deniz Özgül", "last_name": "Kızılbora", "phone": "+90 555 000 00 04", "gender": "male", "id_no": "10000000004"
-    },
-    "agent@test.com": {
-        "password": hash_password("123"), "role": "agent", "first_name": "Ahmet", "last_name": "Emlakçı", "phone": "+90 532 111 22 33", "gender": "male", "id_no": "99988877766", "iban": "TR12 0006 2000 0000 1234 5678 90", "company_name": "CypInvest Gayrimenkul"
-    },
-    "user@test.com": {
-        "password": hash_password("1234"), "role": "user", "first_name": "Mehmet", "last_name": "Müşteri", "phone": "+90 544 333 22 11", "gender": "", "email": "user@test.com"
-    }
-}
-
-# --- YENİ EKLENEN CANLI VERİTABANI FONKSİYONLARI ---
+# --- CANLI VERİTABANI: KULLANICI İŞLEMLERİ ---
 
 def get_user_from_db(email):
+    """E-posta adresiyle kullanıcıyı veritabanından bulur"""
     conn = get_db_connection()
-    if conn is None: # Eğer bağlantı kurulamazsa sessizce None dön
+    if not conn: return None
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+        return user
+    except Exception as e:
+        print(f"Kullanıcı çekme hatası: {e}")
         return None
-    
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("SELECT * FROM users WHERE email = %s", (email,))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
-    return user
 
-def get_villas_from_db():
-    """Veritabanındaki tüm villaları çeker"""
+def register_user_to_db(email, password, first_name, last_name, role="user"):
+    """Yeni kullanıcıyı Neon DB'ye kaydeder"""
     conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("SELECT * FROM villas")
-    all_villas = cur.fetchall()
-    cur.close()
-    conn.close()
-    return all_villas
+    if not conn: return False
+    try:
+        cur = conn.cursor()
+        hashed = hash_password(password)
+        query = """
+            INSERT INTO users (email, password, first_name, last_name, role) 
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cur.execute(query, (email, hashed, first_name, last_name, role))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Kayıt hatası: {e}")
+        return False
 
 def update_user_in_db(email, data: dict):
-    """Kullanıcı bilgilerini günceller"""
+    """Kullanıcı profilini günceller"""
     conn = get_db_connection()
-    cur = conn.cursor()
-    query = """
-        UPDATE users 
-        SET first_name = %s, last_name = %s, phone = %s, gender = %s
-        WHERE email = %s
-    """
-    cur.execute(query, (data['first_name'], data['last_name'], data['phone'], data.get('gender'), email))
-    conn.commit()
-    cur.close()
-    conn.close()
+    if not conn: return
+    try:
+        cur = conn.cursor()
+        query = """
+            UPDATE users 
+            SET first_name = %s, last_name = %s, phone = %s, gender = %s 
+            WHERE email = %s
+        """
+        cur.execute(query, (data['first_name'], data['last_name'], data.get('phone'), data.get('gender'), email))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"Güncelleme hatası: {e}")
+
+# --- CANLI VERİTABANI: MÜLK VE ÖZELLİK İŞLEMLERİ ---
+
+def get_properties_from_db():
+    """Tüm ilanları Neon DB'den çeker."""
+    conn = get_db_connection()
+    if not conn: return []
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT * FROM properties ORDER BY id DESC")
+        db_props = cur.fetchall()
+        cur.close()
+        conn.close()
+        return db_props if db_props else []
+    except Exception as e:
+        print(f"Mülk çekme hatası: {e}")
+        return []
+
+def get_property_images(property_id):
+    """Bir mülke ait tüm fotoğrafları getirir"""
+    conn = get_db_connection()
+    if not conn: return []
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT image_url FROM property_images WHERE property_id = %s", (property_id,))
+        images = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [img['image_url'] for img in images]
+    except Exception as e:
+        print(f"Fotoğraf çekme hatası: {e}")
+        return []
+
+def get_property_features(property_id):
+    """Bir mülke ait özellikleri getirir (Havuz, Otopark vb.)"""
+    conn = get_db_connection()
+    if not conn: return []
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        query = """
+            SELECT f.name FROM features f
+            JOIN property_features pf ON f.id = pf.feature_id
+            WHERE pf.property_id = %s
+        """
+        cur.execute(query, (property_id,))
+        features = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [f['name'] for f in features]
+    except Exception as e:
+        print(f"Özellik çekme hatası: {e}")
+        return []
+
+# --- UYGULAMA MANTIĞI: LOGIN VE OTURUM ---
+
+def login_user(email, password):
+    """Kullanıcıyı DB'den kontrol eder ve global oturumu başlatır"""
+    global current_user_email, current_user_role, current_user_data
+    
+    user = get_user_from_db(email)
+    if user and verify_password(password, user['password']):
+        current_user_email = user['email']
+        current_user_role = user['role']
+        current_user_data = dict(user)
+        return True
+    return False
+
+def logout_user():
+    """Oturumu sonlandırır"""
+    global current_user_email, current_user_role, current_user_data
+    current_user_email = None
+    current_user_role = "guest"
+    current_user_data = {}
