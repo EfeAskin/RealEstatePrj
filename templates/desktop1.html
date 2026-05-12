@@ -396,17 +396,46 @@
     function handleDateClick(y, m, d) {
         const clicked = new Date(y, m, d);
         if (clicked < today) return;
+
         if (!checkInDate || (checkInDate && checkOutDate)) {
-            checkInDate = clicked; checkOutDate = null;
+            checkInDate = clicked; 
+            checkOutDate = null;
             if(document.getElementById('checkin-val')) document.getElementById('checkin-val').innerText = clicked.toLocaleDateString();
             if(document.getElementById('checkout-val')) document.getElementById('checkout-val').innerText = "Choose Date";
             if(document.getElementById('final_check_in')) document.getElementById('final_check_in').value = clicked.toISOString().split('T')[0];
+            
+            // Tarih seçimi tamamlanmadığı için kutuyu gizle
+            if(document.getElementById('total-price-box')) document.getElementById('total-price-box').style.display = 'none';
+
         } else if (clicked > checkInDate) {
             checkOutDate = clicked;
             if(document.getElementById('checkout-val')) document.getElementById('checkout-val').innerText = clicked.toLocaleDateString();
             if(document.getElementById('final_check_out')) document.getElementById('final_check_out').value = clicked.toISOString().split('T')[0];
+            
             const diffDays = Math.ceil(Math.abs(checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
             if(document.getElementById('final_nights')) document.getElementById('final_nights').value = diffDays;
+
+            // --- HESAPLAMA VE GÖSTERİM MANTIĞI ---
+            const priceElement = document.getElementById('base-price-display');
+            const priceBox = document.getElementById('total-price-box');
+            
+            if (priceElement && priceBox) {
+                // Fiyattaki noktaları temizleyip sayıya çevir
+                const rawPrice = parseFloat(priceElement.innerText.replace(/\./g, '').replace(/,/g, '')) || 0;
+                const currency = "{{ property.currency_symbol if property.currency_symbol else '₺' }}";
+                
+                if (rawPrice > 0) {
+                    const dailyPrice = rawPrice / 30;
+                    const totalAmount = Math.round(diffDays * dailyPrice);
+                    
+                    // Binlik ayraçlı formatlama (Örn: 15.000)
+                    const formattedTotal = new Intl.NumberFormat('tr-TR').format(totalAmount);
+
+                    document.getElementById('nights-summary').innerText = `${diffDays} nights:`;
+                    document.getElementById('total-amount-display').innerText = `${formattedTotal} ${currency}`;
+                    priceBox.style.display = 'block'; // Kutuyu görünür yap
+                }
+            }
         }
         renderCalendar();
     }

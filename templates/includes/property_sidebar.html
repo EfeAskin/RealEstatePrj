@@ -1,11 +1,20 @@
 <div class="booking-widget">
     <div class="price-info">
-        {{ "{:,.0f}".format(property.monthly_price if property.monthly_price else 0).replace(',', '.') }} ₺ 
+        <span id="base-price-display">
+            {{ "{:,.0f}".format(property.monthly_price if property.monthly_price else 0).replace(',', '.') }}
+        </span> {{ property.currency_symbol if property.currency_symbol else '₺' }}
         {% if property.listing_type == "rent" %}
         <span style="font-weight:400; font-size:16px; color:var(--text-muted);">/ 30 nights</span>
         {% endif %}
     </div>
-    
+
+    {% if property.listing_type == "rent" %}
+    <div id="total-price-box" style="display: none; margin-top: -15px; margin-bottom: 20px; padding: 12px; background: #f0fff4; border: 1px dashed #27ae60; border-radius: 12px; text-align: center;">
+        <span id="nights-summary" style="font-size: 14px; color: #666; font-weight: 500;">0 nights:</span>
+        <span id="total-amount-display" style="font-size: 18px; color: #27ae60; font-weight: 800; margin-left: 5px;"></span>
+    </div>
+    {% endif %}
+
     {% if property.listing_type == "rent" %}
     <form action="/calculate-booking" method="POST" id="mainBookingForm">
         <input type="hidden" name="property_id" value="{{ property.id }}">

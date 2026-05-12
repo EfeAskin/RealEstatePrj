@@ -10,7 +10,8 @@
     </div>
     <div class="detail-item">
         <span class="detail-label">Property Type:</span>
-        <span>{{ (property.property_type | capitalize) if property.property_type else 'Villa' }}</span>
+        {# Veritabanındaki property_type kolonundan veri çekiliyor, yoksa varsayılan olarak 'Villa' yazıyor #}
+        <span>{{ property.property_type if property.property_type else 'Villa' }}</span>
     </div>
     <div class="detail-item">
         <span class="detail-label">Gross Area:</span>

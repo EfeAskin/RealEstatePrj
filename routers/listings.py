@@ -1,11 +1,19 @@
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import database as db
 import math
+import os
+import uuid
+from typing import List
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+# Fotoğrafların kaydedileceği klasör
+UPLOAD_DIR = "static/htmlfotos"
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
 
 # --- YARDIMCI FONKSİYONLAR ---
 
@@ -14,7 +22,6 @@ def format_currency(value):
     try:
         if value is None or value == "" or value == "None":
             return "0"
-        # Float'a çevirip kontrol et, 0 ise 0 döndür
         num = float(value)
         if num == 0:
             return "0"
@@ -35,66 +42,114 @@ def process_property_data(property_item):
     if not property_item:
         return None
         
-    # 'type' veya 'listing_type' kolonunu kontrol et
     raw_type = property_item.get("type") or property_item.get("listing_type", "rent")
     p_type = str(raw_type).lower()
     
-    # 1. ETİKET VE TÜR BELİRLEME (FOR RENT / FOR SALE)
-    # Veritabanı yapına göre fiyat sütunlarını eşliyoruz
     if p_type in ["sale", "satılık"]:
         property_item["display_type"] = "FOR SALE"
         property_item["is_sale"] = True
-        # Satılıklar için ana kaynak: price_normalized
         raw_price = property_item.get("price_normalized")
     else:
         property_item["display_type"] = "FOR RENT"
         property_item["is_sale"] = False
-        # Kiralıklar için ana kaynak: monthly_price
         raw_price = property_item.get("monthly_price")
         
-    # Eğer belirlenen sütunlar boş veya 0 ise genel 'price' sütununa bak
     if raw_price is None or str(raw_price) == "0" or raw_price == "":
         raw_price = property_item.get("price", 0)
 
-    # 2. FORMATLAMA
-    # Nihai fiyatı kontrol et, 0'dan büyükse formatla
     try:
         price_float = float(raw_price) if raw_price else 0
         if price_float > 0:
             property_item["formatted_price"] = format_currency(price_float)
         else:
-            property_item["formatted_price"] = None # HTML'de "Price on Request" basılması için
+            property_item["formatted_price"] = None 
     except:
         property_item["formatted_price"] = None
     
-    # Currency (Döviz) kontrolü
     curr_code = property_item.get("currency", "TRY")
     property_item["currency_symbol"] = get_currency_symbol(curr_code)
 
-    # Aidat (Dues) Formatlama (Yeni eklendi)
     if "dues" in property_item and property_item["dues"] not in [None, "N/A"]:
         property_item["formatted_dues"] = format_currency(property_item["dues"])
+    
+    # property_type kolonu db'den gelmişse capitalize ediyoruz
+    if "property_type" in property_item and property_item["property_type"]:
+        property_item["property_type"] = str(property_item["property_type"]).capitalize()
     
     return property_item
 
 # Jinja2 filtresi olarak kaydet
 templates.env.filters["currency"] = format_currency
 
+# --- YÜKLEME ENDPOINT'İ (Tekli Yükleme & Akıllı Kapak Fotoğrafı) ---
+
+@router.post("/upload-property-image/{property_id}")
+async def upload_property_image(property_id: int, file: UploadFile = File(...)):
+    """Seçilen fotoğrafı kaydeder, DB'ye bağlar ve gerekirse kapak fotoğrafı yapar."""
+    conn = db.get_db_connection()
+    if not conn:
+        return {"error": "DB Connection Error"}
+    
+    try:
+        cur = conn.cursor()
+        
+        # 1. Dosya işlemleri
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        
+        # Fiziksel kayıt
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        db_path = f"htmlfotos/{unique_filename}"
+        
+        # 2. Veritabanına (property_images tablosuna) kayıt
+        cur.execute(
+            "INSERT INTO property_images (property_id, image_url) VALUES (%s, %s)",
+            (property_id, db_path)
+        )
+        
+        # 3. OTOMATİK KAPAK FOTOĞRAFI KONTROLÜ
+        # properties tablosundaki mevcut 'image' değerini kontrol et
+        cur.execute("SELECT image FROM properties WHERE id = %s", (property_id,))
+        row = cur.fetchone()
+        
+        # Eğer ana resim yoksa veya varsayılan değerdeyse, bu yüklenen ilk resmi kapak yap
+        if not row or row[0] in [None, "", "villa.png", "default.jpg"]:
+            cur.execute(
+                "UPDATE properties SET image = %s WHERE id = %s",
+                (unique_filename, property_id)
+            )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return {
+            "status": "success", 
+            "message": "Fotoğraf başarıyla yüklendi",
+            "url": db_path
+        }
+        
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Upload hatası: {e}")
+        return {"error": str(e)}
+
+# --- MEVCUT ROUTERLAR ---
+
 @router.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
-    # Veritabanından verileri çek
     properties_from_db = db.get_properties_from_db()
-    
-    # Yedek mekanizması
     current_properties = {str(p['id']): p for p in properties_from_db} if properties_from_db else db.properties
     
-    # Popüler ilanlar listesi
     popular_ids = ["1", "3", "5", "6", "8", "9"]
     popular_properties = []
     
     for pid in popular_ids:
         if pid in current_properties:
-            # Orijinal veriyi bozmamak için kopya üzerinden işlem yapıyoruz
             item_copy = current_properties[pid].copy()
             processed = process_property_data(item_copy)
             popular_properties.append(processed)
@@ -107,21 +162,17 @@ async def home(request: Request):
 
 @router.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request, q: str = Query(None), page: int = Query(1, ge=1)):
-    # Verileri çek
     properties_from_db = db.get_properties_from_db()
     all_properties = properties_from_db if properties_from_db else list(db.properties.values())
     
-    # Arama (Query) filtresi
     if q:
         all_properties = [
             p for p in all_properties 
             if q.lower() in str(p.get('name', '')).lower() or q.lower() in str(p.get('location', '')).lower()
         ]
 
-    # Her bir ilanı işle (fiyat ve sembol formatı)
     processed_properties = [process_property_data(p.copy()) for p in all_properties]
     
-    # SAYFALAMA MANTIĞI
     items_per_page = 15
     total_items = len(processed_properties)
     total_pages = math.ceil(total_items / items_per_page) if total_items > 0 else 1
@@ -159,16 +210,16 @@ async def property_detail(request: Request, property_id: str):
     conn = db.get_db_connection()
     property_item = None
     property_features = []
+    property_images = []
 
     if conn:
         try:
             cur = conn.cursor(cursor_factory=db.RealDictCursor)
-            # Mülk bilgilerini çek
             cur.execute("SELECT * FROM properties WHERE id = %s", (property_id,))
             property_item = cur.fetchone()
             
             if property_item:
-                # Özellikleri (features) getir - junction table üzerinden isimleri çekiyoruz
+                # 1. Özellikleri çek
                 feature_query = """
                     SELECT f.name 
                     FROM features f
@@ -176,37 +227,43 @@ async def property_detail(request: Request, property_id: str):
                     WHERE pf.property_id = %s
                 """
                 cur.execute(feature_query, (property_id,))
-                rows = cur.fetchall()
-                # Özellik isimlerini listeye atıyoruz
-                property_features = [r['name'] for r in rows]
+                property_features = [r['name'] for r in cur.fetchall()]
+
+                # 2. Resimleri çek
+                cur.execute("SELECT image_url FROM property_images WHERE property_id = %s", (property_id,))
+                property_images = [r['image_url'] for r in cur.fetchall()]
             
             cur.close()
             conn.close()
         except Exception as e:
             print(f"Veri çekme hatası: {e}")
 
-    # Yedek mekanizması (DB'de yoksa statik dataya bak)
     if not property_item:
         property_item = db.properties.get(property_id)
         if property_item and not property_features:
-            # Statik veride özellik yoksa varsayılanlar
             property_features = ["Free WiFi", "Air Conditioning", "Parking"]
+        if property_item and not property_images:
+            property_images = [property_item.get("image", "villa.png")]
 
     if not property_item: 
         return RedirectResponse(url="/home")
 
-    # Veriyi işle (fiyat formatı, semboller vb.)
     property_item = process_property_data(property_item.copy())
 
-    # Güvenlik Kontrolleri (N/A değerler ve Dues kontrolü)
-    fields = ["room_count", "net_m2", "gross_m2", "dues"]
+    fields = ["room_count", "net_m2", "gross_m2", "dues", "property_type"]
     for field in fields:
         if property_item.get(field) is None:
-            property_item[field] = "N/A" if field == "room_count" else 0
+            if field == "room_count":
+                property_item[field] = "N/A"
+            elif field == "property_type":
+                property_item[field] = "Villa"
+            else:
+                property_item[field] = 0
         
     return templates.TemplateResponse(request, "desktop1.html", {
         "property": property_item,
-        "property_features": property_features, # HTML'de bu ismi kullanacağız
+        "property_features": property_features,
+        "property_images": property_images,
         "role": db.current_user_role, 
         "page_id": "search"
     })
