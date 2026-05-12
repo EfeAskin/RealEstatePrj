@@ -1,12 +1,21 @@
 import bcrypt
 import psycopg2
+import os
 from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+
+# .env dosyasındaki verileri (DATABASE_URL vb.) sisteme yükler
+load_dotenv()
 
 # --- VERİTABANI BAĞLANTI AYARLARI ---
-DATABASE_URL = "postgresql://neondb_owner:npg_C7r0GnhzokJv@ep-icy-lab-al1z6b9l-pooler.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+# Artık şifre kodun içinde değil, güvenli bir şekilde .env'den çekiliyor.
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     """Neon PostgreSQL veritabanına canlı bağlantı açar"""
+    if not DATABASE_URL:
+        print("CRITICAL: DATABASE_URL .env dosyasında bulunamadı!")
+        return None
     try:
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         return conn
