@@ -76,9 +76,8 @@ async def register(
             "role": role
         })
 
-    # Yeni kullanıcıyı veritabanına kaydet
-    # database.py içindeki register_user_to_db fonksiyonunu kullanıyoruz
-    success = db.register_user_to_db(
+    # 1. Yeni kullanıcıyı users tablosuna kaydet ve dönen ID'yi al
+    new_user_id = db.register_user_to_db(
         email=email,
         password=password,
         first_name=first_name,
@@ -86,15 +85,23 @@ async def register(
         role=role
     )
     
-    if success:
-        # Kayıt sonrası ek bilgileri (phone, company vb.) güncellemek için
-        # (Eğer veritabanı tablon bu sütunları içeriyorsa)
+    if new_user_id:
+        # 2. Kayıt sonrası ek bilgileri (phone, gender vb.) users tablosunda güncelle
         db.update_user_in_db(email, {
             "first_name": first_name,
             "last_name": last_name,
             "phone": phone,
             "gender": ""
         })
+
+        # 3. KRİTİK EKLEME: Eğer kullanıcı AGENT ise, agents tablosuna da kaydet
+        if role == "agent":
+            # PostgreSQL syntax'ına uygun olarak (%) kullanıyoruz ve ID'yi direkt bağlıyoruz
+            db.execute_query(
+                "INSERT INTO agents (id, agency_name, phone_number, is_verified) VALUES (%s, %s, %s, %s)",
+                (new_user_id, company_name if company_name else f"{first_name} Emlak", phone, False)
+            )
+
         return RedirectResponse(url=f"/login/{role}", status_code=status.HTTP_303_SEE_OTHER)
     else:
         return templates.TemplateResponse(request, f"{role}register.html", {

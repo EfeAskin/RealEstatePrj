@@ -1,6 +1,7 @@
 import bcrypt
 import psycopg2
 import os
+import time
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
@@ -21,6 +22,23 @@ def get_db_connection():
     except Exception as e:
         print(f"CRITICAL: Veritabanı bağlantı hatası: {e}")
         return None
+
+# --- GENEL SORGÜ ÇALIŞTIRICI ---
+def execute_query(query, params=None):
+    """Veritabanında INSERT, UPDATE, DELETE gibi işlemleri yapmak için genel yardımcı"""
+    conn = get_db_connection()
+    if not conn: return False
+    try:
+        cur = conn.cursor()
+        cur.execute(query, params)
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Sorgu yürütme hatası: {e}")
+        if conn: conn.rollback()
+        return False
 
 # --- ŞİFRELEME FONKSİYONLARI ---
 def hash_password(password: str):
@@ -43,7 +61,6 @@ current_user_role = "guest"
 current_user_data = {}
 
 # --- STATİK PROPERTIES (Hiçbir satırı silinmeden korunmuştur) ---
-
 properties = {
     "1": {
         "id": "1", "name": "Villa Shiraz", "location": "Yeşilüzümlü, Fethiye", 
@@ -58,7 +75,7 @@ properties = {
         "id": "2", "name": "Sea House", "location": "Kaş, Antalya", 
         "price": 1200, "currency_symbol": "$", "currency_code": "USD",
         "image": "villa2.png", "type": "rent", "guests": 2, "beds": 2, "baths": 1, 
-        "desc": "Denize sıfır konumuyla Kaş'ın eşsiz turkuaz sularına açılan kiralık tatil evi.",
+        "desc": "Denize siper konumuyla Kaş'ın eşsiz turkuaz sularına açılan kiralık tatil evi.",
         "net_m2": 135, "gross_m2": 168, "open_m2": 30, "room_count": "1+1", "building_age": "5", 
         "heating": "Klima", "dues": 2000, "is_site": "Hayır", "site_name": "-",
         "is_credit": "Evet", "deed_status": "Müstakil Tapu", "is_trade": "Hayır"
@@ -128,11 +145,8 @@ properties = {
     } 
 }
 
-
 # --- CANLI VERİTABANI: KULLANICI İŞLEMLERİ ---
-
 def get_user_from_db(email):
-    """E-posta adresiyle kullanıcıyı veritabanından bulur"""
     conn = get_db_connection()
     if not conn: return None
     try:
@@ -147,33 +161,32 @@ def get_user_from_db(email):
         return None
 
 def register_user_to_db(email, password, first_name, last_name, role="user"):
-    """Yeni kullanıcıyı Neon DB'ye kaydeder"""
+    """Yeni kullanıcıyı kaydeder ve oluşan ID'yi geri döndürür"""
     conn = get_db_connection()
-    if not conn: return False
+    if not conn: return None
     try:
         cur = conn.cursor()
         hashed = hash_password(password)
         query = """
             INSERT INTO users (email, password, first_name, last_name, role, profile_image) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
         """
-        # Kayıt anında varsayılan profil resmi atanıyor
         cur.execute(query, (email, hashed, first_name, last_name, role, 'default_user.png'))
+        new_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
         conn.close()
-        return True
+        return new_id
     except Exception as e:
         print(f"Kayıt hatası: {e}")
-        return False
+        if conn: conn.rollback()
+        return None
 
 def update_user_in_db(email, data: dict):
-    """Kullanıcı profilini (fotoğraf dahil) günceller"""
     conn = get_db_connection()
     if not conn: return
     try:
         cur = conn.cursor()
-        # Dinamik şifre güncelleme desteği için kontrol eklenmiştir
         if data.get('password'):
             query = """
                 UPDATE users 
@@ -181,13 +194,8 @@ def update_user_in_db(email, data: dict):
                 WHERE email = %s
             """
             cur.execute(query, (
-                data['first_name'], 
-                data['last_name'], 
-                data.get('phone'), 
-                data.get('gender'), 
-                data.get('profile_image', 'default_user.png'),
-                hash_password(data['password']),
-                email
+                data['first_name'], data['last_name'], data.get('phone'), data.get('gender'), 
+                data.get('profile_image', 'default_user.png'), hash_password(data['password']), email
             ))
         else:
             query = """
@@ -196,17 +204,14 @@ def update_user_in_db(email, data: dict):
                 WHERE email = %s
             """
             cur.execute(query, (
-                data['first_name'], 
-                data['last_name'], 
-                data.get('phone'), 
-                data.get('gender'), 
-                data.get('profile_image', 'default_user.png'), 
-                email
+                data['first_name'], data['last_name'], data.get('phone'), data.get('gender'), 
+                data.get('profile_image', 'default_user.png'), email
             ))
         
-        # Agent modundaysa Agent tablosundaki resmi de senkronize et
+        # Eğer kullanıcı bir agent ise agents tablosundaki image bilgisini de güncelle
         if current_user_role == 'agent':
-            cur.execute("UPDATE agents SET agent_image = %s WHERE id = (SELECT id FROM users WHERE email = %s)", (data.get('profile_image'), email))
+            cur.execute("UPDATE agents SET agent_image = %s WHERE id = (SELECT id FROM users WHERE email = %s)", 
+                        (data.get('profile_image'), email))
             
         conn.commit()
         cur.close()
@@ -215,9 +220,7 @@ def update_user_in_db(email, data: dict):
         print(f"Güncelleme hatası: {e}")
 
 # --- CANLI VERİTABANI: MÜLK VE ÖZELLİK İŞLEMLERİ ---
-
 def get_properties_from_db():
-    """Tüm ilanları Neon DB'den çeker."""
     conn = get_db_connection()
     if not conn: return []
     try:
@@ -231,8 +234,21 @@ def get_properties_from_db():
         print(f"Mülk çekme hatası: {e}")
         return []
 
+def get_all_features_from_db():
+    conn = get_db_connection()
+    if not conn: return []
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT id, name FROM features ORDER BY name ASC")
+        features = cur.fetchall()
+        cur.close()
+        conn.close()
+        return features
+    except Exception as e:
+        print(f"Özellik listesi çekme hatası: {e}")
+        return []
+
 def get_property_images(property_id):
-    """Bir mülke ait tüm fotoğrafları getirir"""
     conn = get_db_connection()
     if not conn: return []
     try:
@@ -247,7 +263,6 @@ def get_property_images(property_id):
         return []
 
 def get_property_features(property_id):
-    """Bir mülke ait özellikleri getirir (Havuz, Otopark vb.)"""
     conn = get_db_connection()
     if not conn: return []
     try:
@@ -268,8 +283,101 @@ def get_property_features(property_id):
 
 # --- AGENT (EMLAKÇI) İŞLEMLERİ ---
 
+def add_full_property_to_db(agent_id, data: dict, selected_features: list, image_urls: list):
+    """
+    NEON DB KOLONLARIYLA TAM SENKRONİZE EDİLMİŞ GELİŞMİŞ EKLEME FONKSİYONU
+    """
+    conn = get_db_connection()
+    if not conn: return False
+    try:
+        cur = conn.cursor()
+        
+        prop_query = """
+            INSERT INTO properties (
+                name, location, district, city, country, 
+                price_normalized, monthly_price, currency_code, listing_type, 
+                property_type, room_count, gross_m2, net_m2, building_age, 
+                heating, deed_status, dues, description, image, agent_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """
+        
+        price_val = data['price']
+        
+        cur.execute(prop_query, (
+            data['name'], data['location'], data.get('district'), data.get('city'), data.get('country'),
+            price_val, price_val, data.get('currency_code', 'TRY'), 
+            data.get('listing_type'), 
+            data.get('property_type'),
+            data.get('room_count'), 
+            data.get('gross_m2'), 
+            data.get('net_m2'), 
+            data.get('building_age'), 
+            data.get('heating'),
+            data.get('deed_status'), 
+            data.get('dues', 0), 
+            data.get('description'),
+            image_urls[0] if image_urls else 'placeholder.jpg', 
+            agent_id
+        ))
+        
+        property_id = cur.fetchone()[0]
+
+        # 2. Özelliklerin Kaydı
+        if selected_features:
+            for feature_id in selected_features:
+                cur.execute(
+                    "INSERT INTO property_features (property_id, feature_id) VALUES (%s, %s)",
+                    (property_id, int(feature_id))
+                )
+
+        # 3. Tüm Resimlerin Kaydı
+        if image_urls:
+            for i, url in enumerate(image_urls):
+                cur.execute(
+                    "INSERT INTO property_images (property_id, image_url, is_main) VALUES (%s, %s, %s)",
+                    (property_id, url, (i == 0))
+                )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Gelişmiş ilan ekleme hatası: {e}")
+        return False
+
+def add_new_property_to_db(agent_id, data: dict):
+    """BASİT FORM İÇİN GÜNCEL SORGUNUN NEON DB İLE UYUMU"""
+    conn = get_db_connection()
+    if not conn: return False
+    try:
+        cur = conn.cursor()
+        query = """
+            INSERT INTO properties (
+                name, location, district, city, country, 
+                price_normalized, monthly_price, listing_type, room_count, net_m2, 
+                description, image, agent_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cur.execute(query, (
+            data['name'], data['location'], data.get('district'), data.get('city'), data.get('country'),
+            data['price'], data['price'], 
+            data.get('type', 'sale'), 
+            str(data.get('beds', 0)), data.get('sqm', 0),
+            data.get('description', ''), data.get('image', 'placeholder.jpg'),
+            agent_id
+        ))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Basit ilan ekleme hatası: {e}")
+        return False
+
 def get_property_agent_info(property_id):
-    """İlan detay sayfasında o ilanın sahibini (Agent) getiren fonksiyon"""
     conn = get_db_connection()
     if not conn: return None
     try:
@@ -293,13 +401,10 @@ def get_property_agent_info(property_id):
         return None
 
 def get_agent_with_properties(agent_id):
-    """Belirli bir emlakçının profilini ve tüm ilanlarını getirir"""
     conn = get_db_connection()
     if not conn: return None, []
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # 1. Agent ve User bilgilerini birleştir
         agent_query = """
             SELECT u.id, (u.first_name || ' ' || u.last_name) as full_name, u.email, 
                    a.agency_name, a.phone_number, a.agent_image, a.is_verified, a.bio, a.joined_at,
@@ -310,17 +415,13 @@ def get_agent_with_properties(agent_id):
         """
         cur.execute(agent_query, (agent_id,))
         agent_info = cur.fetchone()
-        
         if not agent_info:
             cur.close()
             conn.close()
             return None, []
-            
-        # 2. Agent'ın sahip olduğu tüm ilanları çek
         props_query = "SELECT * FROM properties WHERE agent_id = %s ORDER BY id DESC"
         cur.execute(props_query, (agent_id,))
         properties_list = cur.fetchall()
-        
         cur.close()
         conn.close()
         return agent_info, properties_list
@@ -328,12 +429,8 @@ def get_agent_with_properties(agent_id):
         print(f"Agent portföyü çekme hatası: {e}")
         return None, []
 
-# --- UYGULAMA MANTIĞI: LOGIN VE OTURUM ---
-
 def login_user(email, password):
-    """Kullanıcıyı DB'den kontrol eder ve global oturumu başlatır"""
     global current_user_email, current_user_role, current_user_data
-    
     user = get_user_from_db(email)
     if user and verify_password(password, user['password']):
         current_user_email = user['email']
@@ -343,7 +440,6 @@ def login_user(email, password):
     return False
 
 def logout_user():
-    """Oturumu sonlandırır"""
     global current_user_email, current_user_role, current_user_data
     current_user_email = None
     current_user_role = "guest"

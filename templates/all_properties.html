@@ -1,4 +1,51 @@
 {% extends "profile_base.html" %}
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<div class="all-properties-container" style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
+        <div>
+            <h2 style="margin: 0; color: #1e293b;"><i class="fa-solid fa-shield-halved" style="color: #1BA7FF; margin-right: 12px;"></i>Tüm İlanlar (Yönetim Paneli)</h2>
+            <p style="color: #64748b; margin-top: 5px;">Sistemdeki tüm aktif ve pasif ilanları denetleyin.</p>
+        </div>
+        
+        <div style="display: flex; gap: 15px;">
+            <input type="text" placeholder="İlan ID veya Başlık Ara..." style="padding: 10px 20px; border-radius: 12px; border: 1px solid #e2e8f0; width: 250px;">
+            <button style="background: #1BA7FF; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 600; cursor: pointer;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px;">
+        {% for property in all_properties %}
+        <div class="prop-card admin-mode">
+            <div class="prop-img-container">
+                <img src="{{ url_for('static', path='property_photos/' + property.image) }}" alt="Property">
+                <div class="admin-action-bar">
+                    <button title="İlanı Sil" style="background: #fee2e2; color: #ef4444;"><i class="fa-solid fa-trash"></i></button>
+                    <button title="İlanı Düzenle" style="background: #e0f2fe; color: #0ea5e9;"><i class="fa-solid fa-pen"></i></button>
+                    <button title="İlanı Onayla/Kaldır" style="background: #f0fdf4; color: #22c55e;"><i class="fa-solid fa-check"></i></button>
+                </div>
+            </div>
+            <div class="prop-details">
+                <small style="color: #94a3b8; font-weight: 600;">Agent: {{ property.agent_name }}</small>
+                <h3 style="margin: 5px 0; font-size: 1.1rem;">{{ property.title }}</h3>
+                <span style="display: block; color: #FF7226; font-weight: 800; margin-bottom: 10px;">{{ property.price }} ₺</span>
+                <div class="prop-stats">
+                    <span><i class="fa-solid fa-eye"></i> {{ property.views }} İzlenme</span>
+                    <span>{{ property.created_at }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    /* Admin'e Özel Ek CSS */
+    .admin-action-bar { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 8px; }
+    .admin-action-bar button { width: 35px; height: 35px; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .admin-action-bar button:hover { transform: scale(1.1); }
+    
+    /* properties.html'deki diğer kart stillerini buraya da eklemelisin */
+</style>
 {% endblock %}

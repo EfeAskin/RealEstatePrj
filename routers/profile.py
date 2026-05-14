@@ -195,13 +195,20 @@ async def my_transactions(request: Request):
 
 @router.get("/properties", response_class=HTMLResponse)
 async def agent_properties(request: Request):
+    """Emlakçının kendi ilanlarını gördüğü sayfa"""
     user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
+    
+    # Emlakçının ID'sini al ve sadece ona ait ilanları getir
+    agent_id = user_data.get("id")
+    _, agent_props = db.get_agent_with_properties(agent_id)
+    
     return templates.TemplateResponse(request, "properties.html", {
         "role": db.current_user_role,
         "is_admin": get_admin_status(),
         "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
+        "properties": agent_props, # Veritabanından gelen ilanlar listeye eklendi
         "p_page": "properties"
     })
 
@@ -233,14 +240,20 @@ async def agent_payment_page(request: Request):
 
 @router.get("/all-properties", response_class=HTMLResponse)
 async def admin_all_properties(request: Request):
+    """Adminin tüm sistemdeki ilanları gördüğü sayfa"""
     user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
+    
+    # Tüm ilanları çek
+    all_props = db.get_properties_from_db()
+    
     return templates.TemplateResponse(request, "all_properties.html", {
         "role": db.current_user_role, 
         "is_admin": True, 
         "p_page": "all-properties",
         "first_name": user_data.get("first_name", ""), 
         "last_name": user_data.get("last_name", ""),
-        "profile_image": user_data.get("profile_image", "default_user.png")
+        "profile_image": user_data.get("profile_image", "default_user.png"),
+        "properties": all_props # Tüm ilanlar Admin paneline eklendi
     })
 
 @router.get("/users", response_class=HTMLResponse)

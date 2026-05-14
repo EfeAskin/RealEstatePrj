@@ -232,10 +232,10 @@
         {% for property in properties %}
         <div class="card" onclick="window.location.href='/property/{{ property.id }}'">
             <div style="position: relative;">
-                <img src="/static/htmlfotos/{{ property.image }}" alt="{{ property.name }}">
+                {# KRİTİK DÜZELTME: Yolun başına / eklendi. backend.py'deki mount ile tam uyumlu hale getirildi #}
+                <img src="/{{ property.image }}" alt="{{ property.name }}">
                 
                 <div style="position: absolute; top: 15px; right: 15px; z-index: 10;">
-                    {# LİSTİNGS.PY'DAN GELEN DİNAMİK ETİKET #}
                     {% if property.is_sale %}
                         <span class="badge-sale">{{ property.display_type }}</span>
                     {% else %}
@@ -249,14 +249,12 @@
                 
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                     <p style="color: var(--theme-color); font-weight: 800; font-size: 1.2rem; margin: 0;">
-                        {# LİSTİNGS.PY'DAN GELEN FORMATLI FİYAT #}
                         {% if property.formatted_price %}
                             {{ property.currency_symbol }} {{ property.formatted_price }}
                         {% else %}
                             Price on Request
                         {% endif %}
                     </p>
-                    {# KİRALIKSA /MONTH GÖSTER #}
                     {% if not property.is_sale %}
                         <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">/ month</span>
                     {% endif %}

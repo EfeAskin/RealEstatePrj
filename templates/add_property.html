@@ -1,0 +1,287 @@
+<div id="propertyModal" class="modal" onclick="checkClose(event)" style="display: none;">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        
+        <div class="modal-header">
+            <div class="header-title">
+                <i class="fas fa-plus-circle" style="color: #ff8c00;"></i>
+                <span>Yeni İlan Ekle</span>
+            </div>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+        </div>
+        
+        <form id="addPropertyForm" action="/add-property-full" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; height: 100%; margin: 0; overflow: hidden;">
+            
+            <div class="modal-body" id="modalBodyScroll">
+                
+                <div class="form-section">
+                    <label class="section-title">Temel Bilgiler</label>
+                    <div class="form-row multi-input" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group" style="flex: 2; min-width: 200px;">
+                            <span>İlan Başlığı</span>
+                            <input type="text" name="title" placeholder="Örn: Citrus Garden Villa" required>
+                        </div>
+                        <div class="input-group" style="flex: 1; min-width: 150px;">
+                            <span>Konum</span>
+                            <input type="text" name="location" placeholder="Örn: Lefke, North Cyprus" required>
+                        </div>
+                    </div>
+                    <div class="form-row multi-input" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                        <div class="input-group" style="flex: 1.5; min-width: 120px;">
+                            <span>Fiyat</span>
+                            <input type="number" name="price" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="input-group" style="flex: 0.5; min-width: 80px;">
+                            <span>Para Birimi</span>
+                            <select name="currency_code">
+                                <option value="TRY">₺ (TRY)</option>
+                                <option value="GBP">£ (GBP)</option>
+                                <option value="EUR">€ (EUR)</option>
+                                <option value="USD">$ (USD)</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="flex: 1; min-width: 100px;">
+                            <span>İlan Türü</span>
+                            <select name="listing_type">
+                                <option value="sale">Satılık</option>
+                                <option value="rent">Kiralık</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label class="section-title">Teknik Detaylar</label>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <span>Emlak Tipi</span>
+                            <select name="property_type">
+                                <optgroup label="Residential (Konut)">
+                                    <option value="Apartment">Apartment / Flat</option>
+                                    <option value="Studio">Studio Apartment (1+0)</option>
+                                    <option value="Penthouse">Penthouse</option>
+                                    <option value="Loft">Loft</option>
+                                    <option value="Duplex">Duplex / Triplex</option>
+                                    <option value="Villa" selected>Villa</option>
+                                    <option value="Townhouse">Townhouse</option>
+                                    <option value="Bungalow">Bungalow</option>
+                                    <option value="Gated Community">Gated Community House</option>
+                                </optgroup>
+                                <optgroup label="Commercial (Ticari)">
+                                    <option value="Office">Office</option>
+                                    <option value="Retail">Retail Shop</option>
+                                    <option value="Warehouse">Warehouse</option>
+                                    <option value="Hotel">Hotel / Resort</option>
+                                    <option value="Business Center">Business Center</option>
+                                </optgroup>
+                                <optgroup label="Land (Arsa / Arazi)">
+                                    <option value="Residential Land">Residential Land</option>
+                                    <option value="Commercial Land">Commercial Land</option>
+                                    <option value="Agricultural">Agricultural Land</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <span>Brüt Alan (m²)</span>
+                            <input type="number" name="gross_m2" placeholder="168">
+                        </div>
+                        <div class="input-group">
+                            <span>Net Alan (m²)</span>
+                            <input type="number" name="net_m2" placeholder="135">
+                        </div>
+                        <div class="input-group">
+                            <span>Bina Yaşı</span>
+                            <input type="text" name="building_age" placeholder="5-10 Years">
+                        </div>
+                        <div class="input-group">
+                            <span>Isıtma</span>
+                            <input type="text" name="heating" placeholder="Air Conditioning">
+                        </div>
+                        <div class="input-group">
+                            <span>Tapu Durumu (Deed)</span>
+                            <input type="text" name="deed_status" placeholder="Müstakil Tapu">
+                        </div>
+                        <div class="input-group">
+                            <span>Oda Sayısı</span>
+                            <input type="text" name="room_count" placeholder="3+1">
+                        </div>
+                        <div class="input-group">
+                            <span>Aidat (Maintenance)</span>
+                            <input type="number" name="dues" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row-flexible" style="display: flex; flex-wrap: wrap; gap: 20px;">
+                    <div class="form-section flex-1" style="flex: 1; min-width: 250px;">
+                        <label class="section-title">Özellikler (Features)</label>
+                        <div id="featuresContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 12px; min-height: 50px;">
+                            <span style="color: #ff8c00;">Özellikler yükleniyor...</span>
+                        </div>
+                    </div>
+
+                    <div class="form-section flex-1" style="flex: 1; min-width: 250px;">
+                        <label class="section-title">Fotoğraflar</label>
+                        <div class="upload-zone-compact" onclick="document.getElementById('propertyImages').click()">
+                            <i class="fas fa-images"></i>
+                            <span>Resim Ekle (Çoklu Seçim)</span>
+                            <input type="file" name="images" id="propertyImages" multiple accept="image/*" onchange="handleImagePreview(event)" style="display:none">
+                        </div>
+                        <div id="imagePreviewGrid" class="preview-grid-compact" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;"></div>
+                    </div>
+                </div>
+
+                <div class="form-section last-section" style="border-bottom: none; margin-bottom: 0;">
+                    <label class="section-title">İlan Açıklaması</label>
+                    <textarea name="description" rows="3" placeholder="İlan hakkında detaylı bilgi girin..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Vazgeç</button>
+                <button type="submit" class="btn-primary" id="submitBtn">İlanı Kaydet ve Yayınla</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(15, 23, 42, 0.8) !important; backdrop-filter: blur(8px) !important; display: none; align-items: center !important; justify-content: center !important; z-index: 9999999 !important; padding: 20px; box-sizing: border-box; }
+.modal-content { background: #fff !important; width: 100% !important; max-width: 850px !important; max-height: 90vh !important; border-radius: 20px !important; display: flex !important; flex-direction: column !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important; overflow: hidden !important; position: relative !important; animation: modalPopUp 0.3s ease-out; }
+@keyframes modalPopUp { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal-header { padding: 18px 25px !important; border-bottom: 1px solid #f1f5f9 !important; display: flex !important; justify-content: space-between !important; align-items: center !important; background: #fff !important; flex-shrink: 0 !important; }
+.modal-body { padding: 25px !important; overflow-y: auto !important; flex-grow: 1 !important; background: #fff !important; -webkit-overflow-scrolling: touch; }
+.modal-footer { padding: 15px 25px !important; border-top: 1px solid #f1f5f9 !important; display: flex !important; justify-content: flex-end !important; gap: 12px !important; background: #fff !important; flex-shrink: 0 !important; }
+.header-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; color: #1e293b; }
+.close-modal { font-size: 24px; cursor: pointer; color: #94a3b8; transition: 0.2s; }
+.close-modal:hover { color: #ef4444; }
+.form-section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9; }
+.section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #ff8c00; letter-spacing: 0.5px; margin-bottom: 15px; display: block; }
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; } 
+@media (min-width: 600px) { .form-grid { grid-template-columns: repeat(4, 1fr); } }
+.input-group span { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block; }
+input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #fff; transition: 0.2s; box-sizing: border-box; color: #1e293b; }
+input:focus { border-color: #ff8c00; outline: none; box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.1); }
+.upload-zone-compact { border: 2.5px dashed #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; color: #64748b; }
+.btn-primary { background: #ff8c00; color: #fff; border: none; padding: 12px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+.btn-primary:hover { background: #f97316; transform: translateY(-1px); }
+.btn-secondary { background: #f1f5f9; color: #475569; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; }
+.modal-body::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+</style>
+
+<script>
+// Sayfa açıldığında verileri hemen hazırla (Hızlandırıcı)
+document.addEventListener('DOMContentLoaded', fetchFeaturesData);
+
+async function fetchFeaturesData() {
+    const container = document.getElementById('featuresContainer');
+    if (!container) return;
+    
+    try {
+        const response = await fetch('/api/features?cache_buster=' + Date.now());
+        if (!response.ok) throw new Error('API hatası');
+        const features = await response.json();
+        
+        if (features && features.length > 0) {
+            container.innerHTML = features.map(f => `
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 2px;">
+                    <input type="checkbox" name="features" value="${f.id}" style="width: 14px; height: 14px; cursor: pointer; accent-color: #ff8c00;">
+                    <span style="color: #475569; font-size: 12px;">${f.name}</span>
+                </label>
+            `).join('');
+        } else {
+            container.innerHTML = '<span style="color: #94a3b8;">Hiç özellik bulunamadı.</span>';
+        }
+    } catch (err) {
+        console.error("Özellik yükleme hatası:", err);
+        container.innerHTML = '<span style="color: red;">Yükleme Hatası!</span>';
+    }
+}
+
+async function openModal() {
+    const modal = document.getElementById('propertyModal');
+    if (!modal) return;
+    
+    modal.style.setProperty('display', 'flex', 'important');
+    document.body.style.overflow = 'hidden'; 
+    
+    // Her ihtimale karşı verileri tekrar tazele
+    await fetchFeaturesData();
+}
+
+function closeModal() {
+    const modal = document.getElementById('propertyModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function checkClose(event) {
+    if (event.target.id === 'propertyModal') closeModal();
+}
+
+function handleImagePreview(event) {
+    const grid = document.getElementById('imagePreviewGrid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    const files = event.target.files;
+    
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '60px'; 
+            img.style.height = '60px'; 
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '8px'; 
+            img.style.border = '1px solid #e2e8f0';
+            wrapper.appendChild(img);
+            grid.appendChild(wrapper);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+document.getElementById('addPropertyForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = "Yükleniyor...";
+
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/add-property-full', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const result = await response.json();
+            if (result.status === 'success') {
+                window.location.href = result.redirect || "/profile/properties";
+            } else {
+                alert("Hata: " + (result.error || "İlan eklenemedi"));
+                btn.disabled = false;
+                btn.innerText = "İlanı Kaydet ve Yayınla";
+            }
+        } else {
+            if (response.ok) {
+                window.location.href = "/profile/properties";
+            } else {
+                throw new Error("Sunucu yanıt vermedi.");
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Hata: " + err.message);
+        btn.disabled = false;
+        btn.innerText = "İlanı Kaydet ve Yayınla";
+    }
+};
+</script>

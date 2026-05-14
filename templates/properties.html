@@ -1,4 +1,185 @@
 {% extends "profile_base.html" %}
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<div class="properties-container" style="padding: 10px; position: relative; min-height: 85vh; display: flex; flex-direction: column;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 5px;">
+        <div>
+            <h2 style="margin: 0; color: #1e293b; font-weight: 800; font-size: 1.6rem;">
+                <i class="fa-solid fa-house-chimney-user" style="margin-right: 12px; color: #FF7226;"></i>My Properties
+            </h2>
+            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">Toplam <b>{{ properties|length }}</b> ilanınız listeleniyor.</p>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button onclick="toggleModal()" style="display: flex; align-items: center; gap: 8px; background: #FF7226; color: white; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 114, 38, 0.2);">
+                <i class="fa-solid fa-plus"></i> <span>Yeni İlan Ekle</span>
+            </button>
+
+            <div style="display: flex; background: #f1f5f9; padding: 6px; border-radius: 14px; gap: 5px; border: 1px solid #e2e8f0;">
+                <button class="tab-btn active" onclick="switchTab('all', this)">All</button>
+                <button class="tab-btn" onclick="switchTab('rented', this)">Rented</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="propertiesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 25px; flex-grow: 1;">
+        {% for property in properties %}
+        <div class="property-card" data-status="{{ property.status }}" onclick="window.location.href='/property/{{ property.id }}'" style="cursor: pointer;">
+            <div class="card-image-wrap">
+                {# Resim yolu düzeltildi: static klasöründen doğru şekilde çekiliyor #}
+                <img src="{{ url_for('static', path='/' + (property.image if property.image else 'htmlfotos/placeholder.jpg')) }}" alt="Property">
+                
+                <span class="status-badge {{ 'rented' if property.status == 'rented' else 'available' }}" style="left: 15px;">
+                    {{ 'RENTED' if property.status == 'rented' else 'AVAILABLE' }}
+                </span>
+
+                <span class="type-badge" style="position: absolute; top: 15px; right: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; color: white; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(4px); z-index: 2;">
+                    {{ property.display_type }}
+                </span>
+                
+                <a href="/profile/edit-property/{{ property.id }}" class="edit-overlay-btn" onclick="event.stopPropagation();">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+            </div>
+
+            <div class="card-content">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <h3 style="margin: 0; font-size: 1.15rem; color: #1e293b; font-weight: 700; line-height: 1.3;">{{ property.title or property.name }}</h3>
+                    
+                    <span style="color: #FF7226; font-weight: 800; font-size: 1.1rem; white-space: nowrap; margin-left: 10px;">
+                        {% if property.formatted_price %}
+                            {{ property.formatted_price }} {{ property.currency_symbol }}
+                        {% else %}
+                            0 ₺
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 18px 0; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-location-dot" style="color: #94a3b8;"></i> {{ property.location }}
+                </p>
+                
+                <div class="card-footer">
+                    <div class="stat-item"><i class="fa-solid fa-bed"></i> <span>{{ property.beds or property.bed_count or '0' }} Beds</span></div>
+                    <div class="stat-item"><i class="fa-solid fa-bath"></i> <span>{{ property.baths or property.bath_count or '0' }} Bath</span></div>
+                    <div class="stat-item"><i class="fa-solid fa-ruler-combined"></i> <span>{{ property.net_m2 or '0' }} m²</span></div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 30px;">
+            <div style="background: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 10px 20px rgba(0,0,0,0.05);">
+                <i class="fa-solid fa-house-chimney-medical" style="font-size: 2rem; color: #cbd5e1;"></i>
+            </div>
+            <h3 style="color: #1e293b; margin-bottom: 10px;">Henüz bir ilanınız yok</h3>
+            <p style="color: #64748b; max-width: 300px; margin: 0 auto 25px auto;">Portföyünüzü oluşturmaya başlamak için hemen yeni bir ilan ekleyin.</p>
+            <button onclick="toggleModal()" style="display: inline-block; padding: 12px 25px; background: #FF7226; color: white; border: none; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.3s; cursor: pointer;">
+                İlk İlanı Oluştur
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-container" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 40px; padding: 20px 0;">
+        <a href="?page={{ current_page - 1 }}" class="pag-btn {{ 'disabled' if current_page == 1 }}" {% if current_page == 1 %}onclick="return false;"{% endif %}>
+            <i class="fa-solid fa-chevron-left"></i>
+        </a>
+        
+        {% for p in range(1, total_pages + 1) %}
+            <a href="?page={{ p }}" class="pag-btn {{ 'active' if p == current_page }}">
+                {{ p }}
+            </a>
+        {% endfor %}
+
+        <a href="?page={{ current_page + 1 }}" class="pag-btn {{ 'disabled' if current_page == total_pages }}" {% if current_page == total_pages %}onclick="return false;"{% endif %}>
+            <i class="fa-solid fa-chevron-right"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% include "add_property.html" %}
+
+<style>
+    /* Pagination Stilleri */
+    .pag-btn {
+        width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+        color: #64748b; text-decoration: none; font-weight: 700; transition: all 0.3s ease;
+    }
+    .pag-btn:hover:not(.disabled) { border-color: #FF7226; color: #FF7226; transform: translateY(-2px); }
+    .pag-btn.active { background: #FF7226; color: white; border-color: #FF7226; box-shadow: 0 4px 12px rgba(255, 114, 38, 0.3); }
+    .pag-btn.disabled { opacity: 0.4; cursor: not-allowed; background: #f8fafc; pointer-events: none; }
+
+    .tab-btn {
+        padding: 10px 25px; border: none; background: transparent;
+        color: #64748b; font-weight: 700; cursor: pointer; border-radius: 10px;
+        transition: all 0.3s ease; font-size: 0.9rem;
+    }
+    .tab-btn:hover { color: #1e293b; }
+    .tab-btn.active { background: white; color: #FF7226; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+    .property-card {
+        background: white; border-radius: 24px; overflow: hidden;
+        border: 1px solid #eef2f6; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        display: flex; flex-direction: column;
+    }
+    .property-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-color: #d1d5db; }
+
+    .card-image-wrap { position: relative; height: 210px; overflow: hidden; background: #f1f5f9; }
+    .card-image-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+    .property-card:hover .card-image-wrap img { transform: scale(1.1); }
+    
+    .status-badge {
+        position: absolute; top: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; 
+        font-weight: 800; color: white; letter-spacing: 0.5px; z-index: 2;
+    }
+    .status-badge.available { background: #1BA7FF; box-shadow: 0 4px 10px rgba(27, 167, 255, 0.3); }
+    .status-badge.rented { background: #FF7226; box-shadow: 0 4px 10px rgba(255, 114, 38, 0.3); }
+
+    .edit-overlay-btn {
+        position: absolute; top: 15px; right: 15px;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9); color: #1e293b;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 1.1rem;
+        opacity: 0; transform: translateY(-10px);
+        transition: all 0.3s ease; z-index: 5;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .property-card:hover .edit-overlay-btn { opacity: 1; transform: translateY(0); }
+    .edit-overlay-btn:hover { background: white; color: #FF7226; transform: scale(1.1) !important; }
+
+    .card-content { padding: 22px; flex-grow: 1; display: flex; flex-direction: column; }
+    .card-footer { display: flex; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 15px; margin-top: auto; }
+    .stat-item { display: flex; align-items: center; gap: 7px; color: #64748b; font-size: 0.85rem; font-weight: 600; }
+    .stat-item i { color: #cbd5e1; font-size: 1rem; }
+</style>
+
+<script>
+    function toggleModal() {
+        if (typeof openModal === "function") {
+            openModal();
+        } else {
+            const modal = document.getElementById('propertyModal');
+            if(modal) modal.style.display = 'flex';
+        }
+    }
+
+    function switchTab(type, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const cards = document.querySelectorAll('.property-card');
+        cards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            if (type === 'all') {
+                card.style.display = 'flex';
+            } else if (type === 'rented') {
+                card.style.display = (status === 'rented') ? 'flex' : 'none';
+            }
+        });
+    }
+</script>
 {% endblock %}
