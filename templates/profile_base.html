@@ -4,7 +4,7 @@
     {% if role == 'admin' %}
         <nav style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;">
             <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.location.href='/profile/personal-info'">
-                <img src="/static/htmlfotos/favicon.png" style="width: 50px; height: 50px;">
+                <img src="/static/htmlfotos/favicon.png" style="width: 50px; height: 50px;" alt="Favicon">
                 <div style="font-size: 1.8rem; font-weight: 800; display: flex; align-items: center;">
                     <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span>
                 </div>
@@ -133,25 +133,25 @@
                     </a>
 
                 {% elif role == 'admin' %}
-                    <a href="/profile/all-properties" class="p-nav-item {% if p_page == 'all-properties' %}active{% endif %}">
+                    <a href="/admin/all-properties" class="p-nav-item {% if p_page == 'all-properties' %}active{% endif %}">
                         <i class="fa-solid fa-building-user"></i> All Properties
                     </a>
-                    <a href="/profile/users" class="p-nav-item {% if p_page == 'users' %}active{% endif %}">
+                    <a href="/admin/users" class="p-nav-item {% if p_page == 'users' %}active{% endif %}">
                         <i class="fa-solid fa-users-gear"></i> Users
                     </a>
-                    <a href="/profile/approving" class="p-nav-item {% if p_page == 'approving' %}active{% endif %}">
+                    <a href="/admin/approving" class="p-nav-item {% if p_page == 'approving' %}active{% endif %}">
                         <i class="fa-solid fa-circle-check"></i> Approving
                     </a>
                     <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}">
                         <i class="fa-solid fa-inbox"></i> Messages
                     </a>
-                    <a href="/profile/dashboard" class="p-nav-item {% if p_page == 'dashboard' %}active{% endif %}">
+                    <a href="/admin/dashboard" class="p-nav-item {% if p_page == 'dashboard' %}active{% endif %}">
                         <i class="fa-solid fa-chart-line"></i> Dashboard
                     </a>
-                    <a href="/profile/system-logs" class="p-nav-item {% if p_page == 'system-logs' %}active{% endif %}">
+                    <a href="/admin/system-logs" class="p-nav-item {% if p_page == 'system-logs' %}active{% endif %}">
                         <i class="fa-solid fa-gears"></i> System Logs
                     </a>
-                    <a href="/profile/sales-logs" class="p-nav-item {% if p_page == 'sales-logs' %}active{% endif %}">
+                    <a href="/admin/sales-logs" class="p-nav-item {% if p_page == 'sales-logs' %}active{% endif %}">
                         <i class="fa-solid fa-list-ul"></i> Sales Logs
                     </a>        
                 {% endif %}
@@ -161,7 +161,7 @@
                 <a href="/logout" class="btn-bottom btn-logout">
                     <i class="fa-solid fa-right-from-bracket"></i> LOG OUT
                 </a>
-            {% else %}
+            {"active_page": "properties"}            {% else %}
                 <a href="/home" class="btn-bottom btn-back-main">
                     <i class="fa-solid fa-arrow-left"></i> BACK TO MAIN
                 </a>
@@ -182,9 +182,13 @@ function previewImage(event) {
     const reader = new FileReader();
     reader.onload = function(){
         const output = document.getElementById('profilePreview');
-        output.src = reader.result;
+        if (output) {
+            output.src = reader.result;
+        }
     };
-    reader.readAsDataURL(event.target.files[0]);
+    if (event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0]);
+    }
 }
 
 /* --- GÜNCELLENEN MODAL JAVASCRIPT --- */

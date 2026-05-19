@@ -1,51 +1,334 @@
 {% extends "profile_base.html" %}
 {% block profile_subcontent %}
-<div class="all-properties-container" style="padding: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
+<div class="all-properties-container" style="padding: 10px; position: relative; min-height: 85vh; display: flex; flex-direction: column;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
         <div>
-            <h2 style="margin: 0; color: #1e293b;"><i class="fa-solid fa-shield-halved" style="color: #1BA7FF; margin-right: 12px;"></i>Tüm İlanlar (Yönetim Paneli)</h2>
-            <p style="color: #64748b; margin-top: 5px;">Sistemdeki tüm aktif ve pasif ilanları denetleyin.</p>
+            <h2 style="margin: 0; color: #1e293b; font-weight: 800; font-size: 1.6rem;">
+                <i class="fa-solid fa-shield-halved" style="color: #1BA7FF; margin-right: 12px;"></i>Tüm İlanlar (Yönetim Paneli)
+            </h2>
+            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">
+                Sistemdeki tüm aktif ve pasif ilanları denetleyin. Toplam <b>{{ all_properties|length }}</b> ilan listeleniyor.
+            </p>
         </div>
         
-        <div style="display: flex; gap: 15px;">
-            <input type="text" placeholder="İlan ID veya Başlık Ara..." style="padding: 10px 20px; border-radius: 12px; border: 1px solid #e2e8f0; width: 250px;">
-            <button style="background: #1BA7FF; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 600; cursor: pointer;">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; gap: 5px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 4px 10px; align-items: center;">
+                <input type="text" id="adminSearchInput" placeholder="İlan ID veya Başlık Ara..." style="padding: 8px 10px; border: none; outline: none; width: 220px; font-size: 0.9rem;">
+                <button onclick="filterSearch()" style="background: #1BA7FF; color: white; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <div style="display: flex; background: #f1f5f9; padding: 6px; border-radius: 14px; gap: 5px; border: 1px solid #e2e8f0;">
+                <button class="tab-btn active" onclick="switchAdminTab('all', this)">All</button>
+                <button class="tab-btn" onclick="switchAdminTab('active', this)">Active</button>
+                <button class="tab-btn" onclick="switchAdminTab('passive', this)">Passive</button>
+            </div>
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px;">
+    <div id="propertiesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 25px; flex-grow: 1;">
         {% for property in all_properties %}
-        <div class="prop-card admin-mode">
-            <div class="prop-img-container">
-                <img src="{{ url_for('static', path='property_photos/' + property.image) }}" alt="Property">
-                <div class="admin-action-bar">
-                    <button title="İlanı Sil" style="background: #fee2e2; color: #ef4444;"><i class="fa-solid fa-trash"></i></button>
-                    <button title="İlanı Düzenle" style="background: #e0f2fe; color: #0ea5e9;"><i class="fa-solid fa-pen"></i></button>
-                    <button title="İlanı Onayla/Kaldır" style="background: #f0fdf4; color: #22c55e;"><i class="fa-solid fa-check"></i></button>
+        <div class="property-card admin-mode" data-status="{{ property.status if property.status else 'active' }}" data-id="{{ property.id }}" data-title="{{ property.title or property.name or '' }}" onclick="window.location.href='/property/{{ property.id }}'" style="cursor: pointer;">
+            <div class="card-image-wrap">
+                <img src="{{ url_for('static', path='/' + (property.image if property.image else 'htmlfotos/placeholder.jpg')) }}" alt="Property">
+                
+                <span class="status-badge {{ 'passive' if property.status == 'passive' else ('rented' if property.status == 'rented' else 'available') }}" style="left: 15px;">
+                    {{ 'PASSIVE' if property.status == 'passive' else ('RENTED' if property.status == 'rented' else 'AVAILABLE') }}
+                </span>
+
+                <span class="type-badge" style="position: absolute; top: 15px; right: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; color: white; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(4px); z-index: 2;">
+                    {{ property.display_type if property.display_type else (property.type if property.type else 'İLAN') }}
+                </span>
+                
+                <button type="button" class="delete-overlay-btn" title="İlanı Sil / Pasife Al" onclick="event.stopPropagation(); deleteAdminProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+
+                <button type="button" class="edit-overlay-btn" title="İlanı Düzenle" onclick="event.stopPropagation(); editAdminProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+
+                <button type="button" class="approve-overlay-btn" title="İlanı Onayla / Geri Getir" onclick="event.stopPropagation(); approveAdminProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
+                    <i class="fa-solid fa-square-check"></i>
+                </button>
+            </div>
+
+            <div class="card-content">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div style="max-width: 65%;">
+                        <small style="color: #94a3b8; font-weight: 700; font-size: 0.8rem; display: block; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <i class="fa-solid fa-user-tie" style="color: #1BA7FF; margin-right: 4px;"></i>Agent: {{ property.agent_name if property.agent_name else (property.owner_name if property.owner_name else 'Belirtilmedi') }}
+                        </small>
+                        <h3 class="line-clamp-2" style="margin: 0; font-size: 1.15rem; color: #1e293b; font-weight: 700; line-height: 1.3;">{{ property.title or property.name }}</h3>
+                    </div>
+                    
+                    <span style="color: #FF7226; font-weight: 800; font-size: 1.1rem; white-space: nowrap; margin-left: 10px;">
+                        {% if property.formatted_price %}
+                            {{ property.formatted_price }} {{ property.currency_symbol if property.currency_symbol else (property.currency if property.currency else '₺') }}
+                        {% else %}
+                            {{ property.price }} {{ property.currency_symbol if property.currency_symbol else (property.currency if property.currency else '₺') }}
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 18px 0; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-location-dot" style="color: #94a3b8;"></i> {{ property.location if property.location else 'Konum Belirtilmedi' }}
+                </p>
+                
+                <div class="card-footer">
+                    <div class="stat-item"><i class="fa-solid fa-eye"></i> <span>{{ property.views if property.views else '0' }} İzlenme</span></div>
+                    <div class="stat-item" style="margin-left: auto;"><i class="fa-solid fa-calendar-days"></i> <span>{{ property.created_at }}</span></div>
                 </div>
             </div>
-            <div class="prop-details">
-                <small style="color: #94a3b8; font-weight: 600;">Agent: {{ property.agent_name }}</small>
-                <h3 style="margin: 5px 0; font-size: 1.1rem;">{{ property.title }}</h3>
-                <span style="display: block; color: #FF7226; font-weight: 800; margin-bottom: 10px;">{{ property.price }} ₺</span>
-                <div class="prop-stats">
-                    <span><i class="fa-solid fa-eye"></i> {{ property.views }} İzlenme</span>
-                    <span>{{ property.created_at }}</span>
-                </div>
+        </div>
+        {% else %}
+        <div style="grid-column: 1/-1; text-align: center; padding: 80px 20px; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 30px;">
+            <div style="background: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 10px 20px rgba(0,0,0,0.05);">
+                <i class="fa-solid fa-folder-open" style="font-size: 2rem; color: #cbd5e1;"></i>
             </div>
+            <h3 style="color: #1e293b; margin-bottom: 10px;">Sistemde ilan bulunamadı</h3>
         </div>
         {% endfor %}
     </div>
 </div>
 
+{% include "add_property.html" %}
+
 <style>
-    /* Admin'e Özel Ek CSS */
-    .admin-action-bar { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 8px; }
-    .admin-action-bar button { width: 35px; height: 35px; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-    .admin-action-bar button:hover { transform: scale(1.1); }
+    /* Sarı uyarıyı yok eden standart kural yapısı */
+    .line-clamp-2 {
+        display: block; /* Fallback */
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .tab-btn {
+        padding: 10px 25px; border: none; background: transparent;
+        color: #64748b; font-weight: 700; cursor: pointer; border-radius: 10px;
+        transition: all 0.3s ease; font-size: 0.9rem;
+    }
+    .tab-btn:hover { color: #1e293b; }
+    .tab-btn.active { background: white; color: #1BA7FF; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+    .property-card {
+        background: white; border-radius: 24px; overflow: hidden;
+        border: 1px solid #eef2f6; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        display: flex; flex-direction: column;
+        position: relative;
+    }
+    .property-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-color: #d1d5db; }
+
+    .card-image-wrap { position: relative; height: 210px; overflow: hidden; background: #f1f5f9; }
+    .card-image-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+    .property-card:hover .card-image-wrap img { transform: scale(1.1); }
     
-    /* properties.html'deki diğer kart stillerini buraya da eklemelisin */
+    .status-badge {
+        position: absolute; top: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; 
+        font-weight: 800; color: white; letter-spacing: 0.5px; z-index: 2;
+    }
+    .status-badge.available { background: #22c55e; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
+    .status-badge.rented { background: #FF7226; box-shadow: 0 4px 10px rgba(255, 114, 38, 0.3); }
+    .status-badge.passive { background: #ef4444; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+
+    .edit-overlay-btn {
+        position: absolute; top: 15px; right: 65px;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9); color: #1e293b;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 1.1rem;
+        opacity: 0; transform: translateY(-10px);
+        transition: all 0.3s ease; z-index: 5;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .delete-overlay-btn {
+        position: absolute; top: 15px; right: 15px;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(254, 226, 226, 0.9); color: #dc2626;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 1.1rem;
+        opacity: 0; transform: translateY(-10px);
+        transition: all 0.3s ease; z-index: 5;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.15);
+    }
+
+    .approve-overlay-btn {
+        position: absolute; top: 15px; right: 115px;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(240, 253, 244, 0.9); color: #16a34a;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 1.1rem;
+        opacity: 0; transform: translateY(-10px);
+        transition: all 0.3s ease; z-index: 5;
+        box-shadow: 0 4px 15px rgba(22, 163, 74, 0.15);
+    }
+
+    .property-card:hover .edit-overlay-btn,
+    .property-card:hover .delete-overlay-btn,
+    .property-card:hover .approve-overlay-btn { opacity: 1; transform: translateY(0); }
+    
+    .edit-overlay-btn:hover { background: white; color: #1BA7FF; transform: scale(1.1) !important; }
+    .delete-overlay-btn:hover { background: #dc2626; color: white; transform: scale(1.1) !important; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }
+    .approve-overlay-btn:hover { background: #16a34a; color: white; transform: scale(1.1) !important; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4); }
+
+    .card-content { padding: 22px; flex-grow: 1; display: flex; flex-direction: column; }
+    .card-footer { display: flex; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 15px; margin-top: auto; }
+    .stat-item { display: flex; align-items: center; gap: 7px; color: #64748b; font-size: 0.85rem; font-weight: 600; }
+    .stat-item i { color: #cbd5e1; font-size: 1rem; }
 </style>
+
+<script>
+    let currentTabType = 'all';
+
+    function switchAdminTab(type, btn) {
+        currentTabType = type;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyCombinedFilter();
+    }
+
+    function filterSearch() {
+        applyCombinedFilter();
+    }
+
+    // 4. Hatanın Çözümü: Filtreleme algoritması düzeltildi (JS yumuşak gizleme/gösterme)
+    function applyCombinedFilter() {
+        const searchQuery = document.getElementById('adminSearchInput').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.property-card');
+
+        cards.forEach(card => {
+            const status = card.getAttribute('data-status').toLowerCase();
+            const title = card.getAttribute('data-title').toLowerCase();
+            const id = card.getAttribute('data-id').toLowerCase();
+
+            let matchTab = false;
+            if (currentTabType === 'all') {
+                matchTab = true; // All seçildiğinde veritabanındaki passive, active her şeyi gösterir
+            } else if (currentTabType === 'active') {
+                matchTab = (status !== 'passive');
+            } else if (currentTabType === 'passive') {
+                matchTab = (status === 'passive');
+            }
+
+            let matchSearch = true;
+            if (searchQuery !== '') {
+                matchSearch = title.includes(searchQuery) || id.includes(searchQuery);
+            }
+
+            if (matchTab && matchSearch) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    document.getElementById('adminSearchInput').addEventListener('input', filterSearch);
+
+    // 3. Hatanın Çözümü: Backend API'den veriyi alıp modalı dolu getiren fonksiyon
+    async function editAdminProperty(propertyId) {
+        try {
+            const response = await fetch(`/api/property/${propertyId}`);
+            if (!response.ok) {
+                // Alternatif API uç noktası testi
+                const altResponse = await fetch(`/property/api/${propertyId}`);
+                if (!altResponse.ok) {
+                    const adminAltResponse = await fetch(`/admin/property-api/${propertyId}`);
+                    if (!adminAltResponse.ok) throw new Error("İlan detayları backendden yüklenemedi.");
+                    var data = await adminAltResponse.json();
+                } else {
+                    var data = await altResponse.json();
+                }
+            } else {
+                var data = await response.json();
+            }
+            
+            // add_property.html içindeki formu bulup aksiyonu update'e çeviriyoruz
+            const form = document.getElementById('propertyForm');
+            if (form) {
+                form.action = `/api/property/update/${propertyId}`;
+                
+                // Form alanlarını doldurma (Veritabanındaki kolon isimlerine göre esnetildi)
+                if(form.querySelector('[name="title"]')) form.querySelector('[name="title"]').value = data.title || data.name || '';
+                if(form.querySelector('[name="name"]')) form.querySelector('[name="name"]').value = data.name || data.title || '';
+                if(form.querySelector('[name="location"]')) form.querySelector('[name="location"]').value = data.location || '';
+                if(form.querySelector('[name="price"]')) form.querySelector('[name="price"]').value = data.price || 0;
+                if(form.querySelector('[name="description"]')) form.querySelector('[name="description"]').value = data.description || '';
+                if(form.querySelector('[name="status"]')) form.querySelector('[name="status"]').value = data.status || 'active';
+                if(form.querySelector('[name="currency"]')) form.querySelector('[name="currency"]').value = data.currency || 'EUR';
+                
+                // Gizli id inputu ekleme/güncelleme
+                let idInput = form.querySelector('input[name="property_id"]');
+                if (!idInput) {
+                    idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'property_id';
+                    form.appendChild(idInput);
+                }
+                idInput.value = propertyId;
+            }
+            
+            // Modaları görünür kılma fonksiyonunu tetikleme
+            if (typeof openModal === "function") {
+                openModal();
+            } else {
+                const modal = document.getElementById('propertyModal');
+                if(modal) modal.style.display = 'flex';
+            }
+        } catch (error) {
+            console.error("Hata:", error);
+            alert("İlan verileri alınırken bir hata oluştu. Modal açılamadı.");
+        }
+    }
+
+    async function deleteAdminProperty(propertyId) {
+        if (confirm("Bu ilanı pasif konuma getirmek (silmek) istediğinize emin misiniz?")) {
+            try {
+                const response = await fetch(`/admin/delete-property/${propertyId}`, {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    alert("İlan başarıyla pasif duruma getirildi.");
+                    window.location.reload();
+                } else {
+                    alert("İlan durumu güncellenemedi.");
+                }
+            } catch (error) {
+                console.error("Hata:", error);
+                alert("Bağlantı hatası.");
+            }
+        }
+    }
+
+    async function approveAdminProperty(propertyId) {
+        if (confirm("Bu ilanı tekrar aktif hale getirmek istiyor musunuz?")) {
+            try {
+                const response = await fetch(`/admin/update-property/${propertyId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ 'status': 'active' })
+                });
+                if (response.ok) {
+                    alert("İlan başarıyla aktif hale getirildi.");
+                    window.location.reload();
+                } else {
+                    alert("İlan durumu güncellenemedi.");
+                }
+            } catch (error) {
+                console.error("Hata:", error);
+                alert("Bağlantı hatası.");
+            }
+        }
+    }
+
+    // İlk yüklemede filtreyi çalıştır
+    document.addEventListener("DOMContentLoaded", function() {
+        applyCombinedFilter();
+    });
+</script>
 {% endblock %}

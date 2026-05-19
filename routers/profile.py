@@ -208,7 +208,7 @@ async def agent_properties(request: Request):
         "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
-        "properties": agent_props, # Veritabanından gelen ilanlar listeye eklendi
+        "properties": agent_props,
         "p_page": "properties"
     })
 
@@ -236,85 +236,21 @@ async def agent_payment_page(request: Request):
         "p_page": "payment"
     })
 
-# --- ADMIN ROTALARI ---
+# --- DİNAMİK İLAN SİLME / KALDIRMA API ENDPOINT ---
 
-@router.get("/all-properties", response_class=HTMLResponse)
-async def admin_all_properties(request: Request):
-    """Adminin tüm sistemdeki ilanları gördüğü sayfa"""
-    user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
-    
-    # Tüm ilanları çek
-    all_props = db.get_properties_from_db()
-    
-    return templates.TemplateResponse(request, "all_properties.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
-        "p_page": "all-properties",
-        "first_name": user_data.get("first_name", ""), 
-        "last_name": user_data.get("last_name", ""),
-        "profile_image": user_data.get("profile_image", "default_user.png"),
-        "properties": all_props # Tüm ilanlar Admin paneline eklendi
-    })
-
-@router.get("/users", response_class=HTMLResponse)
-async def admin_users(request: Request):
-    user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
-    return templates.TemplateResponse(request, "users.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
-        "p_page": "users",
-        "first_name": user_data.get("first_name", ""), 
-        "last_name": user_data.get("last_name", ""),
-        "profile_image": user_data.get("profile_image", "default_user.png")
-    })
-
-@router.get("/approving", response_class=HTMLResponse)
-async def admin_approving(request: Request):
-    user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
-    return templates.TemplateResponse(request, "approving.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
-        "p_page": "approving",
-        "first_name": user_data.get("first_name", ""), 
-        "last_name": user_data.get("last_name", ""),
-        "profile_image": user_data.get("profile_image", "default_user.png")
-    })
-
-@router.get("/dashboard", response_class=HTMLResponse)
-async def admin_dashboard(request: Request):
-    user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
-    return templates.TemplateResponse(request, "dashboard.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
-        "p_page": "dashboard",
-        "first_name": user_data.get("first_name", ""), 
-        "last_name": user_data.get("last_name", ""),
-        "profile_image": user_data.get("profile_image", "default_user.png")
-    })
-
-@router.get("/system-logs", response_class=HTMLResponse)
-async def admin_system_logs(request: Request):
-    user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
-    return templates.TemplateResponse(request, "system_logs.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
-        "p_page": "system-logs",
-        "first_name": user_data.get("first_name", ""), 
-        "last_name": user_data.get("last_name", ""),
-        "profile_image": user_data.get("profile_image", "default_user.png")
-    })
-
-@router.get("/sales-logs", response_class=HTMLResponse)
-async def admin_sales_logs(request: Request):
-    user_data = db.get_user_from_db(db.current_user_email) or db.current_user_data
-    return templates.TemplateResponse(request, "sales_logs.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
-        "p_page": "sales-logs",
-        "first_name": user_data.get("first_name", ""), 
-        "last_name": user_data.get("last_name", ""),
-        "profile_image": user_data.get("profile_image", "default_user.png")
-    })
+@router.delete("/api/property/delete/{property_id}")
+async def delete_property(property_id: int):
+    """properties.html üzerinden tetiklenen dinamik ilan silme işleyicisi"""
+    try:
+        # database.py içindeki silme lojiğini çalıştır
+        success = db.delete_property_from_db(property_id)
+        if success:
+            return {"status": "success", "message": "İlan başarıyla kaldırıldı."}
+        else:
+            return {"status": "error", "message": "İlan bulunamadı veya silinemedi."}
+    except Exception as e:
+        print(f"İlan silme hatası: {e}")
+        return {"status": "error", "message": str(e)}
 
 # --- HESAPLAMA ---
 

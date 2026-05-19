@@ -5,442 +5,129 @@ import time
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
-# .env dosyasındaki verileri (DATABASE_URL vb.) sisteme yükler
-load_dotenv()
+# Yeni oluşturduğumuz db paketindeki tüm fonksiyonları ve değişkenleri içeri aktarıyoruz
+from db.connection import (
+    get_db_connection, execute_query, hash_password, verify_password,
+    current_user_email, current_user_role, current_user_data
+)
+from db.auth_user import (
+    get_user_from_db, register_user_to_db, update_user_in_db, get_all_users_from_db,
+    login_user, logout_user
+)
+from db.properties import (
+    properties, get_properties_from_db, get_property_by_id, update_property_in_db,
+    delete_property_from_db, get_all_features_from_db, get_property_images,
+    get_property_features, add_full_property_to_db, add_new_property_to_db,
+    get_property_agent_info, get_agent_with_properties
+)
+from db.db_admin import (
+    get_pending_approvals_from_db, get_system_logs_from_db, get_sales_logs_from_db,
+    get_all_properties_with_agents_from_db as get_all_properties_fixed # db_admin'deki hatasız fonksiyonu import ediyoruz
+)
 
-# --- VERİTABANI BAĞLANTI AYARLARI ---
-DATABASE_URL = os.getenv("DATABASE_URL")
+# --- KÖPRÜ (PROXY) EKLEMELERİ VE ESNEK FONKSİYON EŞLEŞTİRMELERİ ---
+# backend.py ve db/admin.py içerisindeki alternatif fonksiyon çağrılarının 
+# doğrudan bu dosya üzerinden kırılmadan çalışabilmesi için takma isimler (alias) tanımlandı.
 
-def get_db_connection():
-    """Neon PostgreSQL veritabanına canlı bağlantı açar"""
-    if not DATABASE_URL:
-        print("CRITICAL: DATABASE_URL .env dosyasında bulunamadı!")
-        return None
+def get_property_by_id_from_db(property_id):
+    """
+    Neon DB veri tipi uyuşmazlığından kaynaklanan 500 hatasını önlemek 
+    und modal formunu doldurabilmek amacıyla yazılmış güvenli tekil ilan çekme fonksiyonu.
+    PÜRÜZ ÇÖZÜCÜ: İlişkili tablolardaki features ve çoklu resimleri de pakete dahil eder.
+    """
     try:
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-        return conn
-    except Exception as e:
-        print(f"CRITICAL: Veritabanı bağlantı hatası: {e}")
-        return None
-
-# --- GENEL SORGÜ ÇALIŞTIRICI ---
-def execute_query(query, params=None):
-    """Veritabanında INSERT, UPDATE, DELETE gibi işlemleri yapmak için genel yardımcı"""
-    conn = get_db_connection()
-    if not conn: return False
-    try:
-        cur = conn.cursor()
-        cur.execute(query, params)
-        conn.commit()
-        cur.close()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Sorgu yürütme hatası: {e}")
-        if conn: conn.rollback()
-        return False
-
-# --- ŞİFRELEME FONKSİYONLARI ---
-def hash_password(password: str):
-    pwd_bytes = password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(pwd_bytes, salt)
-    return hashed.decode('utf-8')
-
-def verify_password(plain_password, hashed_password):
-    try:
-        password_byte = plain_password.encode('utf-8')
-        hashed_byte = hashed_password.encode('utf-8')
-        return bcrypt.checkpw(password_byte, hashed_byte)
-    except Exception:
-        return False
-
-# --- GLOBAL TAKİP DEĞİŞKENLERİ ---
-current_user_email = None
-current_user_role = "guest"
-current_user_data = {}
-
-# --- STATİK PROPERTIES (Hiçbir satırı silinmeden korunmuştur) ---
-properties = {
-    "1": {
-        "id": "1", "name": "Villa Shiraz", "location": "Yeşilüzümlü, Fethiye", 
-        "price": 35083, "currency_symbol": "₺", "currency_code": "TRY",
-        "image": "villa.png", "type": "rent", "guests": 4, "beds": 6, "baths": 2, 
-        "desc": "Fethiye'nin doğasında, modern mimari ve huzurun buluştuğu lüks kiralık villa.",
-        "net_m2": 135, "gross_m2": 168, "open_m2": 30, "room_count": "3+1", "building_age": "10 ve üzeri", 
-        "heating": "Kalorifer", "dues": 4500, "is_site": "Evet", "site_name": "57. Havacılar Sitesi",
-        "is_credit": "Evet", "deed_status": "Kat İrtifaklı", "is_trade": "Evet"
-    },
-    "2": {
-        "id": "2", "name": "Sea House", "location": "Kaş, Antalya", 
-        "price": 1200, "currency_symbol": "$", "currency_code": "USD",
-        "image": "villa2.png", "type": "rent", "guests": 2, "beds": 2, "baths": 1, 
-        "desc": "Denize siper konumuyla Kaş'ın eşsiz turkuaz sularına açılan kiralık tatil evi.",
-        "net_m2": 135, "gross_m2": 168, "open_m2": 30, "room_count": "1+1", "building_age": "5", 
-        "heating": "Klima", "dues": 2000, "is_site": "Hayır", "site_name": "-",
-        "is_credit": "Evet", "deed_status": "Müstakil Tapu", "is_trade": "Hayır"
-    },
-    "3": {
-        "id": "3", "name": "Modern Villa", "location": "Bodrum, Muğla", 
-        "price": 12490000, "currency_symbol": "₺", "currency_code": "TRY",
-        "image": "villa3.png", "type": "sale", "guests": 8, "beds": 10, "baths": 5, 
-        "desc": "Bodrum'un en prestijli bölgesinde, ultra lüks detaylarla donatılmış satılık modern malikane.",
-        "net_m2": 450, "gross_m2": 550, "open_m2": 150, "room_count": "5+2", "building_age": "0 (Yeni)", 
-        "heating": "Yerden Isıtma", "dues": 7500, "is_site": "Evet", "site_name": "Bodrum Elite Life",
-        "is_credit": "Evet", "deed_status": "Kat Mülkiyeti", "is_trade": "Evet"
-    },
-    "4": {
-        "id": "4", "name": "Olive Grove Manor", "location": "Bellapais, Girne, Kuzey Kıbrıs", 
-        "price": 1500, "currency_symbol": "£", "currency_code": "GBP",
-        "image": "villa4.png", "type": "rent", "guests": 8, "beds": 4, "baths": 3, 
-        "desc": "Tarihi Bellapais Manastırı yakınında, zeytin ağaçları içinde huzur dolu, geleneksel taş mimari.",
-        "net_m2": 220, "gross_m2": 280, "open_m2": 100, "room_count": "4+1", "building_age": "15", 
-        "heating": "Şömine + Klima", "dues": 1500, "is_site": "Hayır", "site_name": "-",
-        "is_credit": "Hayır", "deed_status": "Eşdeğer Koçan", "is_trade": "Hayır"
-    },
-    "5": {
-        "id": "5", "name": "Sky Garden Loft", "location": "Girne, Merkez, Kuzey Kıbrıs", 
-        "price": 250000, "currency_symbol": "€", "currency_code": "EUR",
-        "image": "villa5.png", "type": "sale", "guests": 12, "beds": 9, "baths": 4, 
-        "desc": "Şehrin kalbinde, akıllı ev sistemi ve panoramik şehir manzaralı özel teras bahçesi.",
-        "net_m2": 320, "gross_m2": 380, "open_m2": 60, "room_count": "4+2", "building_age": "2", 
-        "heating": "Merkezi", "dues": 3000, "is_site": "Evet", "site_name": "Sky Loft Residence",
-        "is_credit": "Evet", "deed_status": "Türk Malı Koçan", "is_trade": "Evet"
-    },
-    "6": {
-        "id": "6", "name": "Azure Infinity Villa", "location": "Esentepe, Sahil Yolu, Kuzey Kıbrıs", 
-        "price": 45782, "currency_symbol": "₺", "currency_code": "TRY",
-        "image": "villa6.png", "type": "rent", "guests": 10, "beds": 5, "baths": 5, 
-        "desc": "Kesintisiz Akdeniz manzarasına açılan sonsuzluk havuzu ve özel plaj erişimi.",
-        "net_m2": 280, "gross_m2": 350, "open_m2": 200, "room_count": "5+1", "building_age": "3", 
-        "heating": "VRF Sistem", "dues": 5000, "is_site": "Evet", "site_name": "Azure Esentepe",
-        "is_credit": "Evet", "deed_status": "Eşdeğer Koçan", "is_trade": "Hayır"
-    },
-    "7": {
-        "id": "7", "name": "Pine Valley Estate", "location": "Alsancak, Girne, Kuzey Kıbrıs", 
-        "price": 55000, "currency_symbol": "₺", "currency_code": "TRY",
-        "image": "villa7.png", "type": "rent", "guests": 6, "beds": 4, "baths": 2, 
-        "desc": "Çam ormanlarının içinde, temiz havası ve dağ manzarasıyla doğa tutkunları için müstakil ev.",
-        "net_m2": 180, "gross_m2": 240, "open_m2": 500, "room_count": "3+1", "building_age": "8", 
-        "heating": "Klima", "dues": 500, "is_site": "Hayır", "site_name": "-",
-        "is_credit": "Evet", "deed_status": "Eşdeğer Koçan", "is_trade": "Evet"
-    },
-    "8": {
-        "id": "8", "name": "Golden Sands Penthouse", "location": "İskele, Long Beach, Kuzey Kıbrıs", 
-        "price": 350000, "currency_symbol": "£", "currency_code": "GBP",
-        "image": "villa9.png", "type": "sale", "guests": 10, "beds": 5, "baths": 3, 
-        "desc": "Ünlü Long Beach sahilinde, rezidans konforu ve 360 derece deniz manzaralı dev teras.",
-        "net_m2": 210, "gross_m2": 260, "open_m2": 90, "room_count": "3+2", "building_age": "1", 
-        "heating": "Yerden Isıtma", "dues": 3500, "is_site": "Evet", "site_name": "Long Beach Royal",
-        "is_credit": "Evet", "deed_status": "Kat İrtifaklı", "is_trade": "Evet"
-    },
-    "9": {
-        "id": "9", "name": "Citrus Garden Villa", "location": "Lefke, Kuzey Kıbrıs", 
-        "price": 9850760, "currency_symbol": "₺", "currency_code": "TRY",
-        "image": "villa8.png", "type": "sale", "guests": 8, "beds": 6, "baths": 3, 
-        "desc": "Narenciye bahçeleri içerisinde, sakinlik arayanlar için ideal, modern rustik satılık villa.",
-        "net_m2": 170, "gross_m2": 220, "open_m2": 1000, "room_count": "4+1", "building_age": "12", 
-        "heating": "Klima", "dues": 200, "is_site": "Hayır", "site_name": "-",
-        "is_credit": "Hayır", "deed_status": "Müstakil Koçan", "is_trade": "Evet"
-    } 
-}
-
-# --- CANLI VERİTABANI: KULLANICI İŞLEMLERİ ---
-def get_user_from_db(email):
-    conn = get_db_connection()
-    if not conn: return None
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT * FROM users WHERE email = %s", (email,))
-        user = cur.fetchone()
-        cur.close()
-        conn.close()
-        return user
-    except Exception as e:
-        print(f"Kullanıcı çekme hatası: {e}")
-        return None
-
-def register_user_to_db(email, password, first_name, last_name, role="user"):
-    """Yeni kullanıcıyı kaydeder ve oluşan ID'yi geri döndürür"""
-    conn = get_db_connection()
-    if not conn: return None
-    try:
-        cur = conn.cursor()
-        hashed = hash_password(password)
-        query = """
-            INSERT INTO users (email, password, first_name, last_name, role, profile_image) 
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
-        """
-        cur.execute(query, (email, hashed, first_name, last_name, role, 'default_user.png'))
-        new_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        conn.close()
-        return new_id
-    except Exception as e:
-        print(f"Kayıt hatası: {e}")
-        if conn: conn.rollback()
-        return None
-
-def update_user_in_db(email, data: dict):
-    conn = get_db_connection()
-    if not conn: return
-    try:
-        cur = conn.cursor()
-        if data.get('password'):
-            query = """
-                UPDATE users 
-                SET first_name = %s, last_name = %s, phone = %s, gender = %s, profile_image = %s, password = %s
-                WHERE email = %s
-            """
-            cur.execute(query, (
-                data['first_name'], data['last_name'], data.get('phone'), data.get('gender'), 
-                data.get('profile_image', 'default_user.png'), hash_password(data['password']), email
-            ))
-        else:
-            query = """
-                UPDATE users 
-                SET first_name = %s, last_name = %s, phone = %s, gender = %s, profile_image = %s
-                WHERE email = %s
-            """
-            cur.execute(query, (
-                data['first_name'], data['last_name'], data.get('phone'), data.get('gender'), 
-                data.get('profile_image', 'default_user.png'), email
-            ))
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        # Gelen string ID değerini veritabanı tipi olan integer'a güvenle dönüştürüyoruz
+        clean_id = int(property_id)
+        query = "SELECT * FROM properties WHERE id = %s;"
+        cursor.execute(query, (clean_id,))
+        row = cursor.fetchone()
         
-        # Eğer kullanıcı bir agent ise agents tablosundaki image bilgisini de güncelle
-        if current_user_role == 'agent':
-            cur.execute("UPDATE agents SET agent_image = %s WHERE id = (SELECT id FROM users WHERE email = %s)", 
-                        (data.get('profile_image'), email))
+        if row:
+            # RealDictCursor'dan gelen row yapısını JSONResponse için ham standart sözlüğe çeviriyoruz
+            prop_dict = dict(row)
             
-        conn.commit()
-        cur.close()
+            # --- PÜRÜZ ÇÖZÜCÜ: guests ve open_m2 alanlarının geriye veri nesnesi olarak beslenmesi ---
+            if 'guests' in prop_dict:
+                prop_dict['guests'] = row['guests']
+            if 'open_m2' in prop_dict:
+                prop_dict['open_m2'] = row['open_m2']
+            
+            # --- PÜRÜZ ÇÖZÜCÜ EKLEME: Ek tablolardan verileri güvenle çekip sözlüğe ekliyoruz ---
+            # 1. Özellik ID listesini ekle
+            cursor.execute("SELECT feature_id FROM property_features WHERE property_id = %s", (clean_id,))
+            features_data = cursor.fetchall()
+            prop_dict['features'] = [f['feature_id'] for f in features_data]
+            
+            # 2. Özellik isim listesini ekle
+            cursor.execute("""
+                SELECT f.name FROM features f 
+                JOIN property_features pf ON f.id = pf.feature_id 
+                WHERE pf.property_id = %s
+            """, (clean_id,))
+            features_names = cursor.fetchall()
+            prop_dict['feature_names'] = [f['name'] for f in features_names]
+            
+            # 3. Çoklu resimlerin link listesini ekle
+            cursor.execute("SELECT image_url FROM property_images WHERE property_id = %s ORDER BY id ASC", (clean_id,))
+            images_data = cursor.fetchall()
+            prop_dict['images'] = [img['image_url'] for img in images_data]
+            
+            cursor.close()
+            conn.close()
+            return prop_dict
+            
+        cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Güncelleme hatası: {e}")
-
-# --- CANLI VERİTABANI: MÜLK VE ÖZELLİK İŞLEMLERİ ---
-def get_properties_from_db():
-    conn = get_db_connection()
-    if not conn: return []
+        print(f"get_property_by_id_from_db hatası [ID TİP DÖNÜŞÜMÜ]: {e}")
+    
+    # Fallback koruması: Herhangi bir aksilikte orijinal üst katman fonksiyonunu tetikle
     try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT * FROM properties ORDER BY id DESC")
-        db_props = cur.fetchall()
-        cur.close()
-        conn.close()
-        return db_props if db_props else []
-    except Exception as e:
-        print(f"Mülk çekme hatası: {e}")
-        return []
-
-def get_all_features_from_db():
-    conn = get_db_connection()
-    if not conn: return []
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, name FROM features ORDER BY name ASC")
-        features = cur.fetchall()
-        cur.close()
-        conn.close()
-        return features
-    except Exception as e:
-        print(f"Özellik listesi çekme hatası: {e}")
-        return []
-
-def get_property_images(property_id):
-    conn = get_db_connection()
-    if not conn: return []
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT image_url FROM property_images WHERE property_id = %s", (property_id,))
-        images = cur.fetchall()
-        cur.close()
-        conn.close()
-        return [img['image_url'] for img in images]
-    except Exception as e:
-        print(f"Fotoğraf çekme hatası: {e}")
-        return []
-
-def get_property_features(property_id):
-    conn = get_db_connection()
-    if not conn: return []
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        query = """
-            SELECT f.name FROM features f
-            JOIN property_features pf ON f.id = pf.feature_id
-            WHERE pf.property_id = %s
-        """
-        cur.execute(query, (property_id,))
-        features = cur.fetchall()
-        cur.close()
-        conn.close()
-        return [f['name'] for f in features]
-    except Exception as e:
-        print(f"Özellik çekme hatası: {e}")
-        return []
-
-# --- AGENT (EMLAKÇI) İŞLEMLERİ ---
-
-def add_full_property_to_db(agent_id, data: dict, selected_features: list, image_urls: list):
-    """
-    NEON DB KOLONLARIYLA TAM SENKRONİZE EDİLMİŞ GELİŞMİŞ EKLEME FONKSİYONU
-    """
-    conn = get_db_connection()
-    if not conn: return False
-    try:
-        cur = conn.cursor()
-        
-        prop_query = """
-            INSERT INTO properties (
-                name, location, district, city, country, 
-                price_normalized, monthly_price, currency_code, listing_type, 
-                property_type, room_count, gross_m2, net_m2, building_age, 
-                heating, deed_status, dues, description, image, agent_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """
-        
-        price_val = data['price']
-        
-        cur.execute(prop_query, (
-            data['name'], data['location'], data.get('district'), data.get('city'), data.get('country'),
-            price_val, price_val, data.get('currency_code', 'TRY'), 
-            data.get('listing_type'), 
-            data.get('property_type'),
-            data.get('room_count'), 
-            data.get('gross_m2'), 
-            data.get('net_m2'), 
-            data.get('building_age'), 
-            data.get('heating'),
-            data.get('deed_status'), 
-            data.get('dues', 0), 
-            data.get('description'),
-            image_urls[0] if image_urls else 'placeholder.jpg', 
-            agent_id
-        ))
-        
-        property_id = cur.fetchone()[0]
-
-        # 2. Özelliklerin Kaydı
-        if selected_features:
-            for feature_id in selected_features:
-                cur.execute(
-                    "INSERT INTO property_features (property_id, feature_id) VALUES (%s, %s)",
-                    (property_id, int(feature_id))
-                )
-
-        # 3. Tüm Resimlerin Kaydı
-        if image_urls:
-            for i, url in enumerate(image_urls):
-                cur.execute(
-                    "INSERT INTO property_images (property_id, image_url, is_main) VALUES (%s, %s, %s)",
-                    (property_id, url, (i == 0))
-                )
-
-        conn.commit()
-        cur.close()
-        conn.close()
-        return True
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Gelişmiş ilan ekleme hatası: {e}")
-        return False
-
-def add_new_property_to_db(agent_id, data: dict):
-    """BASİT FORM İÇİN GÜNCEL SORGUNUN NEON DB İLE UYUMU"""
-    conn = get_db_connection()
-    if not conn: return False
-    try:
-        cur = conn.cursor()
-        query = """
-            INSERT INTO properties (
-                name, location, district, city, country, 
-                price_normalized, monthly_price, listing_type, room_count, net_m2, 
-                description, image, agent_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        cur.execute(query, (
-            data['name'], data['location'], data.get('district'), data.get('city'), data.get('country'),
-            data['price'], data['price'], 
-            data.get('type', 'sale'), 
-            str(data.get('beds', 0)), data.get('sqm', 0),
-            data.get('description', ''), data.get('image', 'placeholder.jpg'),
-            agent_id
-        ))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Basit ilan ekleme hatası: {e}")
-        return False
-
-def get_property_agent_info(property_id):
-    conn = get_db_connection()
-    if not conn: return None
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        query = """
-            SELECT u.id, (u.first_name || ' ' || u.last_name) as full_name, u.email, 
-                   a.agency_name, a.phone_number, a.agent_image, a.is_verified, a.joined_at,
-                   u.profile_image
-            FROM properties p
-            JOIN agents a ON p.agent_id = a.id
-            JOIN users u ON a.id = u.id
-            WHERE p.id = %s
-        """
-        cur.execute(query, (property_id,))
-        agent_data = cur.fetchone()
-        cur.close()
-        conn.close()
-        return agent_data
-    except Exception as e:
-        print(f"Agent bilgisi çekme hatası: {e}")
+        return get_property_by_id(property_id)
+    except:
         return None
 
-def get_agent_with_properties(agent_id):
-    conn = get_db_connection()
-    if not conn: return None, []
+# Tekil ilan çekme fonksiyon eşleştirmeleri
+get_property_from_db = get_property_by_id_from_db
+
+def get_all_properties_with_agents_from_db():
+    """
+    Neon DB şemasındaki 'user_id' hatasını kökten çözmek için doğrudan
+    db_admin.py içerisinde yazdığımız, pasif ilanları da getiren güvenli JOIN motorunu çalıştırır.
+    """
     try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        agent_query = """
-            SELECT u.id, (u.first_name || ' ' || u.last_name) as full_name, u.email, 
-                   a.agency_name, a.phone_number, a.agent_image, a.is_verified, a.bio, a.joined_at,
-                   u.profile_image
-            FROM users u
-            JOIN agents a ON u.id = a.id
-            WHERE u.id = %s
-        """
-        cur.execute(agent_query, (agent_id,))
-        agent_info = cur.fetchone()
-        if not agent_info:
-            cur.close()
-            conn.close()
-            return None, []
-        props_query = "SELECT * FROM properties WHERE agent_id = %s ORDER BY id DESC"
-        cur.execute(props_query, (agent_id,))
-        properties_list = cur.fetchall()
-        cur.close()
-        conn.close()
-        return agent_info, properties_list
+        # KESİN ÇÖZÜM: db_admin.py içinde yazdığın, properties.agent_id'ye bakan hatasız fonksiyonu döndürüyoruz.
+        return get_all_properties_fixed()
     except Exception as e:
-        print(f"Agent portföyü çekme hatası: {e}")
-        return None, []
+        print(f"get_all_properties_with_agents_from_db köprü hatası: {e}")
+        # Fallback koruması: Orijinal fonksiyonu çağır
+        return get_properties_from_db()
 
-def login_user(email, password):
-    global current_user_email, current_user_role, current_user_data
-    user = get_user_from_db(email)
-    if user and verify_password(password, user['password']):
-        current_user_email = user['email']
-        current_user_role = user['role']
-        current_user_data = dict(user)
+# İlan durumunu güncelleyen veya soft-delete (pasife alma) yapan fonksiyon eşleştirmeleri
+# Eğer db.properties içinde spesifik bir durum güncelleme yoksa, genel update fonksiyonuna yönlendirilir.
+def update_property_status(property_id: str, status: str) -> bool:
+    """İlanın durumunu (active/passive/rented) günceller."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        query = "UPDATE properties SET status = %s WHERE id = %s;"
+        cursor.execute(query, (status, int(property_id)))
+        conn.commit()
+        cursor.close()
+        conn.close()
         return True
-    return False
+    except Exception as e:
+        print(f"update_property_status hatası: {e}")
+        try:
+            return update_property_in_db(int(property_id), {"status": status})
+        except:
+            return update_property_in_db(property_id, {"status": status})
 
-def logout_user():
-    global current_user_email, current_user_role, current_user_data
-    current_user_email = None
-    current_user_role = "guest"
-    current_user_data = {}
+def soft_delete_property_in_db(property_id: str) -> bool:
+    """İlanı silmek yerine durumunu passive çekerek soft-delete uygular."""
+    return update_property_status(property_id, "passive")
+
+# Not: Bu dosya, projenin eski 'import database' kullanan yerlerinin kırılmaması 
+# için bir köprü (proxy) görevi görmektedir. Tüm lojik db/ klasörüne taşınmıştır.

@@ -11,7 +11,7 @@
         </div>
         
         <div style="display: flex; align-items: center; gap: 12px;">
-            <button onclick="toggleModal()" style="display: flex; align-items: center; gap: 8px; background: #FF7226; color: white; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 114, 38, 0.2);">
+            <button type="button" onclick="openEmbeddedForm()" style="display: flex; align-items: center; gap: 8px; background: #FF7226; color: white; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; text-decoration: none; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 114, 38, 0.2);">
                 <i class="fa-solid fa-plus"></i> <span>Yeni İlan Ekle</span>
             </button>
 
@@ -26,7 +26,6 @@
         {% for property in properties %}
         <div class="property-card" data-status="{{ property.status }}" onclick="window.location.href='/property/{{ property.id }}'" style="cursor: pointer;">
             <div class="card-image-wrap">
-                {# Resim yolu düzeltildi: static klasöründen doğru şekilde çekiliyor #}
                 <img src="{{ url_for('static', path='/' + (property.image if property.image else 'htmlfotos/placeholder.jpg')) }}" alt="Property">
                 
                 <span class="status-badge {{ 'rented' if property.status == 'rented' else 'available' }}" style="left: 15px;">
@@ -37,9 +36,13 @@
                     {{ property.display_type }}
                 </span>
                 
-                <a href="/profile/edit-property/{{ property.id }}" class="edit-overlay-btn" onclick="event.stopPropagation();">
+                <button type="button" class="edit-overlay-btn" onclick="event.stopPropagation(); editProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
                     <i class="fa-solid fa-pen-to-square"></i>
-                </a>
+                </button>
+
+                <button type="button" class="delete-overlay-btn" onclick="event.stopPropagation(); deleteProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
             </div>
 
             <div class="card-content">
@@ -73,7 +76,7 @@
             </div>
             <h3 style="color: #1e293b; margin-bottom: 10px;">Henüz bir ilanınız yok</h3>
             <p style="color: #64748b; max-width: 300px; margin: 0 auto 25px auto;">Portföyünüzü oluşturmaya başlamak için hemen yeni bir ilan ekleyin.</p>
-            <button onclick="toggleModal()" style="display: inline-block; padding: 12px 25px; background: #FF7226; color: white; border: none; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.3s; cursor: pointer;">
+            <button type="button" onclick="openEmbeddedForm()" style="display: inline-block; padding: 12px 25px; background: #FF7226; color: white; border: none; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.3s; cursor: pointer;">
                 İlk İlanı Oluştur
             </button>
         </div>
@@ -97,9 +100,11 @@
         </a>
     </div>
     {% endif %}
-</div>
 
-{% include "add_property.html" %}
+    <div id="embeddedFormWrapper" style="display: none; margin-top: 40px; border-top: 2px dashed #e2e8f0; padding-top: 30px; width: 100%;">
+        {% include "add_property.html" %}
+    </div>
+</div>
 
 <style>
     /* Pagination Stilleri */
@@ -139,7 +144,7 @@
     .status-badge.rented { background: #FF7226; box-shadow: 0 4px 10px rgba(255, 114, 38, 0.3); }
 
     .edit-overlay-btn {
-        position: absolute; top: 15px; right: 15px;
+        position: absolute; top: 15px; right: 65px;
         width: 40px; height: 40px; border-radius: 50%;
         background: rgba(255, 255, 255, 0.9); color: #1e293b;
         display: flex; align-items: center; justify-content: center;
@@ -148,23 +153,103 @@
         transition: all 0.3s ease; z-index: 5;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    .property-card:hover .edit-overlay-btn { opacity: 1; transform: translateY(0); }
+    
+    .delete-overlay-btn {
+        position: absolute; top: 15px; right: 15px;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(254, 226, 226, 0.9); color: #dc2626;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 1.1rem;
+        opacity: 0; transform: translateY(-10px);
+        transition: all 0.3s ease; z-index: 5;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.15);
+    }
+
+    .property-card:hover .edit-overlay-btn,
+    .property-card:hover .delete-overlay-btn { opacity: 1; transform: translateY(0); }
+    
     .edit-overlay-btn:hover { background: white; color: #FF7226; transform: scale(1.1) !important; }
+    .delete-overlay-btn:hover { background: #dc2626; color: white; transform: scale(1.1) !important; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }
 
     .card-content { padding: 22px; flex-grow: 1; display: flex; flex-direction: column; }
     .card-footer { display: flex; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 15px; margin-top: auto; }
     .stat-item { display: flex; align-items: center; gap: 7px; color: #64748b; font-size: 0.85rem; font-weight: 600; }
     .stat-item i { color: #cbd5e1; font-size: 1rem; }
+
+    /* Eski kilitlenen modal katmanlarını deaktif etmek ve sayfa içi kart düzenini oturtmak için CSS */
+    #propertyModal {
+        position: relative !important;
+        top: auto !important; left: auto !important;
+        width: 100% !important; height: auto !important;
+        background: transparent !important;
+        display: block !important;
+        z-index: 1 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    .modal-backdrop, .modal-overlay { display: none !important; }
 </style>
 
 <script>
-    function toggleModal() {
-        if (typeof openModal === "function") {
-            openModal();
-        } else {
-            const modal = document.getElementById('propertyModal');
-            if(modal) modal.style.display = 'flex';
+    // Sayfayı kilitlemeyen, formu beyaz alanın altına organik bir kart olarak açan pürüzsüz fonksiyon
+    function openEmbeddedForm() {
+        const wrapper = document.getElementById('embeddedFormWrapper');
+        if (wrapper) {
+            wrapper.style.display = 'block';
+            
+            // Alt dosyadaki kilitlenmeyi çözmek adına modal elementinin display özelliğini zorla görünür yapıyoruz
+            const innerModal = document.getElementById('propertyModal');
+            if (innerModal) {
+                innerModal.style.setProperty('display', 'block', 'important');
+            }
+
+            // Form açıldığında sayfayı yumuşakça formun olduğu yere kaydırır
+            wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+        
+        // Form alanlarını sıfırla (Yeni ilan temiz gelsin)
+        const form = document.getElementById('addPropertyForm') || document.getElementById('propertyForm');
+        if (form) {
+            if (typeof resetPropertyForm === "function") {
+                resetPropertyForm();
+            } else {
+                form.reset();
+                form.action = '/add-property-full'; // default ekleme url'i
+                const idInput = form.querySelector('input[name="property_id"]');
+                if (idInput) idInput.value = '';
+            }
+        }
+    }
+
+    // Alt dosyadan tetiklenebilecek kapatma aksiyonunu ve sayfa kaydırmasını hatasız yöneten global fonksiyon
+    function closeEmbeddedPropertyForm() {
+        const wrapper = document.getElementById('embeddedFormWrapper');
+        const innerModal = document.getElementById('propertyModal');
+        
+        // Önce sayfa kaydırma işlemini gerçekleştiriyoruz (Element gizlenmeden önce koordinat okunabilmesi için)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Sayfa kaydıktan sonra form alanlarını kapatıyoruz
+        if (innerModal) {
+            innerModal.style.display = 'none';
+            innerModal.style.setProperty('display', 'none', 'important');
+        }
+        if (wrapper) {
+            wrapper.style.display = 'none';
+        }
+        
+        if (typeof resetPropertyForm === "function") {
+            resetPropertyForm();
+        }
+    }
+
+    // add_property.html altındaki eski closeModal çağrılarını bu güvenli kapatma fonksiyonuna yönlendiriyoruz
+    function closeModal() {
+        closeEmbeddedPropertyForm();
+    }
+
+    function toggleModal() {
+        openEmbeddedForm();
     }
 
     function switchTab(type, btn) {
@@ -180,6 +265,68 @@
                 card.style.display = (status === 'rented') ? 'flex' : 'none';
             }
         });
+    }
+
+    /* İlan Düzenleme Fonksiyonu */
+    async function editProperty(propertyId) {
+        try {
+            const response = await fetch(`/api/property/${propertyId}`);
+            if (!response.ok) throw new Error("İlan verileri alınamadı.");
+            const data = await response.json();
+            
+            openEmbeddedForm(); // Önce dahili sarmalayıcıyı aç
+            
+            if (typeof fillFormForEdit === "function") {
+                fillFormForEdit(data);
+            } else {
+                const form = document.getElementById('addPropertyForm') || document.getElementById('propertyForm');
+                if (form) {
+                    form.action = `/api/property/update/${propertyId}`;
+                    let idInput = document.getElementById('formPropertyId') || form.querySelector('input[name="property_id"]');
+                    if (!idInput) {
+                        idInput = document.createElement('input');
+                        idInput.type = 'hidden';
+                        idInput.name = 'property_id';
+                        idInput.id = 'formPropertyId';
+                        form.appendChild(idInput);
+                    }
+                    idInput.value = propertyId;
+                    
+                    if(document.getElementById('input_title')) document.getElementById('input_title').value = data.title || data.name || '';
+                    if(document.getElementById('input_location')) document.getElementById('input_location').value = data.location || '';
+                    if(document.getElementById('input_price')) document.getElementById('input_price').value = data.price_normalized || data.price || '';
+                    if(document.getElementById('input_beds')) document.getElementById('input_beds').value = data.beds || data.bed_count || '';
+                    if(document.getElementById('input_baths')) document.getElementById('input_baths').value = data.baths || data.bath_count || '';
+                    if(document.getElementById('input_net_m2')) document.getElementById('input_net_m2').value = data.net_m2 || '';
+                    if(document.getElementById('textarea_description')) document.getElementById('textarea_description').value = data.description || '';
+                }
+            }
+        } catch (error) {
+            console.error("Hata:", error);
+            alert("İlan bilgileri yüklenirken bir hata oluştu.");
+        }
+    }
+
+    /* İlan Silme Fonksiyonu */
+    async function deleteProperty(propertyId) {
+        if (confirm("Bu ilanı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+            try {
+                const response = await fetch(`/api/property/delete/${propertyId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (response.ok && (result.status === "success" || result.success)) {
+                    alert("İlan başarıyla silindi.");
+                    window.location.reload();
+                } else {
+                    alert(result.message || "İlan silinirken bir hata oluştu.");
+                }
+            } catch (error) {
+                console.error("Silme hatası:", error);
+                alert("Bağlantı hatası nedeniyle işlem gerçekleştirilemedi.");
+            }
+        }
     }
 </script>
 {% endblock %}

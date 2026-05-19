@@ -126,9 +126,11 @@
 
 <div class="property-meta">
     <span><i class="fa-solid fa-user-group"></i> {{ property.guests if property.guests else '0' }} Guests</span>
-    <span><i class="fa-solid fa-bed"></i> {{ property.beds if property.beds else '0' }} Bedrooms</span>
+    <span><i class="fa-solid fa-door-open"></i> {{ property.room_count if property.room_count else '0' }} Bedrooms</span>
+    <span><i class="fa-solid fa-bed"></i> {{ property.beds if property.beds else '0' }} Beds</span>
     <span><i class="fa-solid fa-bath"></i> {{ property.baths if property.baths else '0' }} Bathrooms</span>
     <span><i class="fa-solid fa-maximize"></i> {{ property.net_m2 if property.net_m2 else '0' }} m² Net</span>
+    <span><i class="fa-solid fa-seedling"></i> {{ property.open_m2 if property.open_m2 else '0' }} m² Open Area</span>
 </div>
 
 <script>
