@@ -7,6 +7,7 @@ def get_pending_approvals_from_db():
     if not conn: return []
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
+        # Şemadaki gerçek 'description' kolonuna göre filtreleme yapar
         cur.execute("SELECT * FROM properties WHERE description LIKE '%%Onay%%' ORDER BY id DESC")
         pending_list = cur.fetchall()
         cur.close()
@@ -79,7 +80,7 @@ def get_all_properties_with_agents_from_db():
     """
     TERMİNALDEKİ 'column p.user_id does not exist' HATASINI KÖKTEN ÇÖZEN KRİTİK FONKSİYON.
     Sistemdeki tüm ilanları, ilan sahibinin (Agent) adı ve soyadı ile birleştirerek çeker.
-    Also, döviz simgelerini ve statü verilerini eksiksiz biçimde eşleştirir.
+    Also, döviz simgelerini ve statü verilerini eksikosiz biçimde eşleştirir.
     """
     conn = get_db_connection()
     if not conn: return []
@@ -89,12 +90,12 @@ def get_all_properties_with_agents_from_db():
         
         # KESİN ÇÖZÜM: Sorgu p.user_id veya a.user_id yerine tamamen senin belirttiğin ve 
         # Neonda onayladığın gerçek şemaya göre (properties.agent_id -> agents.id -> users.id) bağlanır.
-        # Hem orijinal kodundaki 'currency' alanını hem de 'currency_code' alternatifini COALESCE ile korur.
+        # Eğer agents tablosu bypass edilip doğrudan users tablosuna bağlanıyorsa COALESCE ve LEFT JOIN zinciri tam koruma sağlar.
         query = """
             SELECT p.*, 
-                   (u.first_name || ' ' || u.last_name) as agent_name,
-                   u.first_name as agent_first_name,
-                   u.last_name as agent_last_name,
+                   COALESCE(u.first_name || ' ' || u.last_name, u2.first_name || ' ' || u2.last_name, 'Sistem Yöneticisi') as agent_name,
+                   COALESCE(u.first_name, u2.first_name, '') as agent_first_name,
+                   COALESCE(u.last_name, u2.last_name, '') as agent_last_name,
                    CASE 
                        WHEN UPPER(COALESCE(p.currency, p.currency_code, '')) = 'TRY' THEN '₺'
                        WHEN UPPER(COALESCE(p.currency, p.currency_code, '')) = 'USD' THEN '$'
@@ -105,6 +106,7 @@ def get_all_properties_with_agents_from_db():
             FROM properties p
             LEFT JOIN agents a ON p.agent_id = a.id
             LEFT JOIN users u ON a.id = u.id
+            LEFT JOIN users u2 ON p.agent_id = u2.id
             ORDER BY p.id DESC
         """
         cur.execute(query)
@@ -115,6 +117,8 @@ def get_all_properties_with_agents_from_db():
             for prop in properties_list:
                 if 'name' in prop and not prop.get('title'):
                     prop['title'] = prop['name']
+                if 'title' in prop and not prop.get('name'):
+                    prop['name'] = prop['title']
                 if 'price_normalized' in prop and not prop.get('price'):
                     prop['price'] = prop['price_normalized']
                     
@@ -143,6 +147,8 @@ def get_property_by_id_from_db(property_id: str):
         if property_data:
             if 'name' in property_data and not property_data.get('title'):
                 property_data['title'] = property_data['name']
+            if 'title' in property_data and not property_data.get('name'):
+                property_data['name'] = property_data['title']
             if 'price_normalized' in property_data and not property_data.get('price'):
                 property_data['price'] = property_data['price_normalized']
             if 'currency_code' in property_data and not property_data.get('currency'):

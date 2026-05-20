@@ -66,7 +66,20 @@ def update_user_in_db(email, data: dict):
             ))
         
         # Eğer kullanıcı bir agent ise agents tablosundaki image bilgisini de güncelle
-        if conn_mod.current_user_role == 'agent':
+        # Çerez geçişinde global roller boşa düşebileceği için veritabanındaki gerçek rolü de fallback olarak kontrol ediyoruz
+        is_agent = False
+        if hasattr(conn_mod, 'current_user_role') and conn_mod.current_user_role == 'agent':
+            is_agent = True
+        else:
+            # Fallback Güvencesi: Eğer global değişken set edilmediyse doğrudan veritabanından rol kontrolü yapıyoruz
+            check_cur = conn.cursor(cursor_factory=RealDictCursor)
+            check_cur.execute("SELECT role FROM users WHERE email = %s", (email,))
+            u_check = check_cur.fetchone()
+            if u_check and u_check['role'] == 'agent':
+                is_agent = True
+            check_cur.close()
+
+        if is_agent:
             cur.execute("UPDATE agents SET agent_image = %s WHERE id = (SELECT id FROM users WHERE email = %s)", 
                         (data.get('profile_image'), email))
             
@@ -77,18 +90,28 @@ def update_user_in_db(email, data: dict):
         print(f"Güncelleme hatası: {e}")
 
 def login_user(email, password):
+    """
+    Kullanıcı giriş kontrolü.
+    Geriye dönük uyumluluk ve hem cookie hem eski mekanizmanın 
+    kırılmadan çalışması için tam veriyi dict formatında döner.
+    """
     user = get_user_from_db(email)
     if user and verify_password(password, user['password']):
+        # Eski global durum güncellenir (Fallback koruması)
         conn_mod.current_user_email = user['email']
         conn_mod.current_user_role = user['role']
         conn_mod.current_user_data = dict(user)
-        return True
+        # backend.py içinde response.set_cookie işlemlerinde 
+        # user['id'] ve user['role'] bilgilerini okuyabilmeniz için ham user nesnesini döndürüyoruz.
+        return user
     return False
 
 def logout_user():
+    # Eski global durum temizlenir
     conn_mod.current_user_email = None
     conn_mod.current_user_role = "guest"
     conn_mod.current_user_data = {}
+    return True
 
 # --- CRITICAL ADMIN EXTENSIONS (Eksiksiz Yönetimsel Güncellemeler) ---
 def get_all_users_from_db():

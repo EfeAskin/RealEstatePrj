@@ -79,8 +79,12 @@ def process_property_data(property_item):
     # UI tarafındaki değişkenleri DB kolonlarıyla eşleştirme (Arayüz Uyumu Güvencesi)
     if 'name' in property_item and not property_item.get('title'):
         property_item['title'] = property_item['name']
+    if 'title' in property_item and not property_item.get('name'):
+        property_item['name'] = property_item['title']
     if 'price_normalized' in property_item and not property_item.get('price'):
         property_item['price'] = property_item['price_normalized']
+    if 'price' in property_item and not property_item.get('price_normalized'):
+        property_item['price_normalized'] = property_item['price']
 
     # --- KÖKLÜ VERİ DEĞİŞİM DÜZELTMESİ ---
     property_item["net_m2"] = property_item.get("net_m2") or 0
@@ -89,6 +93,8 @@ def process_property_data(property_item):
     
     # Baths kolonu db'de bath_count olarak geçebilir
     property_item["baths"] = property_item.get("bath_count") or property_item.get("baths") or 0
+    property_item["open_m2"] = property_item.get("open_m2") or 0
+    property_item["guests"] = property_item.get("guests") or 0
 
     if "dues" in property_item and property_item["dues"] not in [None, "N/A"]:
         property_item["formatted_dues"] = format_currency(property_item["dues"])
@@ -122,6 +128,12 @@ async def add_property_full(
     room_count: str = Form(None),
     gross_m2: int = Form(0),
     net_m2: int = Form(0),
+    open_m2: int = Form(0),              # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    guests: int = Form(0),               # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    is_site: str = Form("Hayır"),        # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    site_name: str = Form("-"),          # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    is_credit: str = Form("Hayır"),      # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    is_trade: str = Form("Hayır"),       # backend.py İLE TAM UYUM İÇİN EKLENDİ
     building_age: str = Form(None),
     heating: str = Form(None),
     deed_status: str = Form(None),
@@ -164,22 +176,43 @@ async def add_property_full(
     city = loc_parts[1] if len(loc_parts) > 1 else ""
     country = loc_parts[2] if len(loc_parts) > 2 else ""
 
+    # --- KONTROL VE ATAMA MANTIKLARI ---
+    clean_is_site = is_site if is_site in ["Evet", "Hayır"] else "Hayır"
+    clean_site_name = site_name if clean_is_site == "Evet" and site_name else "-"
+
+    if listing_type == "sale":
+        clean_is_credit = is_credit if is_credit in ["Evet", "Hayır"] else "Hayır"
+        clean_is_trade = is_trade if is_trade in ["Evet", "Hayır"] else "Hayır"
+    else:
+        clean_is_credit = "Hayır"
+        clean_is_trade = "Hayır"
+
     # 2. Veritabanına Gönderilecek Veri
     # YENİ İŞ MANTIĞI UYUMU: Yeni ilanlar ilk kayıt esnasında onay havuzuna ('approving') düşecek şekilde statülendirildi.
     property_data = {
         "name": title, 
+        "title": title,          # Geriye dönük uyumluluk güvencesi
         "image": main_image_url, # Ana tabloya yazılacak kapak resmi
         "location": location,
         "district": district,
         "city": city,
         "country": country,
         "price": price, 
+        "price_normalized": price, # Filtreleme motoru koruması
+        "currency": currency_code, # Neon DB kolon ismi 'currency'
         "currency_code": currency_code, 
+        "type": listing_type,      # Neon DB kolon ismi 'type'
         "listing_type": listing_type, 
         "property_type": property_type, 
         "room_count": room_count,
         "gross_m2": gross_m2, 
         "net_m2": net_m2, 
+        "open_m2": open_m2,
+        "guests": guests,
+        "is_site": clean_is_site,
+        "site_name": clean_site_name,
+        "is_credit": clean_is_credit,
+        "is_trade": clean_is_trade,
         "building_age": building_age,
         "heating": heating, 
         "deed_status": deed_status, 
@@ -203,7 +236,7 @@ async def add_property_full(
     else:
         return JSONResponse(status_code=500, content={"error": "Veritabanı kaydı başarısız oldu."})
 
-# --- DİNAMİK İLAN GÜNCELLEME ENDPOINT'İ (YENİ EKLENDİ) ---
+# --- DİNAMİK İLAN GÜNCELLEME ENDPOINT'İ ---
 @router.post("/update-property/{property_id}")
 async def update_property(
     property_id: str, # Güvenli string yakalama ve alt satırda int koruması yapıldı
@@ -216,6 +249,12 @@ async def update_property(
     room_count: str = Form(None),
     gross_m2: int = Form(0),
     net_m2: int = Form(0),
+    open_m2: int = Form(0),              # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    guests: int = Form(0),               # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    is_site: str = Form("Hayır"),        # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    site_name: str = Form("-"),          # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    is_credit: str = Form("Hayır"),      # backend.py İLE TAM UYUM İÇİN EKLENDİ
+    is_trade: str = Form("Hayır"),       # backend.py İLE TAM UYUM İÇİN EKLENDİ
     building_age: str = Form(None),
     heating: str = Form(None),
     deed_status: str = Form(None),
@@ -251,19 +290,39 @@ async def update_property(
         except ValueError:
             continue
 
+    clean_is_site = is_site if is_site in ["Evet", "Hayır"] else "Hayır"
+    clean_site_name = site_name if clean_is_site == "Evet" and site_name else "-"
+
+    if listing_type == "sale":
+        clean_is_credit = is_credit if is_credit in ["Evet", "Hayır"] else "Hayır"
+        clean_is_trade = is_trade if is_trade in ["Evet", "Hayır"] else "Hayır"
+    else:
+        clean_is_credit = "Hayır"
+        clean_is_trade = "Hayır"
+
     update_data = {
         "name": title,
+        "title": title,              # Geriye dönük uyumluluk güvencesi
         "location": location,
         "district": district,
         "city": city,
         "country": country,
         "price": price,
+        "price_normalized": price,   # Filtreleme motoru koruması
+        "currency": currency_code,   # Neon DB kolon ismi 'currency'
         "currency_code": currency_code,
+        "type": listing_type,        # Neon DB kolon ismi 'type'
         "listing_type": listing_type,
         "property_type": property_type,
         "room_count": room_count,
         "gross_m2": gross_m2,
         "net_m2": net_m2,
+        "open_m2": open_m2,
+        "guests": guests,
+        "is_site": clean_is_site,
+        "site_name": clean_site_name,
+        "is_credit": clean_is_credit,
+        "is_trade": clean_is_trade,
         "building_age": building_age,
         "heating": heating,
         "deed_status": deed_status,
@@ -280,7 +339,7 @@ async def update_property(
     else:
         return JSONResponse(status_code=500, content={"error": "Veritabanı güncelleme işlemi başarısız oldu."})
 
-# --- MANTIKSAL SİLME (SOFT DELETE) ENDPOINT'İ (YENİ EKLENDİ) ---
+# --- MANTIKSAL SİLME (SOFT DELETE) ENDPOINT'İ ---
 @router.post("/delete-property/{property_id}")
 async def delete_property(property_id: str):
     user_obj = getattr(db, 'current_user_data', None)
@@ -469,6 +528,8 @@ async def property_detail(request: Request, property_id: str):
         "agent": agent_info,
         "role": db.current_user_role, 
         "user": getattr(db, 'current_user_data', None),
+        "current_user_data": getattr(db, 'current_user_data', None),
+        "current_user_role": db.current_user_role,
         "page_id": "search"
     })
 
@@ -481,8 +542,6 @@ async def my_properties(request: Request, page: int = Query(1, ge=1)):
     current_agent_id = user_obj.get("id") if user_obj else None
     
     # EMALAKÇI GÜVENLİK FİLTRESİ:
-    # Emlakçının kendi yönetim panelinde 'approving' (onay bekleyen) ilanlarını da listeleyebilmesi için 
-    # db katmanındaki özel portföy çekme fonksiyonunu kullanıyoruz.
     if current_agent_id and hasattr(db, 'get_agent_with_properties'):
         _, my_props_raw = db.get_agent_with_properties(current_agent_id)
     else:

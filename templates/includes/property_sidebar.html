@@ -1,7 +1,7 @@
 <div class="booking-widget">
     <div class="price-info">
         <span id="base-price-display">
-            {{ "{:,.0f}".format(property.monthly_price if property.monthly_price else 0).replace(',', '.') }}
+            {{ "{:,.0f}".format(property.monthly_price if property.monthly_price else property.price if property.price else 0).replace(',', '.') }}
         </span> {{ property.currency_symbol if property.currency_symbol else '₺' }}
         {% if property.listing_type == "rent" %}
         <span style="font-weight:400; font-size:16px; color:var(--text-muted);">/ 30 nights</span>
@@ -39,13 +39,50 @@
                 <span id="guest-count">1 Adult</span>
             </div>
         </div>
-        <button type="submit" class="request-button">Request to Book</button>
+        <button type="submit" class="request-button" style="margin-bottom: 10px;">Request to Book</button>
     </form>
+    
+    {# Kiralık ilanlar için güncellenen entegre chat butonu #}
+    {% if agent %}
+        <button class="request-button message-agent-trigger msg-btn" 
+                style="background:#1e272e;" 
+                data-property-id="{{ property.id }}"
+                data-agent-id="{% if agent.id is mapping %}{{ agent.id['id'] }}{% else %}{{ agent.id }}{% endif %}"
+                data-agent-name="{{ agent.full_name if agent.full_name else 'Emlak Yetkilisi' }}"
+                data-agent-company="{{ agent.agency_name if agent.agency_name else 'Cypinvest Global' }}"
+                data-agent-avatar="{% if agent.agent_image %}/static/htmlfotos/{{ agent.agent_image }}{% else %}/static/htmlfotos/default-avatar.png{% endif %}"
+                data-property-title="{{ property.name }}">
+            Send Message to Agent
+        </button>
+    {% else %}
+        <button class="request-button" style="background:#1e272e;" disabled>
+            Send Message to Agent
+        </button>
+    {% endif %}
+
     {% else %}
     <div style="margin-bottom: 20px;">
         <p style="color:var(--primary-blue); font-weight:700; margin-bottom: 5px;">Listing for SALE</p>
         <small style="color: var(--text-muted);">Please contact for details & viewing.</small>
     </div>
-    <button class="request-button" style="background:#1e272e;" onclick="location.href='tel:+905555555555'">Contact Agent</button>
+    
+    {# Satılık ilanlar için güncellenen entegre chat butonu #}
+    {% if agent %}
+        <button class="request-button message-agent-trigger msg-btn" 
+                style="background:#1e272e;" 
+                data-property-id="{{ property.id }}"
+                data-agent-id="{% if agent.id is mapping %}{{ agent.id['id'] }}{% else %}{{ agent.id }}{% endif %}"
+                data-agent-name="{{ agent.full_name if agent.full_name else 'Emlak Yetkilisi' }}"
+                data-agent-company="{{ agent.agency_name if agent.agency_name else 'Cypinvest Global' }}"
+                data-agent-avatar="{% if agent.agent_image %}/static/htmlfotos/{{ agent.agent_image }}{% else %}/static/htmlfotos/default-avatar.png{% endif %}"
+                data-property-title="{{ property.name }}">
+            Contact Agent
+        </button>
+    {% else %}
+        <button class="request-button" style="background:#1e272e;" disabled>
+            Contact Agent
+        </button>
+    {% endif %}
+    
     {% endif %}
 </div>

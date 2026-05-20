@@ -111,7 +111,7 @@
                 <img src="{{ '/static/' + img_url if 'http' not in img_url else img_url }}" alt="{{ property.name }}">
             {% endfor %}
         {% else %}
-            <img src="/static/htmlfotos/{{ property.image }}" alt="{{ property.name }}">
+            <img src="/static/htmlfotos/{{ property.image_url if property.image_url else property.image }}" alt="{{ property.name }}">
         {% endif %}
     </div>
 
@@ -167,7 +167,7 @@
         if (prevBtn) prevBtn.addEventListener('click', () => moveSlider(-1));
         if (nextBtn) nextBtn.addEventListener('click', () => moveSlider(1));
 
-        // Noktalara tıklama özelliğini JS ile atıyoruz (Editör kırmızısı bitti!)
+        // Noktalara tıklama özelliğini JS ile atıyoruz
         dots.forEach((dot, index) => {
             dot.addEventListener('click', () => {
                 currentIndex = index;

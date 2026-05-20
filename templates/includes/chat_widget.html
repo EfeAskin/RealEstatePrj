@@ -1,0 +1,437 @@
+<div id="chat-user-metadata" 
+     data-user-id="{% if current_user_data %}{% if current_user_data is mapping %}{{ current_user_data['id'] }}{% else %}{{ current_user_data.id }}{% endif %}{% else %}null{% endif %}" 
+     style="display: none;">
+</div>
+
+<div id="mini-chat-widget" class="mini-chat-wrapper" style="display: none;">
+    <div class="mini-chat-header">
+        <div class="agent-info-mini">
+            <img id="chat-agent-avatar" src="/static/htmlfotos/default-avatar.png" alt="Agent PP" class="chat-avatar-img">
+            <div class="agent-text-mini">
+                <h4 id="chat-agent-name">Agent Name</h4>
+                <p id="chat-agent-company">Company Name</p>
+            </div>
+        </div>
+        <button id="close-chat-widget" class="chat-close-btn" title="Kapat">×</button>
+    </div>
+    
+    <div class="mini-chat-property-bar">
+        <span class="property-tag">İlan:</span>
+        <span id="chat-property-title" class="property-title-text">Property Title</span>
+    </div>
+
+    <div id="mini-chat-messages" class="mini-chat-body">
+    </div>
+
+    <div class="mini-chat-footer">
+        <input type="text" id="mini-chat-input" class="mini-chat-input-field" placeholder="Mesajınızı yazın..." autocomplete="off">
+        <button id="mini-chat-send-btn" class="chat-send-btn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+---
+
+<style>
+/* --- MINI SOHBET KUTUSU CSS TASARIMI --- */
+.mini-chat-wrapper {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 360px;
+    height: 480px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    border: 1px solid #eef2f5;
+    animation: pıtAcilis 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pıtAcilis {
+    from { transform: translateY(40px) scale(0.9); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.mini-chat-header {
+    background: #10b981;
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agent-info-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-avatar-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.agent-text-mini h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.agent-text-mini p {
+    margin: 0;
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.chat-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.chat-close-btn:hover {
+    opacity: 1;
+}
+
+.mini-chat-property-bar {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 6px 16px;
+    font-size: 12px;
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.property-tag {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.property-title-text {
+    color: #1e293b;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-chat-body {
+    flex: 1;
+    padding: 16px;
+    background: #f1f5f9;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-msg-bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.chat-msg-bubble.me {
+    background: #10b981;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+}
+
+.chat-msg-bubble.other {
+    background: white;
+    color: #1e293b;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.mini-chat-footer {
+    padding: 12px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#mini-chat-input {
+    flex: 1;
+    border: 1px solid #cbd5e1;
+    border-radius: 99px;
+    padding: 8px 16px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#mini-chat-input:focus {
+    border-color: #10b981;
+}
+
+.chat-send-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.chat-send-btn:hover {
+    transform: scale(1.05);
+}
+</style>
+
+<script>
+// --- REAL-TIME MINI CHAT JAVASCRIPT MOTORU (DÜZELTİLMİŞ TAM SÜRÜM) ---
+let miniChatSocket = null;
+let currentActiveRoomId = null;
+let currentReceiverId = null;
+let currentUserId = 'null';
+
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Kullanıcı ID Alımı
+    const metaElem = document.getElementById("chat-user-metadata");
+    if (metaElem) {
+        currentUserId = metaElem.getAttribute("data-user-id") || 'null';
+    }
+
+    // 2. Sayfa İçi Yeşil Buton Takibi
+    document.addEventListener("click", function(e) {
+        const targetBtn = e.target.closest(".contact-agent-btn, #message-agent-btn, .message-agent-trigger, .msg-btn");
+        if (targetBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleChatTrigger(e, targetBtn);
+        }
+    });
+
+    // 3. Kapatma Aksiyonu
+    document.getElementById("close-chat-widget").addEventListener("click", function(e) {
+        e.preventDefault();
+        document.getElementById("mini-chat-widget").style.display = "none";
+        if (miniChatSocket) {
+            miniChatSocket.close();
+            miniChatSocket = null;
+        }
+    });
+
+    // 4. Input Odaklı Mesaj Gönderimi (Enter)
+    const chatInput = document.getElementById("mini-chat-input");
+    if (chatInput) {
+        chatInput.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                sendMiniChatMessage();
+            }
+        });
+    }
+
+    // 5. Bağımsız Sağ Alttaki Yeşil Gönder Butonu Aksiyonu
+    const sendBtn = document.getElementById("mini-chat-send-btn");
+    if (sendBtn) {
+        sendBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            sendMiniChatMessage();
+        });
+    }
+});
+
+function handleChatTrigger(e, buttonElement) {
+    if (currentUserId === 'null' || !currentUserId) {
+        alert("Mesaj göndermek için lütfen önce giriş yapınız.");
+        return;
+    }
+
+    const propertyId = buttonElement.getAttribute("data-property-id");
+    const agentId = buttonElement.getAttribute("data-agent-id");
+    const agentName = buttonElement.getAttribute("data-agent-name") || "Emlak Yetkilisi";
+    const agentCompany = buttonElement.getAttribute("data-agent-company") || "Kurumsal Acente";
+    const agentAvatar = buttonElement.getAttribute("data-agent-avatar") || "/static/htmlfotos/default-avatar.png";
+    const propertyTitle = buttonElement.getAttribute("data-property-title") || "İlan Detayı";
+
+    if (!propertyId || agentId === 'null' || !agentId) {
+        console.warn("Eksik parametre, sohbet başlatılamıyor.");
+        return;
+    }
+
+    if (String(currentUserId) === String(agentId)) {
+        alert("Kendi ilanınız için kendinize mesaj gönderemezsiniz.");
+        return;
+    }
+
+    document.getElementById("chat-agent-name").innerText = agentName;
+    document.getElementById("chat-agent-company").innerText = agentCompany;
+    document.getElementById("chat-agent-avatar").src = agentAvatar;
+    document.getElementById("chat-property-title").innerText = propertyTitle;
+    currentReceiverId = agentId;
+
+    initiateMiniChatRoom(propertyId);
+}
+
+async function initiateMiniChatRoom(propertyId) {
+    try {
+        const response = await fetch(`/chat/initiate/${propertyId}`, { method: 'POST' });
+        const result = await response.json();
+        
+        if (response.ok && result.room_id) {
+            currentActiveRoomId = result.room_id;
+            document.getElementById("mini-chat-widget").style.display = "flex";
+            
+            await loadMiniChatHistory(currentActiveRoomId);
+            connectMiniChatWebSocket();
+        } else {
+            alert(result.error || "Sohbet odası başlatılamadı.");
+        }
+    } catch (err) {
+        console.error("Sohbet başlatma hatası:", err);
+    }
+}
+
+async function loadMiniChatHistory(roomId) {
+    const msgBody = document.getElementById("mini-chat-messages");
+    if (!msgBody) return;
+    msgBody.innerHTML = ""; 
+    
+    try {
+        const response = await fetch(`/chat/room/${roomId}/messages`);
+        if (!response.ok) throw new Error("Geçmiş yüklenemedi");
+        
+        const messages = await response.json();
+        if (Array.isArray(messages)) {
+            messages.forEach(msg => {
+                appendBubbleToWidget(msg.message_text || msg.message, String(msg.sender_id) === String(currentUserId));
+            });
+            scrollToBottomWidget();
+        }
+    } catch (err) {
+        console.error("Mesaj geçmişi çekilemedi:", err);
+    }
+}
+
+function connectMiniChatWebSocket() {
+    if (miniChatSocket) {
+        try { miniChatSocket.close(); } catch(e) {}
+    }
+
+    if (currentUserId === 'null' || !currentUserId || !currentActiveRoomId) return;
+
+    const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    // [DÜZELTME]: Bağlantı kurulurken URL parametresine de gerçek oda ID'sini (currentActiveRoomId) veriyoruz.
+    const wsUrl = `${wsProtocol}${window.location.host}/ws/chat/${currentActiveRoomId}`;
+    
+    console.log("WebSocket Bağlantısı Kuruluyor:", wsUrl);
+    miniChatSocket = new WebSocket(wsUrl);
+
+    miniChatSocket.onmessage = function(event) {
+        console.log("WebSocket'ten ham veri geldi:", event.data);
+        try {
+            const data = JSON.parse(event.data);
+            const msgText = data.message_text || data.message;
+            const senderId = data.sender_id;
+
+            if (String(data.room_id) === String(currentActiveRoomId) && msgText) {
+                appendBubbleToWidget(msgText, String(senderId) === String(currentUserId));
+                scrollToBottomWidget();
+            }
+        } catch (e) {
+            console.error("Gelen veri ayrıştırılamadı:", e);
+        }
+    };
+
+    miniChatSocket.onerror = function(err) {
+        console.error("WebSocket Hatası:", err);
+    };
+}
+
+function appendBubbleToWidget(text, isMe) {
+    const msgBody = document.getElementById("mini-chat-messages");
+    if (!msgBody) return;
+
+    const bubble = document.createElement("div");
+    bubble.classList.add("chat-msg-bubble", isMe ? "me" : "other");
+    bubble.innerText = text;
+    msgBody.appendChild(bubble);
+}
+
+function sendMiniChatMessage() {
+    const inputField = document.getElementById("mini-chat-input");
+    if (!inputField) return;
+
+    const text = inputField.value.trim();
+    if (!text || !currentActiveRoomId) {
+        console.warn("Mesaj metni boş veya aktif oda yok.");
+        return;
+    }
+
+    const executeSend = () => {
+        const payload = {
+            room_id: parseInt(currentActiveRoomId) || currentActiveRoomId,
+            message_text: text, 
+            message: text,
+            sender_id: parseInt(currentUserId) || currentUserId,
+            receiver_id: parseInt(currentReceiverId) || currentReceiverId,
+            content: text
+        };
+        
+        console.log("WebSocket üzerinden gönderilen paket:", payload);
+        miniChatSocket.send(JSON.stringify(payload));
+        
+        // [DÜZELTME]: appendBubbleToWidget(text, true) satırı kaldırıldı! 
+        // Mesajı ekrana manuel basmıyoruz, soketten gelen onmessage tetikleyicisi tek bir kez basacak.
+        
+        inputField.value = ""; 
+        inputField.focus();
+    };
+
+    if (!miniChatSocket || miniChatSocket.readyState !== WebSocket.OPEN) {
+        console.log("Soket kapalı, yeniden bağlanıp gönderiliyor...");
+        connectMiniChatWebSocket();
+        setTimeout(() => {
+            if (miniChatSocket && miniChatSocket.readyState === WebSocket.OPEN) {
+                executeSend();
+            } else {
+                alert("Soket bağlantısı kurulamadı. Lütfen sayfayı yenileyip tekrar deneyin.");
+            }
+        }, 500);
+        return;
+    }
+
+    executeSend();
+}
+
+function scrollToBottomWidget() {
+    const msgBody = document.getElementById("mini-chat-messages");
+    if (msgBody) {
+        msgBody.scrollTop = msgBody.scrollHeight;
+    }
+}
+</script>

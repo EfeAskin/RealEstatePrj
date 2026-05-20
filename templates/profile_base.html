@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block navbar %}
-    {% if role == 'admin' %}
+    {% if current_user_role == 'admin' or role == 'admin' %}
         <nav style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;">
-            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.location.href='/profile/personal-info'">
+            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.location.href='/home'">
                 <img src="/static/htmlfotos/favicon.png" style="width: 50px; height: 50px;" alt="Favicon">
                 <div style="font-size: 1.8rem; font-weight: 800; display: flex; align-items: center;">
                     <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span>
@@ -21,7 +21,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link class="profile-link-font" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     :root {
         --user-color: #1BA7FF;
@@ -54,14 +54,13 @@
     .photo-edit-btn { position: absolute; bottom: 0; right: 0; background: var(--active-color); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; transition: var(--transition); }
     .photo-edit-btn:hover { transform: scale(1.1); filter: brightness(1.1); }
 
-    /* --- GÜNCELLENEN MODAL CSS: KESİN ÇÖZÜM --- */
     .modal {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         width: 100% !important;
         height: 100vh !important;
-        z-index: 9999999 !important; /* Sidebar z-index:10'u ezer geçer */
+        z-index: 9999999 !important;
         background: rgba(0, 0, 0, 0.75) !important;
         display: none;
         align-items: center !important;
@@ -70,18 +69,65 @@
         padding: 20px;
         box-sizing: border-box;
     }
-    /* Modal içeriği için ekstra güvenlik */
     .modal-content {
         max-height: 90vh !important;
         overflow-y: auto !important;
         position: relative !important;
         z-index: 10000000 !important;
     }
+
+    /* PREMIUM ELİT BİLDİRİM ROZETİ STİLLERİ */
+    .menu-messages-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        background: linear-gradient(135deg, #ff385c 0%, #e61e4d 100%);
+        color: white;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 50px;
+        margin-left: auto;
+        box-shadow: 0 0 10px rgba(255, 56, 92, 0.5), inset 0 1px 1px rgba(255,255,255,0.2);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        animation: pulse-glow 2s infinite alternate;
+        transition: all 0.3s ease;
+    }
+
+    .menu-messages-badge i {
+        font-size: 10px;
+        margin: 0 !important;
+        width: auto !important;
+        animation: envelope-shake 1.5s infinite ease-in-out;
+    }
+
+    /* Göz Alıcı Lüks Efekt Animasyonları */
+    @keyframes pulse-glow {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 8px rgba(255, 56, 92, 0.4);
+        }
+        100% {
+            transform: scale(1.06);
+            box-shadow: 0 0 16px rgba(255, 56, 92, 0.8), 0 0 4px #ff385c;
+        }
+    }
+
+    @keyframes envelope-shake {
+        0%, 100% { transform: rotate(0deg); }
+        15% { transform: rotate(-10deg) scale(1.1); }
+        30% { transform: rotate(12deg) scale(1.1); }
+        45% { transform: rotate(-8deg); }
+        60% { transform: rotate(8deg); }
+        75% { transform: rotate(0deg); }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="profile-container" data-role="{{ role }}">
+{% set user_role = current_user_role if current_user_role else (role if role else 'user') %}
+<div class="profile-container" data-role="{{ user_role }}">
     <div class="profile-wrapper">
         <aside class="p-sidebar">
             <div class="profile-user-card" style="text-align: center; margin-bottom: 35px;">
@@ -96,26 +142,27 @@
                 </div>
 
                 <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b;">{{ first_name }} {{ last_name }}</h3>
-                <span style="font-size: 0.8rem; color: var(--active-color); font-weight: 700; text-transform: uppercase;">{{ role }}</span>
+                <span style="font-size: 0.8rem; color: var(--active-color); font-weight: 700; text-transform: uppercase;">{{ user_role }}</span>
             </div>
             
-            <nav>
+            <nav id="profileSidebarNav">
                 <a href="/profile/personal-info" class="p-nav-item {% if p_page == 'info' %}active{% endif %}">
                     <i class="fa-solid fa-address-card"></i> Personal Info
                 </a>
                 
-                {% if role == 'user' %}
+                {% if user_role == 'user' %}
                     <a href="/profile/transactions" class="p-nav-item {% if p_page == 'transactions' %}active{% endif %}">
                         <i class="fa-solid fa-receipt"></i> My Transactions
                     </a>
                     <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
                         <i class="fa-solid fa-heart"></i> Favourites
                     </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}">
-                        <i class="fa-solid fa-envelope"></i> Messages
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center; width: 100%;" id="sidebarMsgAnchor">
+                        <i class="fa-solid fa-envelope"></i> <span>Messages</span>
+                        <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
                     </a>
                 
-                {% elif role == 'agent' %}
+                {% elif user_role == 'agent' %}
                     <a href="/profile/properties" class="p-nav-item {% if p_page == 'properties' %}active{% endif %}">
                         <i class="fa-solid fa-house-chimney"></i> Properties
                     </a>
@@ -125,14 +172,15 @@
                     <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
                         <i class="fa-solid fa-heart"></i> Favourites
                     </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}">
-                        <i class="fa-solid fa-envelope"></i> Messages
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center; width: 100%;" id="sidebarMsgAnchor">
+                        <i class="fa-solid fa-envelope"></i> <span>Messages</span>
+                        <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
                     </a>
                     <a href="/profile/payment" class="p-nav-item {% if p_page == 'payment' %}active{% endif %}">
                         <i class="fa-solid fa-credit-card"></i> Payment
                     </a>
 
-                {% elif role == 'admin' %}
+                {% elif user_role == 'admin' %}
                     <a href="/admin/all-properties" class="p-nav-item {% if p_page == 'all-properties' %}active{% endif %}">
                         <i class="fa-solid fa-building-user"></i> All Properties
                     </a>
@@ -142,8 +190,9 @@
                     <a href="/admin/approving" class="p-nav-item {% if p_page == 'approving' %}active{% endif %}">
                         <i class="fa-solid fa-circle-check"></i> Approving
                     </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}">
-                        <i class="fa-solid fa-inbox"></i> Messages
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center; width: 100%;" id="sidebarMsgAnchor">
+                        <i class="fa-solid fa-inbox"></i> <span>Messages</span>
+                        <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
                     </a>
                     <a href="/admin/dashboard" class="p-nav-item {% if p_page == 'dashboard' %}active{% endif %}">
                         <i class="fa-solid fa-chart-line"></i> Dashboard
@@ -157,11 +206,11 @@
                 {% endif %}
             </nav>
             
-            {% if role == 'admin' %}
+            {% if user_role == 'admin' %}
                 <a href="/logout" class="btn-bottom btn-logout">
                     <i class="fa-solid fa-right-from-bracket"></i> LOG OUT
                 </a>
-            {"active_page": "properties"}            {% else %}
+            {% else %}
                 <a href="/home" class="btn-bottom btn-back-main">
                     <i class="fa-solid fa-arrow-left"></i> BACK TO MAIN
                 </a>
@@ -191,7 +240,6 @@ function previewImage(event) {
     }
 }
 
-/* --- GÜNCELLENEN MODAL JAVASCRIPT --- */
 function openModal() {
     const modal = document.getElementById('propertyModal');
     if (modal) {
@@ -207,5 +255,69 @@ function closeModal() {
         document.body.style.overflow = 'auto';
     }
 }
+
+// Global Bildirim ve Rozet Yönetim Sistemi (Anlık Senkronizasyon Motoru)
+function updateGlobalBadges() {
+    const unreadCountFromServer = parseInt("{{ unread_messages_count | default(0) }}") || 0;
+    const activeChatId = "{{ active_conversation_id if active_conversation_id else 'None' }}";
+    
+    // Mesajlaşma sayfasındaysak ve oda aktifse, okunmamış sayısını anında sıfırla
+    if (activeChatId !== "None" && activeChatId !== "undefined" && window.location.pathname.includes("/messages")) {
+        localStorage.setItem("unread_count", "0");
+    } else {
+        // Eğer yerelde veri yoksa sunucudan geleni yaz
+        if (localStorage.getItem("unread_count") === null) {
+            localStorage.setItem("unread_count", unreadCountFromServer);
+        }
+    }
+
+    const finalCount = parseInt(localStorage.getItem("unread_count") || 0);
+    
+    // 1. Sol Sidebar Badge Güncelleme
+    const sidebarBadge = document.querySelector(".field-sidebar-badge");
+    if (sidebarBadge) {
+        const countText = sidebarBadge.querySelector(".badge-count") || sidebarBadge;
+        if (finalCount > 0) {
+            countText.innerText = finalCount;
+            sidebarBadge.style.display = "inline-flex";
+        } else {
+            sidebarBadge.style.display = "none";
+        }
+    }
+
+    // 2. Üst Navbar (base.html içindeki güncel seçicilerle senkron) Güncelleme
+    const navbarSelectors = ["#globalNavBadge", ".backend-msg-count"];
+    navbarSelectors.forEach(selector => {
+        const navbarBadge = document.querySelector(selector);
+        if (navbarBadge) {
+            if (finalCount > 0) {
+                const innerCount = navbarBadge.querySelector(".base-badge-count") || navbarBadge;
+                if (innerCount !== navbarBadge) {
+                    innerCount.innerText = finalCount;
+                }
+                navbarBadge.style.display = selector === "#globalNavBadge" ? "flex" : "inline-flex";
+            } else {
+                navbarBadge.style.display = "none";
+            }
+        }
+    });
+}
+
+// Mesajların okunduğunu anında yakalayan global EventListener dinleyicisi
+document.addEventListener("DOMContentLoaded", function() {
+    updateGlobalBadges();
+
+    // Aktif odadayken DOM güncellemelerini yakala ve bildirimleri anında uçur
+    const chatHistory = document.getElementById("chatMessageHistory") || document.querySelector(".chat-messages");
+    if (chatHistory) {
+        const observer = new MutationObserver(function() {
+            if (window.location.pathname.includes("/messages")) {
+                localStorage.setItem("unread_count", "0");
+                updateGlobalBadges();
+            }
+        });
+        observer.observe(chatHistory, { childList: true });
+    }
+});
 </script>
 {% endblock %}

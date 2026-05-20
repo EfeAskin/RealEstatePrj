@@ -1,4 +1,411 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<div class="chat-container-system" style="display: flex; height: calc(80vh - 80px); margin: -40px; background: #ffffff; border-radius: 25px; overflow: hidden;">
+    
+    <div class="chat-sidebar-list" style="width: 320px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; background: #fafafa;">
+        <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-size: 1.2rem; color: #1e293b; font-weight: 700;">Chats</h4>
+            <div style="display: flex; gap: 8px;">
+                <span style="font-size: 11px; background: var(--active-color); color: white; padding: 3px 8px; border-radius: 20px; font-weight: bold;">Active</span>
+            </div>
+        </div>
+
+        <div class="chat-users-scroll" style="flex: 1; overflow-y: auto; padding: 10px 0;">
+            {% if conversations %}
+                {% for chat in conversations %}
+                <div class="chat-user-item {% if active_conversation_id|string == chat.room_id|string %}active-chat-item{% endif %}" 
+                     id="chat-user-card-{{ chat.room_id }}"
+                     onclick="window.location.href='/profile/messages?chat_id={{ chat.room_id }}'"
+                     style="display: flex; align-items: center; gap: 15px; padding: 15px 20px; cursor: pointer; transition: all 0.2s ease; border-left: 4px solid transparent;">
+                    
+                    <div style="position: relative;">
+                        <img src="/static/htmlfotos/{{ chat.profile_image if chat.profile_image else 'default_user.png' }}" 
+                             style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;">
+                        {% if chat.is_online %}
+                            <span style="position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; border: 2px solid white;"></span>
+                        {% endif %}
+                    </div>
+
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                            <h5 style="margin: 0; font-size: 0.95rem; color: #1e293b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {% if chat.first_name or chat.last_name %}
+                                    {{ chat.first_name }} {{ chat.last_name }}
+                                {% else %}
+                                    User #{{ chat.room_id }}
+                                {% endif %}
+                            </h5>
+                            <span class="sidebar-chat-time" data-utc="{{ chat.last_message_time if chat.last_message_time else '' }}" style="font-size: 11px; color: #94a3b8;">
+                                {{ chat.last_message_time if chat.last_message_time else '' }}
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <p id="sidebar-last-msg-{{ chat.room_id }}" style="margin: 0; font-size: 0.85rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; display: flex; align-items: center; gap: 4px;">
+                                {% if chat.last_message_sender|string == current_user_id|string %}
+                                    {% if chat.last_message_read %}
+                                        <i class="fa-solid fa-check-double sidebar-tick" style="color: var(--active-color); font-size: 12px; flex-shrink: 0;"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-check sidebar-tick" style="color: #94a3b8; font-size: 12px; flex-shrink: 0;"></i>
+                                    {% endif %}
+                                {% endif %}
+                                <span class="last-msg-text-span">{{ chat.last_message if chat.last_message else 'No messages yet...' }}</span>
+                            </p>
+                            
+                            {% if chat.unread_count and chat.unread_count > 0 %}
+                                <span class="inner-chat-badge" style="background: #ff385c; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 50%; min-width: 14px; text-align: center;">
+                                    {{ chat.unread_count }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">
+                    <i class="fa-solid fa-comments" style="font-size: 2.5rem; margin-bottom: 10px; color: #cbd5e1;"></i>
+                    <p style="font-size: 0.9rem; margin: 0;">No conversations yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="chat-main-window" style="flex: 1; display: flex; flex-direction: column; background: #ffffff; position: relative;">
+        {% if active_chat_partner %}
+            <div style="padding: 16px 25px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.01);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="/static/htmlfotos/{{ active_chat_partner.profile_image if active_chat_partner.profile_image else 'default_user.png' }}" 
+                         style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0;">
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.05rem; color: #1e293b; font-weight: 700;">
+                            {{ active_chat_partner.first_name }} {{ active_chat_partner.last_name }}
+                        </h4>
+                        <span style="font-size: 0.8rem; color: var(--active-color); font-weight: 600; text-transform: uppercase;">
+                            {{ active_chat_partner.role if active_chat_partner.role else 'User' }}
+                        </span>
+                    </div>
+                </div>
+                
+                {% if active_property %}
+                <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-soft); padding: 8px 15px; border-radius: 12px; max-width: 280px;">
+                    <i class="fa-solid fa-building" style="color: var(--active-color);"></i>
+                    <div style="min-width: 0;">
+                        <p style="margin: 0; font-size: 0.8rem; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ active_property.name }}</p>
+                        <span style="font-size: 0.75rem; color: #64748b;">{{ active_property.price }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div id="chatMessageHistory" style="flex: 1; overflow-y: auto; padding: 25px; background: #f8fafc; display: flex; flex-direction: column; gap: 15px;">
+                {% if messages %}
+                    {% for msg in messages %}
+                        {% if msg.sender_id|string == current_user_id|string %}
+                            <div style="display: flex; justify-content: flex-end; align-items: flex-end; gap: 8px; margin-left: 20%;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <div style="background: var(--active-color); color: white; padding: 12px 18px; border-radius: 18px 18px 4px 18px; font-size: 0.95rem; line-height: 1.4; box-shadow: 0 2px 4px var(--theme-shadow); word-break: break-word;">
+                                        {{ msg.message_text }}
+                                    </div>
+                                    <span class="message-timestamp-bubble" data-msg-id="{{ msg.id }}" data-utc="{{ msg.created_at }}" style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+                                        <span class="time-text-placeholder">{{ msg.created_at }}</span> 
+                                        <span class="tick-container">
+                                            {% if msg.is_read %}
+                                                <i class="fa-solid fa-check-double" style="color: var(--active-color); margin-left: 2px;"></i>
+                                            {% else %}
+                                                <i class="fa-solid fa-check" style="margin-left: 2px;"></i>
+                                            {% endif %}
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div style="display: flex; justify-content: flex-start; align-items: flex-end; gap: 10px; margin-right: 20%;">
+                                <img src="/static/htmlfotos/{{ active_chat_partner.profile_image if active_chat_partner.profile_image else 'default_user.png' }}" 
+                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                                    <div style="background: #ffffff; color: #1e293b; padding: 12px 18px; border-radius: 18px 18px 18px 4px; font-size: 0.95rem; line-height: 1.4; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); word-break: break-word;">
+                                        {{ msg.message_text }}
+                                    </div>
+                                    <span class="message-timestamp-bubble" data-utc="{{ msg.created_at }}" style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+                                        <span class="time-text-placeholder">{{ msg.created_at }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div id="no-messages-placeholder" style="text-align: center; margin: auto; color: #94a3b8;">
+                        <p style="margin: 0;">Say hello to start the conversation!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div style="padding: 20px; border-top: 1px solid #e2e8f0; background: #ffffff;">
+                <form id="chatForm" style="display: flex; gap: 12px; align-items: center;">
+                    <input type="hidden" id="chat_id" name="chat_id" value="{{ active_conversation_id }}">
+                    <input type="hidden" id="receiver_id" name="receiver_id" value="{{ active_chat_partner.id }}">
+                    
+                    <div style="flex: 1; position: relative; display: flex; align-items: center;">
+                        <input type="text" id="message_text" name="message_text" required placeholder="Type a message..." autocomplete="off"
+                               style="width: 100%; padding: 14px 20px; border: 1px solid #e2e8f0; border-radius: 100px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;"
+                               onfocus="this.style.borderColor='var(--active-color)'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
+                    
+                    <button type="submit" style="background: var(--active-color); color: white; border: none; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px var(--theme-shadow);"
+                            onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fa-solid fa-paper-plane" style="font-size: 16px;"></i>
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; text-align: center; padding: 30px;">
+                <div style="background: #ffffff; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.04); margin-bottom: 20px;">
+                    <i class="fa-solid fa-paper-plane" style="font-size: 2rem; color: var(--active-color);"></i>
+                </div>
+                <h4 style="margin: 0 0 10px 0; color: #1e293b; font-weight: 700; font-size: 1.2rem;">Your Messages</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.95rem; max-width: 320px;">Select an existing conversation from the left menu or contact an agent from property details to start chatting.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .chat-user-item:hover {
+        background-color: #f1f5f9 !important;
+    }
+    .active-chat-item {
+        background-color: var(--bg-soft) !important;
+        border-left-color: var(--active-color) !important;
+    }
+    .chat-users-scroll::-webkit-scrollbar, #chatMessageHistory::-webkit-scrollbar {
+        width: 6px;
+    }
+    .chat-users-scroll::-webkit-scrollbar-thumb, #chatMessageHistory::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 10px;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const currentUserId = "{{ current_user_id }}";
+        const roomId = "{{ active_conversation_id }}";
+        const partnerImg = "{{ active_chat_partner.profile_image if active_chat_partner and active_chat_partner.profile_image else 'default_user.png' }}";
+
+        const chatHistory = document.getElementById("chatMessageHistory");
+        const chatForm = document.getElementById("chatForm");
+        const messageInput = document.getElementById("message_text");
+
+        // --- AKTİF KUTUCUĞUN ROZETİNİ SÖNDÜREN EK MOTOR ---
+        function clearActiveChatBadge() {
+            if (roomId && roomId !== "" && roomId !== "None") {
+                const activeCard = document.getElementById(`chat-user-card-${roomId}`);
+                if (activeCard) {
+                    const badge = activeCard.querySelector(".inner-chat-badge");
+                    if (badge) {
+                        badge.style.display = "none";
+                    }
+                }
+            }
+        }
+        // Sayfa ilk yüklendiğinde eğer bir chat aktifse rozetini söndür
+        clearActiveChatBadge();
+
+        // --- SAAT KAYMASINI ENGELLEYEN ZAMAN MOTORU ---
+        function parseAndFormatTime(dateInput) {
+            if (!dateInput || String(dateInput).trim() === "") return "";
+            
+            if (typeof dateInput === 'string' && dateInput.trim().length === 5 && dateInput.includes(':')) {
+                return dateInput.trim();
+            }
+
+            let date;
+            if (typeof dateInput === 'string') {
+                let rawStr = dateInput.trim();
+                if (rawStr.includes(' ') && rawStr.includes('-')) {
+                    rawStr = rawStr.replace(' ', 'T');
+                }
+                date = new Date(rawStr);
+            } else {
+                date = new Date(dateInput);
+            }
+
+            if (isNaN(date.getTime())) {
+                if (typeof dateInput === 'string' && dateInput.includes(':')) {
+                    const match = dateInput.match(/(\d{2}):(\d{2})/);
+                    if (match) return `${match[1]}:${match[2]}`;
+                }
+                return "";
+            }
+
+            return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        // --- JINJA VERİLERİNİ YEREL SAATE ÇEVİRME ---
+        document.querySelectorAll(".message-timestamp-bubble").forEach(span => {
+            const utcTime = span.getAttribute("data-utc");
+            if (utcTime) {
+                const timePlaceholder = span.querySelector(".time-text-placeholder");
+                if (timePlaceholder) {
+                    const formatted = parseAndFormatTime(utcTime);
+                    if (formatted) timePlaceholder.textContent = formatted;
+                }
+            }
+        });
+
+        document.querySelectorAll(".sidebar-chat-time").forEach(span => {
+            const utcTime = span.getAttribute("data-utc");
+            if (utcTime && utcTime.trim() !== "") {
+                const formatted = parseAndFormatTime(utcTime);
+                if (formatted) span.textContent = formatted;
+            }
+        });
+
+        function scrollToBottom() {
+            if (chatHistory) {
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        }
+        scrollToBottom();
+
+        // --- REAL-TIME WEBSOCKET ENTEGRASYONU ---
+        if (roomId && roomId !== "" && roomId !== "None") {
+            const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+            const wsUrl = wsProtocol + window.location.host + "/ws/chat/" + roomId;
+            
+            const chatSocket = new WebSocket(wsUrl);
+
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                
+                // --- GERÇEK ZAMANLI OKUNDU (READ) EVENT'İ YAKALAMA ---
+                if (data.type === "messages_read") {
+                    // 1. Ana pencerelerdeki tikleri çift yap
+                    document.querySelectorAll("#chatMessageHistory .tick-container").forEach(container => {
+                        container.innerHTML = `<i class="fa-solid fa-check-double" style="color: var(--active-color); margin-left: 2px;"></i>`;
+                    });
+                    
+                    // 2. Mini listedeki tik ikonunu güncelle
+                    const sidebarLastMsg = document.getElementById(`sidebar-last-msg-${roomId}`);
+                    if (sidebarLastMsg) {
+                        const tickIcon = sidebarLastMsg.querySelector(".sidebar-tick");
+                        if (tickIcon) {
+                            tickIcon.className = "fa-solid fa-check-double sidebar-tick";
+                            tickIcon.style.color = "var(--active-color)";
+                        }
+                    }
+
+                    // 3. Mini listedeki kırmızı rozeti anında söndür!
+                    clearActiveChatBadge();
+                    return;
+                }
+
+                if (data.type === "system") return;
+
+                const placeholder = document.getElementById("no-messages-placeholder");
+                if (placeholder) placeholder.remove();
+
+                let messageHtml = "";
+                const isMe = String(data.sender_id) === String(currentUserId);
+                
+                const timeStr = parseAndFormatTime(data.created_at) || new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+                if (isMe) {
+                    const checkIcon = data.is_read ? 
+                        `<i class="fa-solid fa-check-double" style="color: var(--active-color); margin-left: 2px;"></i>` : 
+                        `<i class="fa-solid fa-check" style="margin-left: 2px;"></i>`;
+
+                    messageHtml = `
+                        <div style="display: flex; justify-content: flex-end; align-items: flex-end; gap: 8px; margin-left: 20%;">
+                            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                <div style="background: var(--active-color); color: white; padding: 12px 18px; border-radius: 18px 18px 4px 18px; font-size: 0.95rem; line-height: 1.4; box-shadow: 0 2px 4px var(--theme-shadow); word-break: break-word;">
+                                    ${data.message}
+                                </div>
+                                <span class="message-timestamp-bubble" data-msg-id="${data.msg_id || ''}" style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+                                    <span class="time-text-placeholder">${timeStr}</span> <span class="tick-container">${checkIcon}</span>
+                                </span>
+                            </div>
+                        </div>`;
+                } else {
+                    messageHtml = `
+                        <div style="display: flex; justify-content: flex-start; align-items: flex-end; gap: 10px; margin-right: 20%;">
+                            <img src="/static/htmlfotos/${partnerImg}" 
+                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                                <div style="background: #ffffff; color: #1e293b; padding: 12px 18px; border-radius: 18px 18px 18px 4px; font-size: 0.95rem; line-height: 1.4; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); word-break: break-word;">
+                                    ${data.message}
+                                </div>
+                                <span class="message-timestamp-bubble" style="font-size: 10px; color: #94a3b8; margin-top: 4px;">
+                                    <span class="time-text-placeholder">${timeStr}</span>
+                                </span>
+                            </div>
+                        </div>`;
+                        
+                    chatSocket.send(JSON.stringify({
+                        'type': 'read_event',
+                        'room_id': roomId,
+                        'reader_id': currentUserId
+                    }));
+                }
+
+                chatHistory.insertAdjacentHTML('beforeend', messageHtml);
+                
+                const sidebarLastMsg = document.getElementById(`sidebar-last-msg-${roomId}`);
+                if (sidebarLastMsg) {
+                    let tickHtml = "";
+                    if (isMe) {
+                        if (data.is_read) {
+                            tickHtml = `<i class="fa-solid fa-check-double sidebar-tick" style="color: var(--active-color); font-size: 12px; flex-shrink: 0;"></i>`;
+                        } else {
+                            tickHtml = `<i class="fa-solid fa-check sidebar-tick" style="color: #94a3b8; font-size: 12px; flex-shrink: 0;"></i>`;
+                        }
+                    }
+                    sidebarLastMsg.innerHTML = `${tickHtml}<span class="last-msg-text-span">${data.message}</span>`;
+                }
+                
+                const currentItem = document.getElementById(`sidebar-last-msg-${roomId}`)?.closest('.chat-user-item');
+                if (currentItem) {
+                    const sidebarTime = currentItem.querySelector('.sidebar-chat-time');
+                    if (sidebarTime) sidebarTime.textContent = timeStr;
+                }
+                
+                // Karşıdan aktif sohbete yeni bir mesaj geldiğinde de rozeti temiz tut
+                clearActiveChatBadge();
+                scrollToBottom();
+            };
+
+            chatSocket.onopen = function(e) {
+                setTimeout(() => {
+                    chatSocket.send(JSON.stringify({
+                        'type': 'read_event',
+                        'room_id': roomId,
+                        'reader_id': currentUserId
+                    }));
+                }, 500);
+            };
+
+            chatSocket.onclose = function(e) {
+                console.log("Chat socket kapandı.");
+            };
+
+            if (chatForm) {
+                chatForm.addEventListener("submit", function(e) {
+                    e.preventDefault();
+                    const text = messageInput.value.trim();
+                    if (!text) return;
+
+                    if (chatSocket.readyState === WebSocket.OPEN) {
+                        chatSocket.send(JSON.stringify({
+                            'message': text,
+                            'sender_id': currentUserId,
+                            'is_read': false
+                        }));
+                    }
+
+                    messageInput.value = "";
+                });
+            }
+        }
+    });
+</script>
 {% endblock %}

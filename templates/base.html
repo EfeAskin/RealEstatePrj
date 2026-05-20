@@ -6,7 +6,7 @@
     <title>{% block title %}CypInvEst{% endblock %}</title>
     
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', path='htmlfotos/favicon.png') }}">
     
     <style>
@@ -43,6 +43,7 @@
             padding: 12px 28px; border-radius: 100px; cursor: pointer;
             font-weight: 600; transition: all 0.3s ease; display: flex; 
             align-items: center; gap: 10px; box-shadow: 0 4px 12px var(--theme-shadow);
+            position: relative;
         }
         .btn-main:hover { 
             background: var(--theme-hover); transform: translateY(-2px);
@@ -65,6 +66,7 @@
             display: flex; align-items: center; gap: 14px; padding: 14px 22px;
             color: #475569; text-decoration: none; font-size: 14.5px; 
             font-weight: 500; transition: 0.2s;
+            position: relative;
         }
         .drop-item:hover { background: var(--theme-light); color: var(--theme-color); }
         .drop-item i { width: 20px; text-align: center; color: #94a3b8; }
@@ -73,6 +75,63 @@
         .nav-links a { text-decoration: none; color: #64748b; font-weight: 500; transition: 0.2s; }
         .nav-links a:hover { color: var(--theme-color); }
         .nav-links a.active { color: #1e293b; font-weight: 700; }
+
+        /* --- PREMIUM ANIMASYONLU ELIT BİLDİRİM SİSTEMİ (NAVBAR & DROPDOWN) --- */
+        .nav-unread-dot {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #ff385c 0%, #e61e4d 100%);
+            color: white;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 12px rgba(255, 56, 92, 0.6);
+            animation: pulse-danger 1.8s infinite alternate;
+        }
+
+        .nav-unread-dot i {
+            font-size: 10px !important;
+            color: white !important;
+            margin: 0 !important;
+            animation: envelope-shake 1.5s infinite ease-in-out;
+        }
+        
+        .drop-messages-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #ff385c 0%, #e61e4d 100%);
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 50px;
+            margin-left: auto;
+            box-shadow: 0 0 8px rgba(255, 56, 92, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: none;
+        }
+
+        /* Göz Alıcı Animasyon Tanımlamaları */
+        @keyframes pulse-danger {
+            0% { transform: scale(1); box-shadow: 0 0 6px rgba(255, 56, 92, 0.5); }
+            100% { transform: scale(1.1); box-shadow: 0 0 16px rgba(255, 56, 92, 0.9), 0 0 4px #ff385c; }
+        }
+
+        @keyframes envelope-shake {
+            0%, 100% { transform: rotate(0deg); }
+            15% { transform: rotate(-12deg) scale(1.1); }
+            30% { transform: rotate(14deg) scale(1.1); }
+            45% { transform: rotate(-10deg); }
+            60% { transform: rotate(10deg); }
+            75% { transform: rotate(0deg); }
+        }
     </style>
 
     {% if is_admin %}
@@ -108,6 +167,7 @@
         <div class="profile" style="position: relative;">
             <button id="profileBtn" class="btn-main" onclick="toggleDropdown(event)">
                 <i class="fas fa-user-circle"></i> Profile
+                <span class="nav-unread-dot" id="globalNavBadge"><i class="fa-solid fa-envelope"></i></span>
             </button>
             
             <div id="profileDropdown" class="dropdown">
@@ -116,17 +176,27 @@
                     <a href="/profile/properties" class="drop-item"><i class="fas fa-building"></i> Properties</a>
                     <a href="/profile/requests" class="drop-item"><i class="fas fa-clipboard-list"></i> Requests</a>
                     <a href="/profile/favourites" class="drop-item"><i class="fas fa-heart"></i> Favourites</a>
-                    <a href="/profile/messages" class="drop-item"><i class="fas fa-envelope"></i> Messages</a>
+                    <a href="/profile/messages" class="drop-item">
+                        <i class="fas fa-envelope"></i> Messages
+                        <span class="drop-messages-badge backend-msg-count"><b class="base-badge-count">0</b></span>
+                    </a>
                     <a href="/profile/payment" class="drop-item"><i class="fas fa-credit-card"></i> Payment</a>
                 {% elif is_admin %}
                     <a href="/profile/dashboard" class="drop-item"><i class="fas fa-chart-line"></i> Dashboard</a>
                     <a href="/profile/users" class="drop-item"><i class="fas fa-users"></i> Users</a>
                     <a href="/profile/personal-info" class="drop-item"><i class="fas fa-user-shield"></i> Personal Info</a>
+                    <a href="/profile/messages" class="drop-item">
+                        <i class="fas fa-envelope"></i> Messages
+                        <span class="drop-messages-badge backend-msg-count"><b class="base-badge-count">0</b></span>
+                    </a>
                 {% else %}
                     <a href="/profile/personal-info" class="drop-item"><i class="fas fa-user-circle"></i> Personal Info</a>
                     <a href="/profile/transactions" class="drop-item"><i class="fas fa-calendar-check"></i> My Transactions</a>
                     <a href="/profile/favourites" class="drop-item"><i class="fas fa-heart"></i> Favourites</a>
-                    <a href="/profile/messages" class="drop-item"><i class="fas fa-envelope"></i> Messages</a>
+                    <a href="/profile/messages" class="drop-item">
+                        <i class="fas fa-envelope"></i> Messages
+                        <span class="drop-messages-badge backend-msg-count"><b class="base-badge-count">0</b></span>
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -142,6 +212,7 @@
 <main>
     {% block content %}{% endblock %}
 </main>
+
 
 <footer class="patriotic-footer">
     {% if not is_admin %}
@@ -197,6 +268,7 @@
     </div>
 </footer>
 
+
 <script>
     function toggleDropdown(event) {
         event.stopPropagation();
@@ -211,6 +283,81 @@
             dropdown.style.display = 'none';
         }
     }
+
+    // --- SİZİN BACKEND'E UYUMLU AKILLI ROZET MOTORU ---
+    async function masterSyncBadges() {
+        const currentPath = window.location.pathname;
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (currentPath.includes("/profile/messages") && (urlParams.has("chat_id") || window.location.search.includes("chat_id"))) {
+            localStorage.setItem("unread_count", "0");
+            updateDOMBadges(0);
+            return;
+        }
+
+        try {
+            const response = await fetch('/chat/unread-check');
+            if (response.ok) {
+                const data = await response.json();
+                const count = data.unread_total ?? 0;
+                localStorage.setItem("unread_count", count.toString());
+                updateDOMBadges(count);
+            } else {
+                fallbackToJinja();
+            }
+        } catch (error) {
+            console.log("API bağlantısı sağlanamadı, Jinja fallback yapılıyor...");
+            fallbackToJinja();
+        }
+    }
+
+    function fallbackToJinja() {
+        const unreadCountFromServer = parseInt("{{ unread_messages_count | default(0) }}") || 0;
+        if (localStorage.getItem("unread_count") === null) {
+            localStorage.setItem("unread_count", unreadCountFromServer.toString());
+        }
+        updateDOMBadges(parseInt(localStorage.getItem("unread_count") || 0));
+    }
+
+    function updateDOMBadges(finalCount) {
+        const globalBadge = document.getElementById("globalNavBadge");
+        const dropBadge = document.querySelector(".backend-msg-count");
+        const dropCountText = dropBadge ? (dropBadge.querySelector(".base-badge-count") || dropBadge) : null;
+        
+        const sidebarBadge = document.querySelector(".field-sidebar-badge");
+        const sidebarCountText = sidebarBadge ? (sidebarBadge.querySelector(".badge-count") || sidebarBadge) : null;
+
+        if (finalCount > 0) {
+            if (globalBadge) globalBadge.style.display = "flex";
+            
+            if (dropBadge) {
+                if (dropCountText) dropCountText.innerText = finalCount;
+                dropBadge.style.display = "inline-flex";
+            }
+            
+            if (sidebarBadge) {
+                if (sidebarCountText) sidebarCountText.innerText = finalCount;
+                sidebarBadge.style.display = "inline-flex";
+            }
+        } else {
+            if (globalBadge) globalBadge.style.display = "none";
+            if (dropBadge) dropBadge.style.display = "none";
+            if (sidebarBadge) sidebarBadge.style.display = "none";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        masterSyncBadges();
+
+        const messageContainer = document.getElementById("chatMessageHistory") || document.querySelector(".chat-messages");
+        if (messageContainer) {
+            const observer = new MutationObserver(function() {
+                localStorage.setItem("unread_count", "0");
+                updateDOMBadges(0);
+            });
+            observer.observe(messageContainer, { childList: true });
+        }
+    });
 </script>
 
 {% block extra_js %}{% endblock %}

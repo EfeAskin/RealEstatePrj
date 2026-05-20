@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, status
+from fastapi import APIRouter, Request, Form, status, Response
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 import database as db
@@ -15,7 +15,7 @@ async def login_page(request: Request, role: str):
     return templates.TemplateResponse(request, f"{role}login.html", {"error": "", "role": role})
 
 @router.post("/login/{role}")
-async def login(request: Request, role: str, email: str = Form(...), password: str = Form(...)):
+async def login(request: Request, response: Response, role: str, email: str = Form(...), password: str = Form(...)):
     # --- CANLI VERİTABANI BAĞLANTISI AKTİF ---
     user = db.get_user_from_db(email)
     # -----------------------------------------
@@ -23,14 +23,39 @@ async def login(request: Request, role: str, email: str = Form(...), password: s
     if user:
         # Şifre doğrulama ve Rol kontrolü
         if db.verify_password(password, user["password"]) and user["role"] == role:
+            # Geriye dönük uyumluluk için eski global durumları da besliyoruz
             db.current_user_role = user["role"]
             db.current_user_email = email  
             db.current_user_data = user
             
-            if user["role"] == "admin":
-                return RedirectResponse(url="/profile/personal-info", status_code=status.HTTP_303_SEE_OTHER)
-            else:
-                return RedirectResponse(url="/home", status_code=status.HTTP_303_SEE_OTHER)
+            # --- 2. YOL KORUMASI: Tarayıcı bazlı HTTP-Only çerezleri mühürliyotuz ---
+            # Böylece Chrome ayrı, Firefox ayrı bir kullanıcı hafızası tutacak
+            redirect_url = "/profile/personal-info" if user["role"] == "admin" else "/home"
+            res = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+            
+            res.set_cookie(
+                key="user_id",
+                value=str(user["id"]),
+                httponly=True,   # JavaScript erişimini engeller, güvenlidir
+                max_age=86400,   # 1 gün (saniye cinsinden)
+                samesite="lax"
+            )
+            res.set_cookie(
+                key="user_role",
+                value=str(user["role"]),
+                httponly=False,  # Frontend JS isterse okuyabilsin diye false
+                max_age=86400,
+                samesite="lax"
+            )
+            # PROFİL VE MESAJLAŞMA İÇİN KUSURSUZ GÜVENCE: E-posta bilgisini de HTTP-Only çereze mühürlüyoruz
+            res.set_cookie(
+                key="user_email",
+                value=str(user["email"]),
+                httponly=True,
+                max_age=86400,
+                samesite="lax"
+            )
+            return res
         else:
             error_msg = f"Hatalı şifre veya bu bir {user['role']} hesabıdır!"
     else:
@@ -39,9 +64,15 @@ async def login(request: Request, role: str, email: str = Form(...), password: s
     return templates.TemplateResponse(request, f"{role}login.html", {"error": error_msg, "role": role})
 
 @router.get("/logout")
-async def logout():
+async def logout(response: Response):
     db.logout_user() # database.py'daki temizleme fonksiyonunu çağırır
-    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    
+    # Çerezleri tarayıcı hafızasından tamamen siliyoruz
+    res = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    res.delete_cookie("user_id")
+    res.delete_cookie("user_role")
+    res.delete_cookie("user_email") # Eklenen yeni çerezi de çıkışta siliyoruz
+    return res
 
 @router.get("/register/{role}", response_class=HTMLResponse)
 async def register_page(request: Request, role: str):

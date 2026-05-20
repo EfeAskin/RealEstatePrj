@@ -91,23 +91,29 @@
     </div>
 
     {% if agent %}
-        <button class="msg-btn" onclick="openChat('{{ agent.id }}')">
+        <button class="msg-btn message-agent-trigger" 
+                data-property-id="{{ property.id }}"
+                data-agent-id="{{ agent.id }}"
+                data-agent-name="{{ agent.full_name }}"
+                data-agent-company="{{ agent.agency_name if agent.agency_name else 'Cypinvest Global' }}"
+                data-agent-avatar="{{ url_for('static', path='htmlfotos/' + agent.agent_image) if agent.agent_image else url_for('static', path='htmlfotos/default_agent.png') }}"
+                data-property-title="{{ property.name }}">
             Message Agent
         </button>
     {% else %}
-        <button class="msg-btn" onclick="openChat('null')" disabled>
+        <button class="msg-btn" disabled>
             Message Agent
         </button>
     {% endif %}
 </div>
 
 <script>
+// Bu fonksiyon geriye dönük uyumluluk ve konsol takibi için korunmuştur.
+// Asıl tetikleme işlemini .message-agent-trigger sınıfını dinleyen chat_widget.html yürütmektedir.
 function openChat(agentId) {
     if (!agentId || agentId === 'null') {
-        alert("Bu ilan için emlakçı bilgisi bulunamadı.");
         return;
     }
-    console.log("Mesajlaşma başlatılıyor, Agent ID:", agentId);
-    // İleride buraya chat penceresini açacak kodları yazacağız
+    console.log("Sohbet arayüzü tetiklendi, Emlakçı ID:", agentId);
 }
 </script>

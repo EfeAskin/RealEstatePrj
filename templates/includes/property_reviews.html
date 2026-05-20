@@ -17,8 +17,8 @@
     {% for review in property.reviews %}
     <div class="comment-card">
         <div class="user-info">
-            <img src="{{ review.user_avatar if review.user_avatar else 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y' }}" alt="{{ review.user_name }}">
-            <div><strong>{{ review.user_name }}</strong><br><small>{{ review.created_at.strftime('%B %Y') if review.created_at else 'Recent' }}</small></div>
+            <img src="{{ review.user_avatar if review.user_avatar else review.avatar_url if review.avatar_url else 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y' }}" alt="{{ review.user_name if review.user_name else review.reviewer_name }}">
+            <div><strong>{{ review.user_name if review.user_name else review.reviewer_name }}</strong><br><small>{{ review.created_at.strftime('%B %Y') if review.created_at else 'Recent' }}</small></div>
         </div>
         <p class="comment-body">{{ review.comment }}</p>
     </div>
