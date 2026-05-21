@@ -74,25 +74,25 @@ async def db_session_middleware(request: Request, call_next):
     user_id_cookie = request.cookies.get("user_id")
     current_user = None
     unread_count = 0
-   
+    
     if user_id_cookie:
         try:
             current_user = db.get_user_from_cookie(user_id_cookie)
         except Exception as e:
             print(f"Middleware Kullanıcı Çerez Okuma Hatası: {e}")
             current_user = None
-   
+    
     if current_user:
         safe_user_data = CallableDict(current_user)
         safe_user_role = CallableStr(current_user.get("role", "guest"))
-       
+        
         templates.env.globals["current_user_role"] = safe_user_role
         templates.env.globals["current_user_data"] = safe_user_data
-       
+        
         db.current_user_role = current_user.get("role", "guest")
         db.current_user_data = current_user
         db.current_user_email = current_user.get("email")
-       
+        
         # --- KÜRESEL OKUNMAMIŞ MESAJ SAYMA MOTORU ---
         current_user_id = current_user.get("id")
         if current_user_id:
@@ -123,10 +123,10 @@ async def db_session_middleware(request: Request, call_next):
     else:
         empty_user_data = CallableDict({})
         guest_role = CallableStr("guest")
-       
+        
         templates.env.globals["current_user_role"] = guest_role
         templates.env.globals["current_user_data"] = empty_user_data
-       
+        
         db.current_user_role = "guest"
         db.current_user_data = {}
         db.current_user_email = None
@@ -156,24 +156,24 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
     """
     user_id_cookie = request.cookies.get("user_id")
     current_user = db.get_user_from_cookie(user_id_cookie) if user_id_cookie else None
-   
+    
     if not current_user:
         return RedirectResponse(url="/auth/login", status_code=303)
-       
+        
     current_user_id = int(current_user.get("id"))
-   
+    
     conn = db.get_db_connection()
     if not conn:
         return templates.TemplateResponse("messages.html", {"request": request, "chats": [], "messages": [], "error": "Veritabanı bağlantı hatası."})
-       
+        
     chats_list = []
     messages_list = []
     active_chat_user_name = None
     active_chat_user_avatar = None
-   
+    
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-       
+        
         # 1. ADIM: AKTİF SOHBET ODALARI LİSTESİNİ VE KARŞI TARAFIN BİLGİLERİNİ ÇEKME
         cur.execute(
             """
@@ -195,7 +195,7 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
             (current_user_id, current_user_id, current_user_id, current_user_id, current_user_id)
         )
         db_chats = cur.fetchall()
-       
+        
         for row in db_chats:
             prof_img = str(row["profile_image"]).strip() if row["profile_image"] else ""
             if prof_img:
@@ -207,7 +207,7 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
                     avatar_path = f"/static/htmlfotos/{prof_img}"
             else:
                 avatar_path = "/static/htmlfotos/default_user.png"
-               
+                
             chats_list.append({
                 "id": row["chat_id"],
                 "user_name": f"{row['first_name']} {row['last_name']}".strip() or f"Kullanıcı #{row['counterpart_id']}",
@@ -215,7 +215,7 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
                 "last_message": row["last_message"] if row["last_message"] else "Henüz mesaj yok.",
                 "unread_count": int(row["unread_count"])
             })
-           
+            
         # 2. ADIM: EĞER BİR ODA SEÇİLDİYSE MESAJLARI GETİR VE OKUNDU YAP
         if chat_id:
             cur.execute(
@@ -227,7 +227,7 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
                 (chat_id, current_user_id)
             )
             conn.commit()
-           
+            
             # [ZAMAN REBORN]: Katlamalı +3 saat hatasını düzeltmek adına SQL'deki çifte TIME ZONE dönüşümü temizlendi.
             cur.execute(
                 """
@@ -239,7 +239,7 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
                 (chat_id,)
             )
             db_messages = cur.fetchall()
-           
+            
             for m in db_messages:
                 m_time = m["created_at"]
                 time_str = ""
@@ -257,7 +257,7 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
                     "timestamp": time_str,
                     "is_my_message": int(m["sender_id"]) == current_user_id
                 })
-               
+                
             for c in chats_list:
                 if int(c["id"]) == int(chat_id):
                     active_chat_user_name = c["user_name"]
@@ -269,7 +269,7 @@ async def get_profile_messages(request: Request, chat_id: Optional[int] = None):
         print(f"Sohbet Sayfası Yükleme Hatası: {e}")
     finally:
         conn.close()
-           
+            
     return templates.TemplateResponse(
         "messages.html",
         {
@@ -293,21 +293,21 @@ async def send_profile_message(
     """Sohbet odası içerisinden gönderilen yeni mesajları mükerrer kayıt korumasıyla veritabanına yazar."""
     user_id_cookie = request.cookies.get("user_id")
     current_user = db.get_user_from_cookie(user_id_cookie) if user_id_cookie else None
-   
+    
     if not current_user:
         return RedirectResponse(url="/auth/login", status_code=303)
-       
+        
     current_user_id = current_user.get("id")
     clean_message = message_content.strip()
-   
+    
     if not clean_message:
         return RedirectResponse(url=f"/profile/messages?chat_id={chat_id}", status_code=303)
-       
+        
     conn = db.get_db_connection()
     if conn:
         try:
             cur = conn.cursor()
-           
+            
             # [ÇİFT KAYIT KORUMASI]: Aynı odada, aynı kişinin son 2 saniyede attığı birebir aynı mesaj var mı kontrol et
             cur.execute(
                 """
@@ -319,7 +319,7 @@ async def send_profile_message(
                 (chat_id, current_user_id, clean_message)
             )
             duplicate = cur.fetchone()
-           
+            
             # Eğer kayıt zaten mevcutsa ikinci kez ekleme yapmadan doğrudan sayfaya yönlendir
             if duplicate:
                 cur.close()
@@ -340,7 +340,7 @@ async def send_profile_message(
             conn.rollback()
         finally:
             conn.close()
-               
+                
     return RedirectResponse(url=f"/profile/messages?chat_id={chat_id}", status_code=303)
 
 
@@ -352,10 +352,10 @@ async def initiate_chat(property_id: int, request: Request):
     """Sohbet odası oluşturma veya var olan odayı getirme endpoint'i."""
     user_id_cookie = request.cookies.get("user_id")
     user_data = db.get_user_from_cookie(user_id_cookie) if user_id_cookie else None
-   
+    
     if not user_data:
         return JSONResponse(status_code=401, content={"error": "Sohbet başlatmak için giriş yapmalısınız."})
-       
+        
     current_user_id = user_data.get("id")
     if not current_user_id:
         return JSONResponse(status_code=401, content={"error": "Kullanıcı oturum bilgisi geçersiz."})
@@ -363,16 +363,16 @@ async def initiate_chat(property_id: int, request: Request):
     conn = db.get_db_connection()
     if not conn:
         return JSONResponse(status_code=500, content={"error": "Veritabanı bağlantı hatası."})
-       
+        
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute("SELECT id, name, agent_id FROM properties WHERE id = %s", (property_id,))
         prop = cur.fetchone()
-       
+        
         if not prop:
             cur.close()
             return JSONResponse(status_code=404, content={"error": "İlan bulunamadı."})
-           
+            
         target_agent_id = prop.get("agent_id")
         if not target_agent_id:
             cur.close()
@@ -390,7 +390,7 @@ async def initiate_chat(property_id: int, request: Request):
             (property_id, current_user_id, target_agent_id)
         )
         room = cur.fetchone()
-       
+        
         if room:
             room_id = room["id"]
         else:
@@ -403,7 +403,7 @@ async def initiate_chat(property_id: int, request: Request):
             )
             room_id = cur.fetchone()["id"]
             conn.commit()
-           
+            
         cur.close()
         return {
             "room_id": room_id,
@@ -411,7 +411,7 @@ async def initiate_chat(property_id: int, request: Request):
             "name": prop.get("name"),
             "title": prop.get("name")
         }
-       
+        
     except Exception as e:
         conn.rollback()
         print(f"Kritik /chat/initiate Hatası: {e}")
@@ -421,55 +421,92 @@ async def initiate_chat(property_id: int, request: Request):
 
 
 # ==============================================================================
-# YENİ İLAN EKLEME ENDPOINT (Pop-up Formu Yönetimi)
+# YENİ İLAN EKLEME ENDPOINT (Çoklu Fotoğraf ve Dinamik Form Yönetimi)
 # ==============================================================================
+
 @app.post("/add-property")
-async def add_property(
-    request: Request,
-    name: str = Form(...),
-    location: str = Form(...),
-    price: float = Form(...),
-    type: str = Form(...),
-    beds: int = Form(0),
-    baths: int = Form(0),
-    sqm: int = Form(0),
-    open_m2: int = Form(0),
-    guests: int = Form(0),
-    is_site: str = Form("Hayır"),
-    site_name: str = Form("-"),
-    is_credit: str = Form("Hayır"),
-    is_trade: str = Form("Hayır"),
-    currency_code: str = Form("TRY"),
-    deed_status: str = Form("-"),
-    description: str = Form(None),
-    main_image: UploadFile = File(...)
-):
-    """Pop-up formdan gelen ilan verilerini resim yükleme kontrolüyle birlikte kaydeder."""
+async def add_property(request: Request):
+    """
+    HTML formundan gelen verileri ve çoklu resimleri çözer.
+    Veritabanı (DB) şemasındaki gerçek sütun isimlerine (monthly_price, gross_m2 vb.)
+    birebir uyumlu hale getirilerek hatasız kaydeder.
+    """
     user_id_cookie = request.cookies.get("user_id")
     user_data = db.get_user_from_cookie(user_id_cookie) if user_id_cookie else None
     user_role = user_data.get("role") if user_data else "guest"
-   
+    
     if not user_data or user_role != 'agent':
         return JSONResponse(status_code=401, content={"error": "İlan vermek için Agent hesabı ile giriş yapmalısınız."})
 
-    file_extension = os.path.splitext(main_image.filename)[1].lower()
-    if file_extension not in ['.png', '.jpg', '.jpeg', '.webp']:
-        return JSONResponse(status_code=400, content={"error": "Sadece resim formatında (.png, .jpg, .jpeg, .webp) dosya yükleyebilirsiniz."})
+    # Dinamik form verilerini topla
+    form_data = await request.form()
+    
+    name = form_data.get("name", "").strip()
+    location = form_data.get("location", "").strip()
+    
+    # DB Kolon Eşleşmesi: Fiyatlar 'monthly_price' sütununa yazılır
+    monthly_price = float(form_data.get("monthly_price") or 0.0)
+    currency_code = form_data.get("currency_code", "TRY")
+    listing_type = form_data.get("listing_type", "sale")
+    property_type = form_data.get("property_type", "Villa")
+    
+    # Teknik Detaylar (DB Sütun İsimleri ve Form Eşleşmeleri)
+    gross_m2 = int(form_data.get("gross_m2") or 0)
+    net_m2 = int(form_data.get("net_m2") or 0)
+    open_m2 = int(form_data.get("open_m2") or 0)
+    
+    # "3+2" gibi esnek formatları desteklemek için tamamen METİN (String) olarak yakalanıyor
+    room_count = str(form_data.get("room_count") or "0").strip()
+    
+    beds = int(form_data.get("beds") or 0)
+    baths = int(form_data.get("baths") or 0)
+    guests = int(form_data.get("guests") or 0)
+    dues = float(form_data.get("dues") or 0.0)
+    
+    building_age = form_data.get("building_age", "-").strip()
+    heating = form_data.get("heating", "-").strip()
+    deed_status = form_data.get("deed_status", "-").strip()
+    
+    is_site = form_data.get("is_site", "Hayır")
+    site_name = form_data.get("site_name", "-")
+    is_credit = form_data.get("is_credit", "Hayır")
+    is_trade = form_data.get("is_trade", "Hayır")
+    description = form_data.get("description", "").strip() or None
 
+    # Çoklu özellik seçimi (features listesi)
+    features_raw = form_data.getlist("features")
+    selected_features_ids = [int(f) for f in features_raw if str(f).isdigit()]
+
+    # Çoklu resim dosyalarını (main_image field) yakala
+    uploaded_files = form_data.getlist("main_image")
     upload_folder = os.path.join(BASE_DIR, "static/htmlfotos")
     if not os.path.exists(upload_folder):
         os.makedirs(upload_folder)
 
-    new_filename = f"prop_{int(time.time())}{file_extension}"
-    file_path = os.path.join(upload_folder, new_filename)
+    image_urls_list = []
+    saved_disk_paths = []
 
-    try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(main_image.file, buffer)
-    except Exception as e:
-        print(f"Dosya kaydetme hatası: {e}")
-        return JSONResponse(status_code=500, content={"error": "Dosya yüklenemedi."})
+    for idx, file_item in enumerate(uploaded_files):
+        if hasattr(file_item, "filename") and file_item.filename:
+            file_extension = os.path.splitext(file_item.filename)[1].lower()
+            if file_extension in ['.png', '.jpg', '.jpeg', '.webp']:
+                new_filename = f"prop_{int(time.time())}_{idx}{file_extension}"
+                file_path = os.path.join(upload_folder, new_filename)
+                
+                try:
+                    with open(file_path, "wb") as buffer:
+                        shutil.copyfileobj(file_item.file, buffer)
+                    
+                    image_urls_list.append(f"htmlfotos/{new_filename}")
+                    saved_disk_paths.append(file_path)
+                except Exception as e:
+                    print(f"Çoklu dosya kaydetme hatası ({idx}): {e}")
 
+    # Koruma: Eğer hiç geçerli resim yüklenmediyse varsayılan bir görsel ata
+    if not image_urls_list:
+        image_urls_list.append("htmlfotos/placeholder.jpg")
+
+    # Konum parçalama motoru
     loc_parts = [p.strip() for p in location.split(',')]
     district = loc_parts[0] if len(loc_parts) > 0 else ""
     city = loc_parts[1] if len(loc_parts) > 1 else ""
@@ -478,13 +515,14 @@ async def add_property(
     clean_is_site = is_site if is_site in ["Evet", "Hayır"] else "Hayır"
     clean_site_name = site_name if clean_is_site == "Evet" and site_name else "-"
 
-    if type == "sale":
+    if listing_type == "sale":
         clean_is_credit = is_credit if is_credit in ["Evet", "Hayır"] else "Hayır"
         clean_is_trade = is_trade if is_trade in ["Evet", "Hayır"] else "Hayır"
     else:
         clean_is_credit = "Hayır"
         clean_is_trade = "Hayır"
 
+    # Veritabanı katmanına gönderilecek veri paketi (DB Tablo Şemasıyla %100 Uyumlu)
     property_data = {
         "name": name,
         "title": name,
@@ -492,24 +530,31 @@ async def add_property(
         "district": district,      
         "city": city,              
         "country": country,        
-        "price": price,            
-        "price_normalized": price,
-        "type": type,              
-        "listing_type": type,      
+        "monthly_price": monthly_price,            
+        "price": monthly_price,            
+        "price_normalized": monthly_price,
+        "listing_type": listing_type,      
+        "type": listing_type,              
+        "property_type": property_type,
+        "gross_m2": gross_m2,
+        "net_m2": net_m2,
+        "open_m2": open_m2,
+        "room_count": room_count,  # Burası artık güvenli bir string
         "beds": beds,
         "baths": baths,
-        "sqm": sqm,
-        "open_m2": open_m2,
         "guests": guests,
+        "dues": dues,
+        "building_age": building_age,
+        "heating": heating,
         "is_site": clean_is_site,
         "site_name": clean_site_name,
         "is_credit": clean_is_credit,
         "is_trade": clean_is_trade,
+        "currency_code": currency_code,    
         "currency": currency_code,    
-        "currency_code": currency_code,
         "deed_status": deed_status,
         "description": description,
-        "image": f"htmlfotos/{new_filename}",
+        "image": image_urls_list[0],  # İlk resim kapak resmi olarak ana tabloya gider
         "status": "approving"
     }
 
@@ -517,7 +562,12 @@ async def add_property(
     clean_agent_id = int(agent_id) if str(agent_id).isdigit() else agent_id
    
     try:
-        success = db.add_new_property_to_db(clean_agent_id, property_data)
+        success = db.add_full_property_to_db(
+            agent_id=clean_agent_id, 
+            data=property_data, 
+            image_urls=image_urls_list, 
+            selected_features=selected_features_ids
+        )
     except Exception as e:
         print(f"Veritabanı ekleme fonksiyonu hatası: {e}")
         success = False
@@ -525,8 +575,9 @@ async def add_property(
     if success:
         return RedirectResponse(url="/profile/properties", status_code=303)
     else:
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        for path in saved_disk_paths:
+            if os.path.exists(path):
+                os.remove(path)
         return JSONResponse(status_code=500, content={"error": "Veritabanı kaydı sırasında bir hata oluştu."})
 
 
@@ -551,7 +602,7 @@ async def get_single_property_api(property_id: str):
     try:
         clean_id = int(property_id) if str(property_id).isdigit() else property_id
         prop = None
-       
+        
         if hasattr(db, 'get_property_by_id_from_db'):
             prop = db.get_property_by_id_from_db(clean_id)
         elif hasattr(db, 'get_property_from_db'):
@@ -561,7 +612,7 @@ async def get_single_property_api(property_id: str):
         else:
             all_props = db.get_properties_from_db(include_passive=True) if hasattr(db, 'get_properties_from_db') else []
             prop = next((p for p in all_props if str(p.get('id')) == str(clean_id)), None)
-           
+            
         if prop:
             safe_prop = {}
             for key, value in dict(prop).items():
@@ -592,7 +643,7 @@ async def get_single_property_api(property_id: str):
             if 'type' in safe_prop and not safe_prop.get('listing_type'): safe_prop['listing_type'] = safe_prop['type']
 
             return JSONResponse(content=safe_prop)
-           
+            
         return JSONResponse(status_code=404, content={"error": "İlan bulunamadı."})
     except Exception as e:
         print(f"Kritik /api/property/{property_id} Çökme Detayı: {str(e)}")
@@ -606,66 +657,81 @@ async def update_property_endpoint(property_id: str, request: Request):
         form_data = await request.form()
         update_data = {}
 
-        if "title" in form_data:
-            update_data["name"] = form_data.get("title")
-            update_data["title"] = form_data.get("title")
-        if "name" in form_data and "title" not in form_data:
-            update_data["name"] = form_data.get("name")
-            update_data["title"] = form_data.get("name")
-           
-        if "location" in form_data: update_data["location"] = form_data.get("location")
-        if "description" in form_data: update_data["description"] = form_data.get("description")
-        if "status" in form_data: update_data["status"] = form_data.get("status")
+        # Başlık Eşitlemeleri
+        if "name" in form_data:
+            title_val = form_data.get("name", "").strip()
+            update_data["name"] = title_val
+            update_data["title"] = title_val
+
+        if "location" in form_data: 
+            update_data["location"] = form_data.get("location")
+        if "description" in form_data: 
+            update_data["description"] = form_data.get("description")
+        if "status" in form_data: 
+            update_data["status"] = form_data.get("status")
        
-        if "currency" in form_data:
-            update_data["currency"] = form_data.get("currency")
-            update_data["currency_code"] = form_data.get("currency")
-        if "currency_code" in form_data and "currency" not in form_data:
-            update_data["currency"] = form_data.get("currency_code")
-            update_data["currency_code"] = form_data.get("currency_code")
-           
+        # Para Birimi
+        if "currency_code" in form_data:
+            curr = form_data.get("currency_code")
+            update_data["currency"] = curr
+            update_data["currency_code"] = curr
+            
         if "deed_status" in form_data: update_data["deed_status"] = form_data.get("deed_status")
         if "site_name" in form_data: update_data["site_name"] = form_data.get("site_name")
        
-        if "type" in form_data:
-            update_data["type"] = form_data.get("type")
-            update_data["listing_type"] = form_data.get("type")
-        if "listing_type" in form_data and "type" not in form_data:
-            update_data["type"] = form_data.get("listing_type")
-            update_data["listing_type"] = form_data.get("listing_type")
-           
+        # İlan Türü
+        if "listing_type" in form_data:
+            l_type = form_data.get("listing_type")
+            update_data["type"] = l_type
+            update_data["listing_type"] = l_type
+            
         if "is_site" in form_data: update_data["is_site"] = form_data.get("is_site")
         if "is_credit" in form_data: update_data["is_credit"] = form_data.get("is_credit")
         if "is_trade" in form_data: update_data["is_trade"] = form_data.get("is_trade")
 
-        if "price" in form_data and form_data.get("price") != "":
-            update_data["price"] = float(form_data.get("price"))
-            update_data["price_normalized"] = float(form_data.get("price"))
-        if "beds" in form_data and form_data.get("beds") != "":
-            update_data["beds"] = int(form_data.get("beds"))
-        if "baths" in form_data and form_data.get("baths") != "":
-            update_data["baths"] = int(form_data.get("baths"))
-        if "sqm" in form_data and form_data.get("sqm") != "":
-            update_data["sqm"] = int(form_data.get("sqm"))
-           
-        if "open_m2" in form_data and form_data.get("open_m2") != "":
-            update_data["open_m2"] = int(form_data.get("open_m2"))
-        elif "open_area_m2" in form_data and form_data.get("open_area_m2") != "":
-            update_data["open_m2"] = int(form_data.get("open_area_m2"))
-           
-        if "guests" in form_data and form_data.get("guests") != "":
-            update_data["guests"] = int(form_data.get("guests"))
-        elif "capacity" in form_data and form_data.get("capacity") != "":
-            update_data["guests"] = int(form_data.get("capacity"))
+        # DB %100 Uyumlu Sayısal ve Metinsel Alanlar
+        if "monthly_price" in form_data and form_data.get("monthly_price") != "":
+            price_val = float(form_data.get("monthly_price") or 0.0)
+            update_data["monthly_price"] = price_val
+            update_data["price"] = price_val
+            update_data["price_normalized"] = price_val
 
+        # KRİTİK: "3+2" gibi değerleri alabilmek için room_count artık STRING (Yazı) tipinde paslanıyor
+        if "room_count" in form_data:
+            update_data["room_count"] = str(form_data.get("room_count") or "0")
+
+        if "beds" in form_data and form_data.get("beds") != "":
+            update_data["beds"] = int(form_data.get("beds") or 0)
+        if "baths" in form_data and form_data.get("baths") != "":
+            update_data["baths"] = int(form_data.get("baths") or 0)
+            
+        # Alanlar (gross_m2 ve net_m2 olarak db'ye yazılıyor)
+        if "gross_m2" in form_data and form_data.get("gross_m2") != "":
+            update_data["gross_m2"] = int(form_data.get("gross_m2") or 0)
+        if "net_m2" in form_data and form_data.get("net_m2") != "":
+            update_data["net_m2"] = int(form_data.get("net_m2") or 0)
+        if "open_m2" in form_data and form_data.get("open_m2") != "":
+            update_data["open_m2"] = int(form_data.get("open_m2") or 0)
+            
+        if "guests" in form_data and form_data.get("guests") != "":
+            update_data["guests"] = int(form_data.get("guests") or 0)
+            
+        if "dues" in form_data and form_data.get("dues") != "":
+            update_data["dues"] = float(form_data.get("dues") or 0.0)
+
+        if "property_type" in form_data:
+            update_data["property_type"] = form_data.get("property_type")
+        if "building_age" in form_data:
+            update_data["building_age"] = form_data.get("building_age")
+        if "heating" in form_data:
+            update_data["heating"] = form_data.get("heating")
+
+        # İlişkili Özellikler
         features_list = form_data.getlist("features")
         if features_list:
             update_data["features"] = [int(f) for f in features_list if str(f).isdigit()]
-       
-        images_list = form_data.getlist("images")
-        if images_list:
-            update_data["images"] = [str(img) for img in images_list if img]
 
+        # Konum Ayrıştırma Motoru
         if "location" in update_data and update_data["location"]:
             loc_parts = [p.strip() for p in update_data["location"].split(',')]
             update_data["district"] = loc_parts[0] if len(loc_parts) > 0 else ""
@@ -691,7 +757,7 @@ async def update_property_endpoint(property_id: str, request: Request):
             return RedirectResponse(url=redirect_url, status_code=303)
         else:
             return JSONResponse(status_code=400, content={"error": "Veritabanı güncelleme hatası."})
-           
+            
     except Exception as e:
         print(f"Kritik Güncelleme Hatası Logu: {str(e)}")
         return JSONResponse(status_code=500, content={"error": f"Sunucu hatası: {str(e)}"})

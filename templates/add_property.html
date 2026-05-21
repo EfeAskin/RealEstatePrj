@@ -30,7 +30,7 @@
                     <div class="form-row multi-input" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
                         <div class="input-group" style="flex: 1.5; min-width: 120px;">
                             <span>Fiyat</span>
-                            <input type="number" name="price" id="input_price" placeholder="0.00" step="0.01" required>
+                            <input type="number" name="monthly_price" id="input_price" placeholder="0.00" step="0.01" required>
                         </div>
                         <div class="input-group" style="flex: 0.5; min-width: 80px;">
                             <span>Para Birimi</span>
@@ -43,7 +43,7 @@
                         </div>
                         <div class="input-group" style="flex: 1; min-width: 100px;">
                             <span>İlan Türü</span>
-                            <select name="type" id="select_listing_type">
+                            <select name="listing_type" id="select_listing_type">
                                 <option value="sale">Satılık</option>
                                 <option value="rent">Kiralık</option>
                             </select>
@@ -97,11 +97,11 @@
                         </div>
                         <div class="input-group">
                             <span>Brüt Alan (m²)</span>
-                            <input type="number" name="gross_m2" id="input_gross_m2" placeholder="168">
+                            <input type="number" name="gross_m2" id="input_gross_m2" value="0" placeholder="168">
                         </div>
                         <div class="input-group">
                             <span>Net Alan (m²)</span>
-                            <input type="number" name="net_m2" id="input_net_m2" placeholder="135">
+                            <input type="number" name="net_m2" id="input_net_m2" value="0" placeholder="135">
                         </div>
                         <div class="input-group">
                             <span>Açık Alan / Teras (m²)</span>
@@ -109,35 +109,35 @@
                         </div>
                         <div class="input-group">
                             <span>Bina Yaşı</span>
-                            <input type="text" name="building_age" id="input_building_age" placeholder="5-10 Years">
+                            <input type="text" name="building_age" id="input_building_age" value="-" placeholder="5-10 Years">
                         </div>
                         <div class="input-group">
                             <span>Isıtma</span>
-                            <input type="text" name="heating" id="input_heating" placeholder="Air Conditioning">
+                            <input type="text" name="heating" id="input_heating" value="-" placeholder="Air Conditioning">
                         </div>
                         <div class="input-group">
                             <span>Tapu Durumu (Deed)</span>
-                            <input type="text" name="deed_status" id="input_deed_status" placeholder="Müstakil Tapu">
+                            <input type="text" name="deed_status" id="input_deed_status" value="-" placeholder="Müstakil Tapu">
                         </div>
                         <div class="input-group">
                             <span>Oda Sayısı</span>
-                            <input type="text" name="room_count" id="input_room_count" placeholder="3+1">
+                            <input type="text" name="room_count" id="input_room_count" value="0" placeholder="Örn: 3+2 veya 4">
                         </div>
                         <div class="input-group">
                             <span>Yatak Sayısı (Beds)</span>
-                            <input type="number" name="beds" id="input_beds" placeholder="3" min="0">
+                            <input type="number" name="beds" id="input_beds" value="0" placeholder="3" min="0">
                         </div>
                         <div class="input-group">
                             <span>Banyo Sayısı (Baths)</span>
-                            <input type="number" name="baths" id="input_baths" placeholder="2" min="0">
+                            <input type="number" name="baths" id="input_baths" value="0" placeholder="2" min="0">
                         </div>
                         <div class="input-group">
                             <span>Misafir Kapasitesi</span>
-                            <input type="number" name="guests" id="input_guests" placeholder="4" min="0">
+                            <input type="number" name="guests" id="input_guests" value="0" placeholder="4" min="0">
                         </div>
                         <div class="input-group">
                             <span>Aidat (Maintenance)</span>
-                            <input type="number" name="dues" id="input_dues" placeholder="0">
+                            <input type="number" name="dues" id="input_dues" value="0" step="0.01" placeholder="0">
                         </div>
                     </div>
 
@@ -188,7 +188,6 @@
 </div>
 
 <style>
-/* Kart Tasarımına Dönüştürülmüş Gömülü Form Stilleri */
 .embedded-property-card {
     background: #fff !important;
     width: 100% !important;
@@ -219,19 +218,16 @@ input:focus { border-color: #ff8c00; outline: none; box-shadow: 0 0 0 4px rgba(2
 .btn-primary:hover { background: #f97316; transform: translateY(-1px); }
 .btn-secondary { background: #f1f5f9; color: #475569; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; }
 
-/* Özelleştirilmiş iç kaydırma çubuğu */
 #featuresContainer::-webkit-scrollbar { width: 4px; }
 #featuresContainer::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 </style>
 
 <script>
-// Sayfa açıldığında verileri hemen hazırla (Hızlandırıcı)
 document.addEventListener('DOMContentLoaded', function() {
     fetchFeaturesData();
     initDynamicFormLogic();
 });
 
-// Kredi, Takas ve Site alanı ilişkilerini yöneten dinamik dinleyici fonksiyonu
 function initDynamicFormLogic() {
     const typeSelect = document.getElementById('select_listing_type');
     const saleFields = document.getElementById('saleOnlyFieldsSection');
@@ -249,11 +245,10 @@ function initDynamicFormLogic() {
             }
         };
         typeSelect.addEventListener('change', handleTypeChange);
-        handleTypeChange(); // İlk durum kontrolü
+        handleTypeChange();
     }
 }
 
-// Site alanı checkbox değişim kontrolü
 function toggleSiteNameField(isChecked) {
     const siteNameInput = document.getElementById('input_site_name');
     document.getElementById('hidden_is_site').value = isChecked ? 'Evet' : 'Hayır';
@@ -272,7 +267,7 @@ function toggleSiteNameField(isChecked) {
     }
 }
 
-let globalFeaturesData = []; // Özellikleri hafızada tutmak için global değişken
+let globalFeaturesData = [];
 
 async function fetchFeaturesData() {
     const container = document.getElementById('featuresContainer');
@@ -282,7 +277,6 @@ async function fetchFeaturesData() {
         const response = await fetch('/api/features?cache_buster=' + Date.now());
         if (!response.ok) throw new Error('API hatası');
         globalFeaturesData = await response.json();
-        
         renderFeatures(globalFeaturesData);
     } catch (err) {
         console.error("Özellik yükleme hatası:", err);
@@ -306,15 +300,11 @@ function renderFeatures(features) {
     }
 }
 
-/* Çakışmaları önlemek amacıyla benzersiz isme sahip açma fonksiyonu */
 async function openEmbeddedPropertyForm() {
     const modal = document.getElementById('propertyModal');
     const wrapper = document.getElementById('embeddedFormWrapper');
     
-    if (wrapper) {
-        wrapper.style.display = 'block';
-    }
-    
+    if (wrapper) wrapper.style.display = 'block';
     if (!modal) return;
     
     modal.style.display = 'block';
@@ -326,40 +316,22 @@ async function openEmbeddedPropertyForm() {
     }
 }
 
-/* Diğer JS dosyalarıyla asla çakışmayan ve kesin çalışan kapatma fonksiyonu */
 function closeEmbeddedPropertyForm() {
     const modal = document.getElementById('propertyModal');
     const wrapper = document.getElementById('embeddedFormWrapper');
     
-    // Yumuşak kaydırma işlemini elementler kaybolmadan önce başlatıyoruz
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     if (modal) {
         modal.style.display = 'none';
         modal.style.setProperty('display', 'none', 'important');
     }
-    
-    if (wrapper) {
-        wrapper.style.display = 'none';
-    }
-    
-    // Düzenleme modundan kalıntılar kalmasın diye formu sıfırlıyoruz
+    if (wrapper) wrapper.style.display = 'none';
     resetPropertyForm();
 }
 
-/* properties.html içerisindeki eski openModal ve closeModal çağrıları gelirse doğrudan buraya yönlendiriyoruz */
-function openModal() {
-    openEmbeddedPropertyForm();
-}
-
-function closeModal() {
-    closeEmbeddedPropertyForm();
-}
-
-/* Pop-up dışı tıklama kontrolü devre dışı bırakıldı */
-function checkClose(event) {
-    return;
-}
+function openModal() { openEmbeddedPropertyForm(); }
+function closeModal() { closeEmbeddedPropertyForm(); }
 
 function handleImagePreview(event) {
     const grid = document.getElementById('imagePreviewGrid');
@@ -367,7 +339,7 @@ function handleImagePreview(event) {
     grid.innerHTML = '';
     const files = event.target.files;
     
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach((file, index) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const wrapper = document.createElement('div');
@@ -378,55 +350,62 @@ function handleImagePreview(event) {
             img.style.height = '60px'; 
             img.style.objectFit = 'cover';
             img.style.borderRadius = '8px'; 
-            img.style.border = '1px solid #e2e8f0';
+            img.style.border = index === 0 ? '2px solid #ff8c00' : '1px solid #e2e8f0';
+            
             wrapper.appendChild(img);
+            
+            if(index === 0) {
+                const label = document.createElement('span');
+                label.innerText = 'Kapak';
+                label.style.cssText = "position:absolute; bottom:0; left:0; right:0; background:rgba(255,140,0,0.8); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;";
+                wrapper.appendChild(label);
+            }
             grid.appendChild(wrapper);
         };
         reader.readAsDataURL(file);
     });
 }
 
-/* ANA PLAN: İlan Düzenleme Veri Doldurma Fonksiyonu */
 function fillFormForEdit(data) {
     document.getElementById('modalHeaderTitle').innerText = "İlanı Düzenle / Güncelle";
     const headerIcon = document.getElementById('modalHeaderIcon');
-    if(headerIcon) {
-        headerIcon.className = "fas fa-pen-to-square";
-    }
+    if(headerIcon) headerIcon.className = "fas fa-pen-to-square";
 
     const form = document.getElementById('addPropertyForm');
-    if(form) {
-        form.action = `/api/property/update/${data.id}`;
-    }
+    if(form) form.action = `/api/property/update/${data.id}`;
 
     document.getElementById('formPropertyId').value = data.id;
 
-    if(document.getElementById('input_title')) document.getElementById('input_title').value = data.title || data.name || '';
+    if(document.getElementById('input_title')) document.getElementById('input_title').value = data.name || data.title || '';
     if(document.getElementById('input_location')) document.getElementById('input_location').value = data.location || '';
-    if(document.getElementById('input_price')) document.getElementById('input_price').value = data.price_normalized || data.price || '';
     
-    if(document.getElementById('select_currency_code')) document.getElementById('select_currency_code').value = data.currency_code || 'TRY';
+    if(document.getElementById('input_price')) document.getElementById('input_price').value = data.monthly_price || data.price_normalized || data.price || '';
+    if(document.getElementById('select_currency_code')) document.getElementById('select_currency_code').value = data.currency_code || data.currency || 'TRY';
+    
     if(document.getElementById('select_listing_type')) {
         document.getElementById('select_listing_type').value = data.listing_type || data.type || 'sale';
-        // Dinamik alan durumunu tetikle
         document.getElementById('select_listing_type').dispatchEvent(new Event('change'));
     }
     if(document.getElementById('select_property_type')) document.getElementById('select_property_type').value = data.property_type || 'Villa';
     
-    if(document.getElementById('input_gross_m2')) document.getElementById('input_gross_m2').value = data.gross_m2 || '';
-    if(document.getElementById('input_net_m2')) document.getElementById('input_net_m2').value = data.net_m2 || '';
-    if(document.getElementById('input_open_m2')) document.getElementById('input_open_m2').value = data.open_m2 || data.open_area_m2 || '0';
-    if(document.getElementById('input_building_age')) document.getElementById('input_building_age').value = data.building_age || '';
-    if(document.getElementById('input_heating')) document.getElementById('input_heating').value = data.heating || '';
-    if(document.getElementById('input_deed_status')) document.getElementById('input_deed_status').value = data.deed_status || '';
-    if(document.getElementById('input_room_count')) document.getElementById('input_room_count').value = data.room_count || '';
-    if(document.getElementById('input_beds')) document.getElementById('input_beds').value = data.beds || data.bed_count || '';
-    if(document.getElementById('input_baths')) document.getElementById('input_baths').value = data.baths || data.bath_count || '';
-    if(document.getElementById('input_guests')) document.getElementById('input_guests').value = data.guests || data.guest_count || '';
-    if(document.getElementById('input_dues')) document.getElementById('input_dues').value = data.dues || '';
+    if(document.getElementById('input_gross_m2')) document.getElementById('input_gross_m2').value = data.gross_m2 || '0';
+    if(document.getElementById('input_net_m2')) document.getElementById('input_net_m2').value = data.net_m2 || '0';
+    if(document.getElementById('input_open_m2')) document.getElementById('input_open_m2').value = data.open_m2 || '0';
+    if(document.getElementById('input_building_age')) document.getElementById('input_building_age').value = data.building_age || '-';
+    if(document.getElementById('input_heating')) document.getElementById('input_heating').value = data.heating || '-';
+    if(document.getElementById('input_deed_status')) document.getElementById('input_deed_status').value = data.deed_status || '-';
+    
+    // Düzenleme modunda string değeri (Örn: "3+2") bozmadan birebir input'a aktarması sağlandı
+    if(document.getElementById('input_room_count')) {
+        document.getElementById('input_room_count').value = data.room_count !== undefined && data.room_count !== null ? data.room_count : '0';
+    }
+    
+    if(document.getElementById('input_beds')) document.getElementById('input_beds').value = data.beds || '0';
+    if(document.getElementById('input_baths')) document.getElementById('input_baths').value = data.baths || '0';
+    if(document.getElementById('input_guests')) document.getElementById('input_guests').value = data.guests || '0';
+    if(document.getElementById('input_dues')) document.getElementById('input_dues').value = data.dues || '0';
     if(document.getElementById('textarea_description')) document.getElementById('textarea_description').value = data.description || '';
 
-    // Kredi ve Takas edit eşleşmesi
     const isCreditVal = data.is_credit === 'Evet';
     document.getElementById('input_is_credit').checked = isCreditVal;
     document.getElementById('hidden_is_credit').value = isCreditVal ? 'Evet' : 'Hayır';
@@ -435,7 +414,6 @@ function fillFormForEdit(data) {
     document.getElementById('input_is_trade').checked = isTradeVal;
     document.getElementById('hidden_is_trade').value = isTradeVal ? 'Evet' : 'Hayır';
 
-    // Site Bilgisi edit eşleşmesi
     const isSiteVal = data.is_site === 'Evet';
     document.getElementById('input_is_site').checked = isSiteVal;
     toggleSiteNameField(isSiteVal);
@@ -451,17 +429,12 @@ function fillFormForEdit(data) {
 
     const grid = document.getElementById('imagePreviewGrid');
     if(grid) {
-        grid.innerHTML = ''; // Eski önizlemeleri temizle
-        
-        // --- GÜNCELLEME: Çoklu Resimlerin (images) Döngüyle Arayüze Basılması Mantığı ---
+        grid.innerHTML = '';
         if (data.images && data.images.length > 0) {
             data.images.forEach((imgUrl, index) => {
                 const imgWrapper = document.createElement('div');
                 imgWrapper.style.position = 'relative';
-                
-                // Eğer url static ile başlamıyorsa ve ham dosya adıysa güvenli yol üretimi
                 const finalSrc = (imgUrl.startsWith('http') || imgUrl.startsWith('/')) ? imgUrl : `/static/${imgUrl}`;
-                
                 imgWrapper.innerHTML = `
                     <img src="${finalSrc}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:2px solid #ff8c00;">
                     <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;">${index === 0 ? 'Kapak' : 'Aktif'}</span>
@@ -469,28 +442,24 @@ function fillFormForEdit(data) {
                 grid.appendChild(imgWrapper);
             });
         } else if (data.image) {
-            // Eğer veritabanından dizi değil de tek bir ana resim gelirse fallback koruması
             const finalSrc = (data.image.startsWith('http') || data.image.startsWith('/')) ? data.image : `/static/${data.image}`;
             grid.innerHTML = `
                 <div style="position: relative;">
                     <img src="${finalSrc}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:2px solid #ff8c00;">
-                    <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;">Aktif</span>
+                    <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;">Kapak</span>
                 </div>
             `;
         }
     }
 
     document.getElementById('submitBtn').innerText = "Değişiklikleri Kaydet";
-
     openEmbeddedPropertyForm();
 }
 
 function resetPropertyForm() {
     document.getElementById('modalHeaderTitle').innerText = "Yeni İlan Ekle";
     const headerIcon = document.getElementById('modalHeaderIcon');
-    if(headerIcon) {
-        headerIcon.className = "fas fa-plus-circle";
-    }
+    if(headerIcon) headerIcon.className = "fas fa-plus-circle";
     
     const form = document.getElementById('addPropertyForm');
     if(form) {
@@ -502,7 +471,6 @@ function resetPropertyForm() {
     const grid = document.getElementById('imagePreviewGrid');
     if(grid) grid.innerHTML = '';
     
-    // Değerleri el ile güvenli varsayılana çekiyoruz
     document.getElementById('hidden_is_site').value = "Hayır";
     document.getElementById('hidden_is_credit').value = "Hayır";
     document.getElementById('hidden_is_trade').value = "Hayır";
@@ -510,7 +478,6 @@ function resetPropertyForm() {
     if(document.getElementById('select_listing_type')) {
         document.getElementById('select_listing_type').dispatchEvent(new Event('change'));
     }
-    
     document.querySelectorAll('.feature-checkbox').forEach(checkbox => checkbox.checked = false);
 }
 

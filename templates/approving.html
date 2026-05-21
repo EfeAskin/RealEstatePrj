@@ -1,4 +1,542 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<div class="approval-container">
+    <div class="approval-header-block">
+        <div class="header-title-area">
+            <h2 class="main-title">Onay Bekleyen İlanlar</h2>
+            <p class="subtitle">Sistem yöneticisi onayını bekleyen, inceleme aşamasındaki ilanlarınızın güncel listesi.</p>
+        </div>
+        <div class="status-badge-summary">
+            <div class="status-icon-wrapper">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="status-text-wrapper">
+                <span class="status-count">{% if properties %}{{ properties|length }}{% else %}0{% endif %}</span>
+                <span class="status-label">Bekleyen İlan</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="approval-grid">
+        {% if properties and properties|length > 0 %}
+            {% for item in properties %}
+                <div class="approval-card" id="property-card-{{ item.id }}">
+                    <div class="card-image-section">
+                        {% if item.primary_image or item.image_url or item.image %}
+                            <img src="{{ url_for('static', path='/' + (item.image if item.image else (item.primary_image or item.image_url))) }}" alt="{{ item.title or item.name }}" class="property-cover-img">
+                        {% else %}
+                            <img src="/static/htmlfotos/placeholder.jpg" alt="Varsayılan İlan Görseli" class="property-cover-img">
+                        {% endif %}
+                        <div class="badge-overlay">
+                            <span class="badge-status-waiting">
+                                <span class="pulse-dot"></span> İncelemede
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="card-details-section">
+                        <div class="property-meta-row">
+                            <span class="property-category">
+                                {{ item.category_name or item.display_type or item.type or "Gayrimenkul" }}
+                            </span>
+                            <span class="property-date">{{ item.created_at or "Yeni Başvuru" }}</span>
+                        </div>
+                        
+                        <h3 class="property-card-title">{{ item.title or item.name }}</h3>
+                        
+                        <div class="property-location">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>
+                                {% if item.location %}
+                                    {{ item.location }}
+                                {% else %}
+                                    {{ item.city or "Şehir" }}, {{ item.district or "İlçe" }}
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="property-specs">
+                            <div class="spec-item" title="Oda Sayısı">
+                                <span class="spec-value">{{ item.room_count or "—" }}</span>
+                            </div>
+                            <div class="spec-item" title="Metrekare">
+                                <span class="spec-value">{{ item.square_meters or item.area or "—" }} m²</span>
+                            </div>
+                            {% if item.agent_name %}
+                            <div class="spec-item" title="Sorumlu Agent" style="background: #eff6ff; border-color: #bfdbfe; color: #1e40af;">
+                                <span class="spec-value"><i class="fa-solid fa-user-tie" style="margin-right: 4px;"></i>{{ item.agent_name }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-footer-action">
+                            <div class="price-box">
+                                <span class="price-label">Talep Edilen Fiyat</span>
+                                <span class="price-amount">
+                                    {% if item.formatted_price %}
+                                        {{ item.formatted_price }} {{ item.currency_symbol if item.currency_symbol else (item.currency if item.currency else '₺') }}
+                                    {% elif item.price %}
+                                        {{ "{:,.0f}".format(item.price) if isinstance(item.price, (int, float)) else item.price }} {{ item.currency_symbol if item.currency_symbol else (item.currency if item.currency else '₺') }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="action-btn-group" style="display: flex; gap: 8px; align-items: center;">
+                                <a href="/property/{{ item.id }}?preview=true" class="preview-btn" target="_blank" title="İlan Önizleme">
+                                    <span>Önizleme</span>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </a>
+
+                                <button type="button" class="admin-approve-btn" title="İlanı Doğrudan Onayla" onclick="quickApproveProperty('{{ item.id }}')" style="display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; border: 1px solid #bbf7d0; color: #15803d; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    <i class="fa-solid fa-check"></i> Onayla
+                                </button>
+
+                                <button type="button" class="admin-reject-btn" title="İlanı Reddet / Pasife Al" onclick="quickRejectProperty('{{ item.id }}')" style="display: inline-flex; align-items: center; justify-content: center; background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; width: 35px; height: 35px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s;">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-approval-state">
+                <div class="empty-icon-box">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#10b981" stroke-width="1.5">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3>Onay Bekleyen İlan Bulunmuyor</h3>
+                <p>Şu anda onay havuzunda bekleyen veya inceleme aşamasında olan herhangi bir ilan başvurusu bulunmamaktadır. Yeni bir ilan eklendiğinde bu panelden sürecini anlık olarak takip edebilirsiniz.</p>
+                <a href="/listings/add" class="create-listing-btn">Yeni İlan Oluştur</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* --- ONAY BEKLEYENLER PANELİ MODERN GÖRÜNÜMÜ --- */
+.approval-container {
+    padding: 8px;
+    font-family: 'Inter', sans-serif;
+}
+
+.approval-header-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+    gap: 16px;
+}
+
+.main-title {
+    margin: 0 0 6px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.status-badge-summary {
+    display: flex;
+    align-items: center;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    padding: 10px 16px;
+    border-radius: 12px;
+    gap: 12px;
+    min-width: 160px;
+}
+
+.status-icon-wrapper {
+    color: #d97706;
+    display: flex;
+    align-items: center;
+}
+
+.status-text-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.status-count {
+    font-size: 18px;
+    font-weight: 700;
+    color: #92400e;
+    line-height: 1.2;
+}
+
+.status-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #b45309;
+}
+
+/* İlan Listesi Kontrolü */
+.approval-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Modern İlan Kartı Yapısı */
+.approval-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.approval-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    border-color: #cbd5e1;
+}
+
+.card-image-section {
+    position: relative;
+    width: 240px;
+    min-width: 240px;
+    height: 180px;
+    background: #f1f5f9;
+}
+
+.property-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.badge-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+}
+
+.badge-status-waiting {
+    background: rgba(217, 119, 6, 0.9);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.pulse-dot {
+    width: 7px;
+    height: 7px;
+    background-color: #fff;
+    border-radius: 50%;
+    display: inline-block;
+    animation: approvalPulse 1.6s infinite ease-in-out;
+}
+
+@keyframes approvalPulse {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+/* Detay ve İçerik Alanı */
+.card-details-section {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.property-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.property-category {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.property-date {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.property-card-title {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.4;
+}
+
+.property-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.property-location svg {
+    flex-shrink: 0;
+}
+
+.property-specs {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.spec-item {
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Alt Çizgi ve Fiyat/Buton Yapısı */
+.card-footer-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 14px;
+    margin-top: auto;
+    gap: 10px;
+}
+
+.price-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.price-label {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.price-amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.preview-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.preview-btn:hover {
+    background: #1e293b;
+    color: #ffffff;
+    border-color: #1e293b;
+}
+
+/* Admin Aksiyon Hover Efektleri */
+.admin-approve-btn:hover {
+    background: #16a34a !important;
+    color: white !important;
+    border-color: #16a34a !important;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+}
+
+.admin-reject-btn:hover {
+    background: #dc2626 !important;
+    color: white !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+/* Boş Durum Tasarımı */
+.empty-approval-state {
+    text-align: center;
+    padding: 60px 40px;
+    background: #ffffff;
+    border: 2px dashed #e2e8f0;
+    border-radius: 20px;
+    max-width: 600px;
+    margin: 40px auto;
+}
+
+.empty-icon-box {
+    width: 80px;
+    height: 80px;
+    background: #ecfdf5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px auto;
+}
+
+.empty-approval-state h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.empty-approval-state p {
+    margin: 0 0 24px 0;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+.create-listing-btn {
+    display: inline-block;
+    background: #10b981;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.create-listing-btn:hover {
+    background: #059669;
+}
+
+/* Mobil Cihaz Duyarlılığı */
+@media (max-width: 768px) {
+    .approval-header-block {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .status-badge-summary {
+        width: 100%;
+    }
+    .approval-card {
+        flex-direction: column;
+    }
+    .card-image-section {
+        width: 100%;
+        height: 200px;
+    }
+    .card-footer-action {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+    .action-btn-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+</style>
+
+<script>
+    // All_properties.html dosyasındaki onay motoruyla entegre hızlı onay fonksiyonu
+    async function quickApproveProperty(propertyId) {
+        if (confirm("Bu ilanı onaylayarak sistemde aktif hale getirmek istediğinize emin misiniz?")) {
+            try {
+                const response = await fetch(`/admin/update-property/${propertyId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ 'status': 'active' })
+                });
+                if (response.ok) {
+                    alert("İlan başarıyla onaylandı ve yayına alındı.");
+                    const card = document.getElementById(`property-card-${propertyId}`);
+                    if (card) {
+                        card.style.transition = 'all 0.5s ease';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        setTimeout(() => { window.location.reload(); }, 500);
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    alert("İlan durumu güncellenirken sistemsel bir hata oluştu.");
+                }
+            } catch (error) {
+                console.error("Hata:", error);
+                alert("Bağlantı hatası oluştu.");
+            }
+        }
+    }
+
+    // All_properties.html dosyasındaki pasife alma motoruyla entegre hızlı reddetme fonksiyonu
+    async function quickRejectProperty(propertyId) {
+        if (confirm("Bu ilanı reddetmek ve pasif konuma almak istediğinize emin misiniz?")) {
+            try {
+                const response = await fetch(`/admin/delete-property/${propertyId}`, {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    alert("İlan reddedildi ve pasif konuma alındı.");
+                    const card = document.getElementById(`property-card-${propertyId}`);
+                    if (card) {
+                        card.style.transition = 'all 0.5s ease';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        setTimeout(() => { window.location.reload(); }, 500);
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    alert("İlan durumu güncellenemedi.");
+                }
+            } catch (error) {
+                console.error("Hata:", error);
+                alert("Bağlantı hatası oluştu.");
+            }
+        }
+    }
+</script>
 {% endblock %}
