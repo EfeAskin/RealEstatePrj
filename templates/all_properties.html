@@ -257,10 +257,10 @@
                 if(form.querySelector('[name="title"]')) form.querySelector('[name="title"]').value = data.title || data.name || '';
                 if(form.querySelector('[name="name"]')) form.querySelector('[name="name"]').value = data.name || data.title || '';
                 if(form.querySelector('[name="location"]')) form.querySelector('[name="location"]').value = data.location || '';
-                if(form.querySelector('[name="price"]')) form.querySelector('[name="price"]').value = data.price || 0;
+                if(form.querySelector('[name="price_normalized"]')) form.querySelector('[name="price_normalized"]').value = data.price_normalized || 0;
                 if(form.querySelector('[name="description"]')) form.querySelector('[name="description"]').value = data.description || '';
                 if(form.querySelector('[name="status"]')) form.querySelector('[name="status"]').value = data.status || 'active';
-                if(form.querySelector('[name="currency"]')) form.querySelector('[name="currency"]').value = data.currency || 'EUR';
+                if(form.querySelector('[name="currency_code"]')) form.querySelector('[name="currency_code"]').value = data.currency_code || 'EUR';
                 
                 // Gizli id inputu ekleme/güncelleme
                 let idInput = form.querySelector('input[name="property_id"]');
