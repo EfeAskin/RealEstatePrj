@@ -477,14 +477,34 @@ async def add_property(request: Request):
     features_raw = form_data.getlist("features")
     selected_features_ids = [int(f) for f in features_raw if str(f).isdigit()]
 
-    # Çoklu resim dosyalarını (main_image field) yakala
-    uploaded_files = form_data.getlist("main_image")
+    # Dosya yükleme klasörü kontrolü
     upload_folder = os.path.join(BASE_DIR, "static/htmlfotos")
     if not os.path.exists(upload_folder):
         os.makedirs(upload_folder)
 
     image_urls_list = []
     saved_disk_paths = []
+
+    # --- YENİ ADIM: ÖNCE ÖZEL KAPAK RESMİNİ (single_cover) YAKALA VE İŞLE ---
+    cover_file = form_data.get("single_cover")
+    if cover_file and hasattr(cover_file, "filename") and cover_file.filename:
+        file_extension = os.path.splitext(cover_file.filename)[1].lower()
+        if file_extension in ['.png', '.jpg', '.jpeg', '.webp']:
+            new_filename = f"prop_{int(time.time())}_cover{file_extension}"
+            file_path = os.path.join(upload_folder, new_filename)
+            
+            try:
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(cover_file.file, buffer)
+                
+                # Kapak resmi ilk sırada eklendiği için index 0 bu olacak
+                image_urls_list.append(f"htmlfotos/{new_filename}")
+                saved_disk_paths.append(file_path)
+            except Exception as e:
+                print(f"Kapak fotoğrafı kaydetme hatası: {e}")
+
+    # --- ÇOKLU RESİM DOSYALARINI (main_image field) YAKALA ---
+    uploaded_files = form_data.getlist("main_image")
 
     for idx, file_item in enumerate(uploaded_files):
         if hasattr(file_item, "filename") and file_item.filename:
@@ -554,7 +574,7 @@ async def add_property(request: Request):
         "currency": currency_code,    
         "deed_status": deed_status,
         "description": description,
-        "image": image_urls_list[0],  # İlk resim kapak resmi olarak ana tabloya gider
+        "image": image_urls_list[0],  # İlk resim (Özel kapak veya ilk galeri resmi) ana tabloya gider
         "status": "approving"
     }
 
@@ -738,6 +758,53 @@ async def update_property_endpoint(property_id: str, request: Request):
             update_data["city"] = loc_parts[1] if len(loc_parts) > 1 else ""
             update_data["country"] = loc_parts[2] if len(loc_parts) > 2 else ""
 
+        # --- FOTOĞRAF GÜNCELLEME MOTORU ---
+        upload_folder = os.path.join(BASE_DIR, "static/htmlfotos")
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+
+        new_image_urls = []
+        
+        # 1. Adım: Yeni Kapak Fotoğrafını İşle
+        cover_file = form_data.get("single_cover")
+        if cover_file and hasattr(cover_file, "filename") and cover_file.filename:
+            file_extension = os.path.splitext(cover_file.filename)[1].lower()
+            if file_extension in ['.png', '.jpg', '.jpeg', '.webp']:
+                new_filename = f"prop_{int(time.time())}_update_cover{file_extension}"
+                file_path = os.path.join(upload_folder, new_filename)
+                try:
+                    with open(file_path, "wb") as buffer:
+                        shutil.copyfileobj(cover_file.file, buffer)
+                    
+                    cover_url = f"htmlfotos/{new_filename}"
+                    update_data["image"] = cover_url  # Ana tablo için set et
+                    new_image_urls.append(cover_url)  # Galeri listesine ekle (0. index kapak olur)
+                except Exception as e:
+                    print(f"Güncellemede kapak fotoğrafı kaydetme hatası: {e}")
+
+        # 2. Adım: Yeni Çoklu Galeri Fotoğraflarını İşle (main_image)
+        uploaded_files = form_data.getlist("main_image")
+        for idx, file_item in enumerate(uploaded_files):
+            if hasattr(file_item, "filename") and file_item.filename:
+                file_extension = os.path.splitext(file_item.filename)[1].lower()
+                if file_extension in ['.png', '.jpg', '.jpeg', '.webp']:
+                    new_filename = f"prop_{int(time.time())}_up_gal_{idx}{file_extension}"
+                    file_path = os.path.join(upload_folder, new_filename)
+                    try:
+                        with open(file_path, "wb") as buffer:
+                            shutil.copyfileobj(file_item.file, buffer)
+                        
+                        new_image_urls.append(f"htmlfotos/{new_filename}")
+                    except Exception as e:
+                        print(f"Güncellemede galeri fotoğrafı kaydetme hatası ({idx}): {e}")
+
+        # Eğer yeni fotoğraflar yüklenmişse bunları update_data paketine dahil et
+        if new_image_urls:
+            update_data["image_urls"] = new_image_urls
+            # Eğer kullanıcı kapak seçmediyse ama çoklu foto yüklediyse, çoklunun ilki ana kapak olsun
+            if "image" not in update_data:
+                update_data["image"] = new_image_urls[0]
+
         clean_id = int(property_id) if str(property_id).isdigit() else property_id
 
         user_id_cookie = request.cookies.get("user_id")
@@ -761,7 +828,6 @@ async def update_property_endpoint(property_id: str, request: Request):
     except Exception as e:
         print(f"Kritik Güncelleme Hatası Logu: {str(e)}")
         return JSONResponse(status_code=500, content={"error": f"Sunucu hatası: {str(e)}"})
-
 
 if __name__ == "__main__":
     uvicorn.run("backend:app", host="127.0.0.1", port=8000, reload=True)

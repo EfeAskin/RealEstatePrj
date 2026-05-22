@@ -204,20 +204,22 @@ def update_property_in_db(property_id, data: dict):
             if db_price is None: db_price = old_data.get('price_normalized')
             if db_listing_type is None: db_listing_type = old_data.get('listing_type')
             
-        # Sorguya open_m2 eklenmiş, guests ve diğerleri tam senkronize edilmiştir
+        # Sorguya 'image' (Kapak Resmi) kolonu başarıyla eklendi!
         query = """
             UPDATE properties SET 
                 name = %s, location = %s, district = %s, city = %s, country = %s,
                 price_normalized = %s, monthly_price = %s, currency_code = %s, listing_type = %s,
                 property_type = %s, room_count = %s, gross_m2 = %s, net_m2 = %s, building_age = %s,
                 heating = %s, deed_status = %s, dues = %s, description = %s, status = %s,
-                beds = %s, baths = %s, guests = %s, open_m2 = %s
+                beds = %s, baths = %s, guests = %s, open_m2 = %s, image = %s
             WHERE id = %s
         """
         
-        # HTML'den hem 'guest_count' hem de 'guests' olarak gelebilecek veriyi güvenli yakalama mantığı
         guests_input = data.get('guests') if data.get('guests') is not None else data.get('guest_count')
         open_m2_input = data.get('open_m2') if data.get('open_m2') is not None else data.get('open_area_m2')
+
+        # Eğer yeni bir kapak resmi gönderilmediyse, eski kapak resmini koru
+        db_image = data.get('image', old_data.get('image') if old_data else 'placeholder.jpg')
 
         cur.execute(query, (
             db_name, 
@@ -243,6 +245,7 @@ def update_property_in_db(property_id, data: dict):
             int(data.get('baths')) if data.get('baths') is not None else (old_data.get('baths', 0) if old_data else 0),
             int(guests_input) if guests_input is not None else (old_data.get('guests', 0) if old_data else 0),
             int(open_m2_input) if open_m2_input is not None else (old_data.get('open_m2', 0) if old_data else 0),
+            db_image, # Sorgudaki %s eşleşmesi için buraya eklendi
             clean_id
         ))
         
@@ -255,10 +258,13 @@ def update_property_in_db(property_id, data: dict):
                     (clean_id, int(feature_id))
                 )
                 
-        # Resimler güncellenirken senkronize edilir
-        if 'images' in data and data['images'] is not None:
+        # --- RESİMLER GÜNCELLENİRKEN SENKRONİZE EDİLİR (İSİM UYUŞMAZLIĞI GİDERİLDİ) ---
+        # Backend 'image_urls' veya 'images' yollasa da ikisini de kabul edecek esneklik sağlandı
+        target_images = data.get('image_urls') if data.get('image_urls') is not None else data.get('images')
+        
+        if target_images is not None:
             cur.execute("DELETE FROM property_images WHERE property_id = %s", (clean_id,))
-            for i, url in enumerate(data['images']):
+            for i, url in enumerate(target_images):
                 cur.execute(
                     "INSERT INTO property_images (property_id, image_url, is_main) VALUES (%s, %s, %s)",
                     (clean_id, url, (i == 0))

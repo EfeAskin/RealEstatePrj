@@ -164,10 +164,23 @@
 
                     <div class="form-section flex-1" style="flex: 1; min-width: 250px;">
                         <label class="section-title">Fotoğraflar</label>
-                        <div class="upload-zone-compact" onclick="document.getElementById('propertyImages').click()">
-                            <i class="fas fa-images"></i>
-                            <span>Resim Ekle (Çoklu Seçim)</span>
-                            <input type="file" name="main_image" id="propertyImages" accept="image/*" multiple onchange="handleImagePreview(event)" style="display:none">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            
+                            <div class="cover-upload-square" onclick="document.getElementById('singleCoverImage').click()" style="width: 100px; height: 100px; border: 2.5px dashed #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748b; background: #f8fafc; transition: 0.2s; position: relative; overflow: hidden; flex-shrink: 0;">
+                                <div id="coverUploadPlaceholder" style="text-align: center; padding: 5px;">
+                                    <i class="fas fa-camera" style="font-size: 18px; color: #ff8c00; margin-bottom: 4px;"></i>
+                                    <span style="display: block; font-size: 10px; font-weight: 700;">Kapak Seç</span>
+                                </div>
+                                <img id="coverImagePreview" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
+                                <input type="file" name="single_cover" id="singleCoverImage" accept="image/*" onchange="handleSingleCoverPreview(event)" style="display:none">
+                            </div>
+
+                            <div class="upload-zone-compact" onclick="document.getElementById('propertyImages').click()" style="flex: 1; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; padding: 10px;">
+                                <i class="fas fa-images" style="font-size: 20px; margin-bottom: 5px;"></i>
+                                <span style="font-size: 12px; font-weight: 600;">Resim Ekle (Çoklu Seçim)</span>
+                                <input type="file" name="main_image" id="propertyImages" accept="image/*" multiple onchange="handleImagePreview(event)" style="display:none">
+                            </div>
+
                         </div>
                         <div id="imagePreviewGrid" class="preview-grid-compact" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;"></div>
                     </div>
@@ -213,7 +226,8 @@
 .input-group span { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block; }
 input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #fff; transition: 0.2s; box-sizing: border-box; color: #1e293b; }
 input:focus { border-color: #ff8c00; outline: none; box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.1); }
-.upload-zone-compact { border: 2.5px dashed #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; color: #64748b; }
+.upload-zone-compact { border: 2.5px dashed #e2e8f0; border-radius: 12px; text-align: center; cursor: pointer; color: #64748b; }
+.upload-zone-compact:hover, .cover-upload-square:hover { border-color: #ff8c00; background: #fff7ed !important; }
 .btn-primary { background: #ff8c00; color: #fff; border: none; padding: 12px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; }
 .btn-primary:hover { background: #f97316; transform: translateY(-1px); }
 .btn-secondary { background: #f1f5f9; color: #475569; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; }
@@ -333,6 +347,23 @@ function closeEmbeddedPropertyForm() {
 function openModal() { openEmbeddedPropertyForm(); }
 function closeModal() { closeEmbeddedPropertyForm(); }
 
+// Yeni: Tekil Kapak Fotoğrafı Seçildiğinde Kutunun İçinde Önizleme Gösterme Fonksiyonu
+function handleSingleCoverPreview(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('coverImagePreview');
+    const placeholder = document.getElementById('coverUploadPlaceholder');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
 function handleImagePreview(event) {
     const grid = document.getElementById('imagePreviewGrid');
     if(!grid) return;
@@ -350,16 +381,15 @@ function handleImagePreview(event) {
             img.style.height = '60px'; 
             img.style.objectFit = 'cover';
             img.style.borderRadius = '8px'; 
-            img.style.border = index === 0 ? '2px solid #ff8c00' : '1px solid #e2e8f0';
+            img.style.border = '1px solid #e2e8f0';
             
             wrapper.appendChild(img);
             
-            if(index === 0) {
-                const label = document.createElement('span');
-                label.innerText = 'Kapak';
-                label.style.cssText = "position:absolute; bottom:0; left:0; right:0; background:rgba(255,140,0,0.8); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;";
-                wrapper.appendChild(label);
-            }
+            const label = document.createElement('span');
+            label.innerText = `Aktif ${index + 1}`;
+            label.style.cssText = "position:absolute; bottom:0; left:0; right:0; background:rgba(71,85,105,0.8); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;";
+            wrapper.appendChild(label);
+            
             grid.appendChild(wrapper);
         };
         reader.readAsDataURL(file);
@@ -395,7 +425,6 @@ function fillFormForEdit(data) {
     if(document.getElementById('input_heating')) document.getElementById('input_heating').value = data.heating || '-';
     if(document.getElementById('input_deed_status')) document.getElementById('input_deed_status').value = data.deed_status || '-';
     
-    // Düzenleme modunda string değeri (Örn: "3+2") bozmadan birebir input'a aktarması sağlandı
     if(document.getElementById('input_room_count')) {
         document.getElementById('input_room_count').value = data.room_count !== undefined && data.room_count !== null ? data.room_count : '0';
     }
@@ -427,6 +456,16 @@ function fillFormForEdit(data) {
         checkbox.checked = assignedFeatures.includes(valueAsNum) || assignedFeatures.includes(checkbox.value);
     });
 
+    // Düzenleme modunda veritabanındaki mevcut kapak fotoğrafını kare alana basar
+    const coverPreview = document.getElementById('coverImagePreview');
+    const coverPlaceholder = document.getElementById('coverUploadPlaceholder');
+    if (data.image) {
+        const finalCoverSrc = (data.image.startsWith('http') || data.image.startsWith('/')) ? data.image : `/static/${data.image}`;
+        coverPreview.src = finalCoverSrc;
+        coverPreview.style.display = 'block';
+        coverPlaceholder.style.display = 'none';
+    }
+
     const grid = document.getElementById('imagePreviewGrid');
     if(grid) {
         grid.innerHTML = '';
@@ -436,19 +475,11 @@ function fillFormForEdit(data) {
                 imgWrapper.style.position = 'relative';
                 const finalSrc = (imgUrl.startsWith('http') || imgUrl.startsWith('/')) ? imgUrl : `/static/${imgUrl}`;
                 imgWrapper.innerHTML = `
-                    <img src="${finalSrc}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:2px solid #ff8c00;">
-                    <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;">${index === 0 ? 'Kapak' : 'Aktif'}</span>
+                    <img src="${finalSrc}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">
+                    <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;">Mevcut ${index + 1}</span>
                 `;
                 grid.appendChild(imgWrapper);
             });
-        } else if (data.image) {
-            const finalSrc = (data.image.startsWith('http') || data.image.startsWith('/')) ? data.image : `/static/${data.image}`;
-            grid.innerHTML = `
-                <div style="position: relative;">
-                    <img src="${finalSrc}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:2px solid #ff8c00;">
-                    <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;">Kapak</span>
-                </div>
-            `;
         }
     }
 
@@ -468,6 +499,12 @@ function resetPropertyForm() {
     }
     document.getElementById('formPropertyId').value = "";
     document.getElementById('submitBtn').innerText = "İlanı Kaydet ve Yayınla";
+    
+    // Kapak önizleme sıfırlama
+    document.getElementById('coverImagePreview').style.display = 'none';
+    document.getElementById('coverImagePreview').src = '';
+    document.getElementById('coverUploadPlaceholder').style.display = 'block';
+
     const grid = document.getElementById('imagePreviewGrid');
     if(grid) grid.innerHTML = '';
     
