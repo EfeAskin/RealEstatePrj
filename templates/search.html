@@ -53,6 +53,8 @@
         margin: 30px 8% 10px 8%; 
         display: flex; 
         gap: 12px; 
+        align-items: center;
+        flex-wrap: wrap;
     }
     .btn-filter { 
         background: white; 
@@ -90,27 +92,6 @@
         border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 800;
-    }
-
-    /* --- FILTER PANEL & CHIPS --- */
-    .filter-chip {
-        padding: 8px 18px;
-        border: 1px solid #e2e8f0;
-        background: white;
-        border-radius: 100px;
-        cursor: pointer;
-        transition: 0.2s;
-        font-weight: 500;
-        color: #64748b;
-    }
-    .filter-chip:hover {
-        border-color: var(--theme-color);
-        color: var(--theme-color);
-    }
-    .active-chip {
-        background: var(--theme-color) !important;
-        color: white !important;
-        border-color: var(--theme-color) !important;
     }
 
     /* --- SORT DROPDOWN --- */
@@ -177,7 +158,84 @@
         border-color: var(--theme-color);
         box-shadow: 0 4px 12px var(--theme-shadow);
     }
-    .page-dots { color: #cbd5e1; font-weight: 800; }
+
+    /* --- 3 AŞAMALI SWITCH TASARIMI --- */
+    .switch-3-way {
+        display: flex;
+        position: relative;
+        background: #e2e8f0;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 4px;
+        width: 260px;
+        height: 46px;
+        user-select: none;
+    }
+    .switch-3-way input {
+        display: none !important;
+    }
+    .switch-3-way label {
+        flex: 1;
+        width: 100%;
+        z-index: 2;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 14px;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.25s ease;
+    }
+    .switch-3-way .slider-thumb {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: calc(33.333% - 4px);
+        height: calc(100% - 8px);
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+        z-index: 1;
+    }
+    #state-rent:checked ~ .slider-thumb { transform: translateX(0); background-color: #10b981; }
+    #state-mix:checked ~ .slider-thumb { transform: translateX(100%); background-color: #3b82f6; }
+    #state-sale:checked ~ .slider-thumb { transform: translateX(200%); background-color: #ef4444; }
+    
+    #state-rent:checked ~ label[for="state-rent"],
+    #state-mix:checked ~ label[for="state-mix"],
+    #state-sale:checked ~ label[for="state-sale"] {
+        color: white !important;
+    }
+
+    /* Gelişmiş Sağ Panel Tasarım Öğeleri */
+    .filter-input-group {
+        margin-bottom: 20px;
+    }
+    .filter-input-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1e293b;
+        font-size: 14px;
+    }
+    .filter-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 14px;
+        color: #334155;
+        background-color: #f8fafc;
+        outline: none;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+    .filter-control:focus {
+        border-color: #3b82f6;
+        background-color: white;
+    }
 </style>
 {% endblock %}
 
@@ -203,8 +261,9 @@
                 {% endif %}
             </p>
             
-            <form action="/search" method="GET" style="max-width: 600px; margin: 0 auto; display: flex; align-items: center; background: white; padding: 8px; border-radius: 50px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-                <input type="text" name="q" value="{{ query if query else '' }}" placeholder="Location, property name, price range..." style="border: none; outline: none; flex: 1; font-size: 16px; padding-left: 25px; color: #475569;">
+            <form action="/search" method="GET" id="mainSearchForm" style="max-width: 600px; margin: 0 auto; display: flex; align-items: center; background: white; padding: 8px; border-radius: 50px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                <input type="text" id="keywordQueryInput" name="q" value="{{ query if query else '' }}" placeholder="Location, property name, price range..." style="border: none; outline: none; flex: 1; font-size: 16px; padding-left: 25px; color: #475569;">
+                <input type="hidden" id="hiddenTypeInput" name="type" value="{{ selected_type if selected_type else '' }}">
                 <button type="submit" class="btn-main">Search</button>
             </form>
         </div>
@@ -226,15 +285,26 @@
         </div>
 
         <button class="btn-filter"><i class="fas fa-map-marked-alt"></i> View on Map</button>
+
+        <div class="switch-3-way">
+            <input type="radio" name="property_status_toggle" id="state-rent" value="rent">
+            <label for="state-rent">Rent</label>
+
+            <input type="radio" name="property_status_toggle" id="state-mix" value="mix">
+            <label for="state-mix">Mix</label>
+
+            <input type="radio" name="property_status_toggle" id="state-sale" value="sale">
+            <label for="state-sale">Sale</label>
+
+            <div class="slider-thumb"></div>
+        </div>
     </div>
 
     <div class="grid">
         {% for property in properties %}
         <div class="card" onclick="window.location.href='/property/{{ property.id }}'">
             <div style="position: relative;">
-                {# KRİTİK DÜZELTME: Yolun başına / eklendi. backend.py'deki mount ile tam uyumlu hale getirildi #}
                 <img src="/{{ property.image }}" alt="{{ property.name }}">
-                
                 <div style="position: absolute; top: 15px; right: 15px; z-index: 10;">
                     {% if property.is_sale %}
                         <span class="badge-sale">{{ property.display_type }}</span>
@@ -272,15 +342,15 @@
 
     <div class="pagination-container">
         {% if current_page > 1 %}
-            <a href="?page={{ current_page - 1 }}{% if query %}&q={{ query }}{% endif %}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
+            <a href="?page={{ current_page - 1 }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if property_type %}&property_type={{ property_type }}{% endif %}{% if rooms %}&rooms={{ rooms }}{% endif %}{% if baths %}&baths={{ baths }}{% endif %}{% if country %}&country={{ country }}{% endif %}{% if city %}&city={{ city }}{% endif %}{% if district %}&district={{ district }}{% endif %}{% if currency %}&currency={{ currency }}{% endif %}{% if min_net_m2 %}&min_net_m2={{ min_net_m2 }}{% endif %}{% if max_net_m2 %}&max_net_m2={{ max_net_m2 }}{% endif %}{% if min_gross_m2 %}&min_gross_m2={{ min_gross_m2 }}{% endif %}{% if max_gross_m2 %}&max_gross_m2={{ max_gross_m2 }}{% endif %}{% if min_open_m2 %}&min_open_m2={{ min_open_m2 }}{% endif %}{% if max_open_m2 %}&max_open_m2={{ max_open_m2 }}{% endif %}{% if building_age %}&building_age={{ building_age }}{% endif %}{% if heating %}&heating={{ heating }}{% endif %}{% if balcony %}&balcony={{ balcony }}{% endif %}{% if is_site %}&is_site={{ is_site }}{% endif %}{% if elevator %}&elevator={{ elevator }}{% endif %}{% if furnished %}&furnished={{ furnished }}{% endif %}{% if otopark %}&otopark={{ otopark }}{% endif %}{% if sort_param %}&sort={{ sort_param }}{% endif %}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
         {% endif %}
 
         {% for p in range(1, total_pages + 1) %}
-            <a href="?page={{ p }}{% if query %}&q={{ query }}{% endif %}" class="page-btn {% if p == current_page %}active{% endif %}">{{ p }}</a>
+            <a href="?page={{ p }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if property_type %}&property_type={{ property_type }}{% endif %}{% if rooms %}&rooms={{ rooms }}{% endif %}{% if baths %}&baths={{ baths }}{% endif %}{% if country %}&country={{ country }}{% endif %}{% if city %}&city={{ city }}{% endif %}{% if district %}&district={{ district }}{% endif %}{% if currency %}&currency={{ currency }}{% endif %}{% if min_net_m2 %}&min_net_m2={{ min_net_m2 }}{% endif %}{% if max_net_m2 %}&max_net_m2={{ max_net_m2 }}{% endif %}{% if min_gross_m2 %}&min_gross_m2={{ min_gross_m2 }}{% endif %}{% if max_gross_m2 %}&max_gross_m2={{ max_gross_m2 }}{% endif %}{% if min_open_m2 %}&min_open_m2={{ min_open_m2 }}{% endif %}{% if max_open_m2 %}&max_open_m2={{ max_open_m2 }}{% endif %}{% if building_age %}&building_age={{ building_age }}{% endif %}{% if heating %}&heating={{ heating }}{% endif %}{% if balcony %}&balcony={{ balcony }}{% endif %}{% if is_site %}&is_site={{ is_site }}{% endif %}{% if elevator %}&elevator={{ elevator }}{% endif %}{% if furnished %}&furnished={{ furnished }}{% endif %}{% if otopark %}&otopark={{ otopark }}{% endif %}{% if sort_param %}&sort={{ sort_param }}{% endif %}" class="page-btn {% if p == current_page %}active{% endif %}">{{ p }}</a>
         {% endfor %}
 
         {% if current_page < total_pages %}
-            <a href="?page={{ current_page + 1 }}{% if query %}&q={{ query }}{% endif %}" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+            <a href="?page={{ current_page + 1 }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if property_type %}&property_type={{ property_type }}{% endif %}{% if rooms %}&rooms={{ rooms }}{% endif %}{% if baths %}&baths={{ baths }}{% endif %}{% if country %}&country={{ country }}{% endif %}{% if city %}&city={{ city }}{% endif %}{% if district %}&district={{ district }}{% endif %}{% if currency %}&currency={{ currency }}{% endif %}{% if min_net_m2 %}&min_net_m2={{ min_net_m2 }}{% endif %}{% if max_net_m2 %}&max_net_m2={{ max_net_m2 }}{% endif %}{% if min_gross_m2 %}&min_gross_m2={{ min_gross_m2 }}{% endif %}{% if max_gross_m2 %}&max_gross_m2={{ max_gross_m2 }}{% endif %}{% if min_open_m2 %}&min_open_m2={{ min_open_m2 }}{% endif %}{% if max_open_m2 %}&max_open_m2={{ max_open_m2 }}{% endif %}{% if building_age %}&building_age={{ building_age }}{% endif %}{% if heating %}&heating={{ heating }}{% endif %}{% if balcony %}&balcony={{ balcony }}{% endif %}{% if is_site %}&is_site={{ is_site }}{% endif %}{% if elevator %}&elevator={{ elevator }}{% endif %}{% if furnished %}&furnished={{ furnished }}{% endif %}{% if otopark %}&otopark={{ otopark }}{% endif %}{% if sort_param %}&sort={{ sort_param }}{% endif %}" class="page-btn {% if p == current_page %}active{% endif %}"><i class="fas fa-chevron-right"></i></a>
         {% endif %}
     </div>
 
@@ -292,17 +362,204 @@
         </div>
 
         <div style="flex: 1; overflow-y: auto; padding: 25px;">
-            <div style="margin-bottom: 30px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #1e293b;">Price Range</label>
+            <div class="filter-input-group">
+                <label for="filterPropertyStatus">Property Status</label>
+                <select id="filterPropertyStatus" class="filter-control">
+                    <option value="">All Statuses</option>
+                    <option value="rent">For Rent</option>
+                    <option value="sale">For Sale</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="select_property_type">Property Type</label>
+                <select id="select_property_type" class="filter-control">
+                    <option value="">All Types</option>
+                    <optgroup label="Residential (Konut)">
+                        <option value="Apartment">Apartment / Flat</option>
+                        <option value="Studio">Studio Apartment (1+0)</option>
+                        <option value="Penthouse">Penthouse</option>
+                        <option value="Loft">Loft</option>
+                        <option value="Duplex">Duplex / Triplex</option>
+                        <option value="Villa">Villa</option>
+                        <option value="Townhouse">Townhouse</option>
+                        <option value="Bungalow">Bungalow</option>
+                        <option value="Gated Community">Gated Community House</option>
+                    </optgroup>
+                    <optgroup label="Commercial (Ticari)">
+                        <option value="Office">Office</option>
+                        <option value="Retail">Retail Shop</option>
+                        <option value="Warehouse">Warehouse</option>
+                        <option value="Hotel">Hotel / Resort</option>
+                        <option value="Business Center">Business Center</option>
+                    </optgroup>
+                    <optgroup label="Land (Arsa / Arazi)">
+                        <option value="Residential Land">Residential Land</option>
+                        <option value="Commercial Land">Commercial Land</option>
+                        <option value="Agricultural">Agricultural Land</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterCountry">Country</label>
+                <select id="filterCountry" class="filter-control" onchange="handleCountryChange()">
+                    <option value="">All Countries</option>
+                    <option value="Northern Cyprus">Northern Cyprus</option>
+                    <option value="Turkey">Turkey</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterCity">City</label>
+                <select id="filterCity" class="filter-control" onchange="handleCityChange()">
+                    <option value="">All Cities</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterDistrict">District</label>
+                <select id="filterDistrict" class="filter-control">
+                    <option value="">All Districts</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterCurrency">Currency</label>
+                <select id="filterCurrency" class="filter-control">
+                    <option value="">All Currencies</option>
+                    <option value="TRY">TRY (₺)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label>Price Range</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="number" placeholder="Min" style="width: 50%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px;">
-                    <input type="number" placeholder="Max" style="width: 50%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                    <input type="number" id="filterMinPrice" placeholder="Min Price" class="filter-control">
+                    <input type="number" id="filterMaxPrice" placeholder="Max Price" class="filter-control">
                 </div>
+            </div>
+
+            <div class="filter-input-group">
+                <label>Net Square Meter (Net m²)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="filterMinNetM2" placeholder="Min m²" class="filter-control">
+                    <input type="number" id="filterMaxNetM2" placeholder="Max m²" class="filter-control">
+                </div>
+            </div>
+
+            <div class="filter-input-group">
+                <label>Gross Square Meter (Brüt m²)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="filterMinGrossM2" placeholder="Min m²" class="filter-control">
+                    <input type="number" id="filterMaxGrossM2" placeholder="Max m²" class="filter-control">
+                </div>
+            </div>
+
+            <div class="filter-input-group">
+                <label>Open Area (Açık Alan m²)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="filterMinOpenM2" placeholder="Min m²" class="filter-control">
+                    <input type="number" id="filterMaxOpenM2" placeholder="Max m²" class="filter-control">
+                </div>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterBuildingAge">Building Age</label>
+                <select id="filterBuildingAge" class="filter-control">
+                    <option value="">Any Age</option>
+                    <option value="0">0 (Brand New)</option>
+                    <option value="1-5">1-5 Years</option>
+                    <option value="6-10">6-10 Years</option>
+                    <option value="11-15">11-15 Years</option>
+                    <option value="16+">16+ Years</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterHeating">Heating</label>
+                <select id="filterHeating" class="filter-control">
+                    <option value="">Any Heating</option>
+                    <option value="Air Conditioner">Air Conditioner (Klima)</option>
+                    <option value="Central Heating">Central Heating (Merkezi Isıtma)</option>
+                    <option value="Underfloor Heating">Underfloor Heating (Yerden Isıtma)</option>
+                    <option value="No Heating">None</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterRooms">Bedrooms</label>
+                <select id="filterRooms" class="filter-control">
+                    <option value="">Any Bedrooms</option>
+                    <option value="1+0">Studio (1+0)</option>
+                    <option value="1+1">1 Bedroom (1+1)</option>
+                    <option value="2+1">2 Bedrooms (2+1)</option>
+                    <option value="3+1">3 Bedrooms (3+1)</option>
+                    <option value="4+1">4+1 or More</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterBaths">Bathrooms</label>
+                <select id="filterBaths" class="filter-control">
+                    <option value="">Any Bathrooms</option>
+                    <option value="1">1 Bathroom</option>
+                    <option value="2">2 Bathrooms</option>
+                    <option value="3">3+ Bathrooms</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterBalcony">Balcony</label>
+                <select id="filterBalcony" class="filter-control">
+                    <option value="">All</option>
+                    <option value="yes">Yes (Var)</option>
+                    <option value="no">No (Yok)</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterIsSite">In Gated Community (Site İçinde)</label>
+                <select id="filterIsSite" class="filter-control">
+                    <option value="">All</option>
+                    <option value="yes">Yes (Var)</option>
+                    <option value="no">No (Yok)</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterElevator">Elevator (Asansör)</label>
+                <select id="filterElevator" class="filter-control">
+                    <option value="">All</option>
+                    <option value="yes">Yes (Var)</option>
+                    <option value="no">No (Yok)</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterFurnished">Furnished (Eşyalı)</label>
+                <select id="filterFurnished" class="filter-control">
+                    <option value="">All</option>
+                    <option value="yes">Yes (Var)</option>
+                    <option value="no">No (Yok)</option>
+                </select>
+            </div>
+
+            <div class="filter-input-group">
+                <label for="filterOtopark">Parking Lot (Otopark)</label>
+                <select id="filterOtopark" class="filter-control">
+                    <option value="">All</option>
+                    <option value="yes">Yes (Var)</option>
+                    <option value="no">No (Yok)</option>
+                </select>
             </div>
         </div>
 
         <div style="padding: 20px 25px; border-top: 1px solid #f1f5f9; display: flex; gap: 15px;">
-            <button onclick="toggleFilters()" style="flex: 1; padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; font-weight: 600; cursor: pointer;">Clear All</button>
+            <button onclick="clearAllFilters()" style="flex: 1; padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; font-weight: 600; cursor: pointer;">Clear All</button>
             <button class="btn-main" style="flex: 2; justify-content: center;" onclick="applyFilters()">Show Results</button>
         </div>
     </div>
@@ -311,6 +568,49 @@
 
 {% block extra_js %}
 <script>
+    // Dinamik Yerleşim Veri Kümesi
+    const locationData = {
+        "Northern Cyprus": {
+            "Kyrenia": ["Alsancak", "Lapta", "Çatalköy", "Center", "Karaoğlanoğlu"],
+            "Nicosia": ["Gönyeli", "Ortaköy", "Hamitköy", "Center"],
+            "Famagusta": ["Sakarya", "Karakol", "Center", "Yeniboğaziçi"]
+        },
+        "Turkey": {
+            "Istanbul": ["Beşiktaş", "Karaköy", "Kadıköy", "Şişli"],
+            "Antalya": ["Muratpaşa", "Konyaaltı", "Alanya", "Kas"],
+            "Izmir": ["Çeşme", "Bornova", "Karşıyaka", "Alacati"]
+        }
+    };
+
+    function handleCountryChange() {
+        const countrySel = document.getElementById('filterCountry').value;
+        const citySel = document.getElementById('filterCity');
+        const distSel = document.getElementById('filterDistrict');
+
+        citySel.innerHTML = '<option value="">All Cities</option>';
+        distSel.innerHTML = '<option value="">All Districts</option>';
+
+        if (countrySel && locationData[countrySel]) {
+            Object.keys(locationData[countrySel]).forEach(city => {
+                citySel.innerHTML += `<option value="${city}">${city}</option>`;
+            });
+        }
+    }
+
+    function handleCityChange() {
+        const countrySel = document.getElementById('filterCountry').value;
+        const citySel = document.getElementById('filterCity').value;
+        const distSel = document.getElementById('filterDistrict');
+
+        distSel.innerHTML = '<option value="">All Districts</option>';
+
+        if (countrySel && citySel && locationData[countrySel][citySel]) {
+            locationData[countrySel][citySel].forEach(dist => {
+                distSel.innerHTML += `<option value="${dist}">${dist}</option>`;
+            });
+        }
+    }
+
     function toggleFilters() {
         const panel = document.getElementById('filterPanel');
         const overlay = document.getElementById('filterOverlay');
@@ -319,7 +619,9 @@
         document.body.style.overflow = (panel.style.right === '0px') ? 'hidden' : 'auto';
     }
 
-    document.getElementById('filterOverlay').onclick = toggleFilters;
+    if (document.getElementById('filterOverlay')) {
+        document.getElementById('filterOverlay').onclick = toggleFilters;
+    }
 
     function toggleSortMenu(event) {
         event.stopPropagation();
@@ -332,6 +634,7 @@
         document.querySelectorAll('.sort-item').forEach(item => item.classList.remove('active'));
         element.classList.add('active');
         document.getElementById('sortMenu').style.display = 'none';
+        executeSearch();
     }
 
     window.onclick = function(event) {
@@ -339,8 +642,214 @@
         if (menu) menu.style.display = 'none';
     }
 
+    function clearAllFilters() {
+        document.getElementById('filterPropertyStatus').value = '';
+        document.getElementById('select_property_type').value = '';
+        document.getElementById('filterCountry').value = '';
+        document.getElementById('filterCity').innerHTML = '<option value="">All Cities</option>';
+        document.getElementById('filterDistrict').innerHTML = '<option value="">All Districts</option>';
+        document.getElementById('filterCurrency').value = '';
+        document.getElementById('filterMinPrice').value = '';
+        document.getElementById('filterMaxPrice').value = '';
+        document.getElementById('filterMinNetM2').value = '';
+        document.getElementById('filterMaxNetM2').value = '';
+        document.getElementById('filterMinGrossM2').value = '';
+        document.getElementById('filterMaxGrossM2').value = '';
+        document.getElementById('filterMinOpenM2').value = '';
+        document.getElementById('filterMaxOpenM2').value = '';
+        document.getElementById('filterBuildingAge').value = '';
+        document.getElementById('filterHeating').value = '';
+        document.getElementById('filterRooms').value = '';
+        document.getElementById('filterBaths').value = '';
+        document.getElementById('filterBalcony').value = '';
+        document.getElementById('filterIsSite').value = '';
+        document.getElementById('filterElevator').value = '';
+        document.getElementById('filterFurnished').value = '';
+        document.getElementById('filterOtopark').value = '';
+        toggleFilters();
+        executeSearch();
+    }
+
     function applyFilters() {
         toggleFilters();
+        executeSearch();
     }
+
+    // Üst Bar Üçlü Switch Tetikleyicisi
+    document.querySelectorAll('input[name="property_status_toggle"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            let val = this.value;
+            let hiddenType = document.getElementById('hiddenTypeInput');
+            let sideStatus = document.getElementById('filterPropertyStatus');
+            
+            if (val === 'mix') {
+                hiddenType.value = '';
+                sideStatus.value = '';
+            } else {
+                hiddenType.value = val;
+                sideStatus.value = val;
+            }
+            executeSearch();
+        });
+    });
+
+    // Filtreleri toplayıp backend uyumlu URL query string ile tetikleyen ana fonksiyon
+    function executeSearch() {
+        const urlParams = new URLSearchParams();
+        
+        // Ana Kelime
+        const qVal = document.getElementById('keywordQueryInput').value;
+        if (qVal) urlParams.set('q', qVal);
+        
+        // Durum/Tip Önceliği (Sağ panel doluysa önceliklidir)
+        const sideStatusVal = document.getElementById('filterPropertyStatus').value;
+        const checkedRadio = document.querySelector('input[name="property_status_toggle"]:checked');
+        if (sideStatusVal) {
+            urlParams.set('type', sideStatusVal);
+        } else if (checkedRadio && checkedRadio.value !== 'mix') {
+            urlParams.set('type', checkedRadio.value);
+        }
+        
+        // Sağ Panel Elemanları
+        const propType = document.getElementById('select_property_type').value;
+        const country = document.getElementById('filterCountry').value;
+        const city = document.getElementById('filterCity').value;
+        const district = document.getElementById('filterDistrict').value;
+        const currency = document.getElementById('filterCurrency').value;
+        const minPrice = document.getElementById('filterMinPrice').value;
+        const maxPrice = document.getElementById('filterMaxPrice').value;
+        
+        const minNet = document.getElementById('filterMinNetM2').value;
+        const maxNet = document.getElementById('filterMaxNetM2').value;
+        const minGross = document.getElementById('filterMinGrossM2').value;
+        const maxGross = document.getElementById('filterMaxGrossM2').value;
+        const minOpen = document.getElementById('filterMinOpenM2').value;
+        const maxOpen = document.getElementById('filterMaxOpenM2').value;
+        
+        const bAge = document.getElementById('filterBuildingAge').value;
+        const heat = document.getElementById('filterHeating').value;
+        const rooms = document.getElementById('filterRooms').value;
+        const baths = document.getElementById('filterBaths').value;
+        
+        const balcony = document.getElementById('filterBalcony').value;
+        const isSite = document.getElementById('filterIsSite').value;
+        const elevator = document.getElementById('filterElevator').value;
+        const furnished = document.getElementById('filterFurnished').value;
+        const otopark = document.getElementById('filterOtopark').value;
+        
+        if (propType) urlParams.set('property_type', propType);
+        if (country) urlParams.set('country', country);
+        if (city) urlParams.set('city', city);
+        if (district) urlParams.set('district', district);
+        if (currency) urlParams.set('currency', currency);
+        if (minPrice) urlParams.set('min_price', minPrice);
+        if (maxPrice) urlParams.set('max_price', maxPrice);
+        
+        if (minNet) urlParams.set('min_net_m2', minNet);
+        if (maxNet) urlParams.set('max_net_m2', maxNet);
+        if (minGross) urlParams.set('min_gross_m2', minGross);
+        if (maxGross) urlParams.set('max_gross_m2', maxGross);
+        if (minOpen) urlParams.set('min_open_m2', minOpen);
+        if (maxOpen) urlParams.set('max_open_m2', maxOpen);
+        
+        if (bAge) urlParams.set('building_age', bAge);
+        if (heat) urlParams.set('heating', heat);
+        if (rooms) urlParams.set('rooms', rooms);
+        if (baths) urlParams.set('baths', baths);
+        
+        if (balcony) urlParams.set('balcony', balcony);
+        if (isSite) urlParams.set('is_site', isSite);
+        if (elevator) urlParams.set('elevator', elevator);
+        if (furnished) urlParams.set('furnished', furnished);
+        if (otopark) urlParams.set('otopark', otopark);
+        
+        // Sıralama Bilgisi
+        const activeSort = document.querySelector('.sort-item.active');
+        if (activeSort) urlParams.set('sort', activeSort.innerText);
+        
+        // Sayfayı her filtre aramada 1'e sıfırla
+        urlParams.set('page', '1');
+        
+        window.location.href = window.location.pathname + '?' + urlParams.toString();
+    }
+
+    // Sayfa yüklendiğinde URL parametrelerini okuyarak arayüz durumunu kilitler
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Switch Durum Kilitlemesi
+        let typeParam = urlParams.get('type');
+        if (typeParam === 'rent') {
+            document.getElementById('state-rent').checked = true;
+            document.getElementById('hiddenTypeInput').value = 'rent';
+            document.getElementById('filterPropertyStatus').value = 'rent';
+        } else if (typeParam === 'sale') {
+            document.getElementById('state-sale').checked = true;
+            document.getElementById('hiddenTypeInput').value = 'sale';
+            document.getElementById('filterPropertyStatus').value = 'sale';
+        } else {
+            document.getElementById('state-mix').checked = true;
+            document.getElementById('hiddenTypeInput').value = '';
+            document.getElementById('filterPropertyStatus').value = '';
+        }
+
+        // Form Girdileri Değer Atamaları
+        if (urlParams.has('property_type')) document.getElementById('select_property_type').value = urlParams.get('property_type');
+        if (urlParams.has('currency')) document.getElementById('filterCurrency').value = urlParams.get('currency');
+        if (urlParams.has('min_price')) document.getElementById('filterMinPrice').value = urlParams.get('min_price');
+        if (urlParams.has('max_price')) document.getElementById('filterMaxPrice').value = urlParams.get('max_price');
+        
+        if (urlParams.has('min_net_m2')) document.getElementById('filterMinNetM2').value = urlParams.get('min_net_m2');
+        if (urlParams.has('max_net_m2')) document.getElementById('filterMaxNetM2').value = urlParams.get('max_net_m2');
+        if (urlParams.has('min_gross_m2')) document.getElementById('filterMinGrossM2').value = urlParams.get('min_gross_m2');
+        if (urlParams.has('max_gross_m2')) document.getElementById('filterMaxGrossM2').value = urlParams.get('max_gross_m2');
+        if (urlParams.has('min_open_m2')) document.getElementById('filterMinOpenM2').value = urlParams.get('min_open_m2');
+        if (urlParams.has('max_open_m2')) document.getElementById('filterMaxOpenM2').value = urlParams.get('max_open_m2');
+        
+        if (urlParams.has('building_age')) document.getElementById('filterBuildingAge').value = urlParams.get('building_age');
+        if (urlParams.has('heating')) document.getElementById('filterHeating').value = urlParams.get('heating');
+        if (urlParams.has('rooms')) document.getElementById('filterRooms').value = urlParams.get('rooms');
+        if (urlParams.has('baths')) document.getElementById('filterBaths').value = urlParams.get('baths');
+        
+        if (urlParams.has('balcony')) document.getElementById('filterBalcony').value = urlParams.get('balcony');
+        if (urlParams.has('is_site')) document.getElementById('filterIsSite').value = urlParams.get('is_site');
+        if (urlParams.has('elevator')) document.getElementById('filterElevator').value = urlParams.get('elevator');
+        if (urlParams.has('furnished')) document.getElementById('filterFurnished').value = urlParams.get('furnished');
+        if (urlParams.has('otopark')) document.getElementById('filterOtopark').value = urlParams.get('otopark');
+
+        // Ülke / Şehir / İlçe Hiyerarşik Yapısı
+        if (urlParams.has('country')) {
+            const cVal = urlParams.get('country');
+            document.getElementById('filterCountry').value = cVal;
+            handleCountryChange();
+            
+            if (urlParams.has('city')) {
+                const cityVal = urlParams.get('city');
+                document.getElementById('filterCity').value = cityVal;
+                handleCityChange();
+                
+                if (urlParams.has('district')) {
+                    document.getElementById('filterDistrict').value = urlParams.get('district');
+                }
+            }
+        }
+        
+        // Sıralama Başlığını Eşitleme
+        if (urlParams.has('sort')) {
+            const sortVal = urlParams.get('sort');
+            document.getElementById('currentSort').innerText = sortVal;
+            document.querySelectorAll('.sort-item').forEach(item => {
+                if (item.innerText === sortVal) {
+                    document.querySelectorAll('.sort-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                }
+            });
+        }
+    });
+
+    document.getElementById('mainSearchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        executeSearch();
+    });
 </script>
 {% endblock %}
