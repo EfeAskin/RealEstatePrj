@@ -433,36 +433,6 @@ async def home(request: Request):
         "page_id": "home"
     })
 
-@router.get("/search", response_class=HTMLResponse)
-async def search_page(request: Request, q: str = Query(None), page: int = Query(1, ge=1)):
-    properties_from_db = db.get_properties_from_db()
-    all_properties = properties_from_db if properties_from_db else []
-    
-    if q:
-        all_properties = [
-            p for p in all_properties 
-            if q.lower() in str(p.get('name', '')).lower() or q.lower() in str(p.get('location', '')).lower()
-        ]
-
-    processed_properties = [process_property_data(p.copy()) for p in all_properties]
-    
-    items_per_page = 15
-    total_items = len(processed_properties)
-    total_pages = math.ceil(total_items / items_per_page) if total_items > 0 else 1
-    
-    start_idx = (page - 1) * items_per_page
-    end_idx = start_idx + items_per_page
-    display_properties = processed_properties[start_idx:end_idx]
-    
-    return templates.TemplateResponse(request, "search.html", {
-        "properties": display_properties, 
-        "role": db.current_user_role, 
-        "user": getattr(db, 'current_user_data', None),
-        "page_id": "search",
-        "current_page": page,
-        "total_pages": total_pages,
-        "query": q
-    })
 
 @router.get("/about", response_class=HTMLResponse)
 async def about_page(request: Request):

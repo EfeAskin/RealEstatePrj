@@ -76,22 +76,6 @@ async def home(request: Request):
         "properties": popular_properties, "page_id": "home"
     })
 
-@router.get("/search", response_class=HTMLResponse)
-async def search_page(request: Request, q: str = Query(None), page: int = Query(1, ge=1)):
-    properties_from_db = db.get_properties_from_db()
-    all_properties = properties_from_db if properties_from_db else []
-    if q:
-        all_properties = [p for p in all_properties if q.lower() in str(p.get('name', '')).lower() or q.lower() in str(p.get('location', '')).lower()]
-    
-    processed_properties = [process_property_data(p.copy()) for p in all_properties]
-    items_per_page = 15
-    total_pages = math.ceil(len(processed_properties) / items_per_page) if processed_properties else 1
-    start_idx = (page - 1) * items_per_page
-    display_properties = processed_properties[start_idx:start_idx + items_per_page]
-    
-    return templates.TemplateResponse(request, "search.html", {
-        "properties": display_properties, "page_id": "search", "current_page": page, "total_pages": total_pages, "query": q
-    })
 
 @router.get("/about", response_class=HTMLResponse)
 async def about_page(request: Request):
