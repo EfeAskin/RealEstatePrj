@@ -28,8 +28,16 @@
             <div class="card-image-wrap">
                 <img src="{{ url_for('static', path='/' + (property.image if property.image else 'htmlfotos/placeholder.jpg')) }}" alt="Property">
                 
-                <span class="status-badge {{ 'rented' if property.status == 'rented' else 'available' }}" style="left: 15px;">
-                    {{ 'RENTED' if property.status == 'rented' else 'AVAILABLE' }}
+                <span class="status-badge {% if property.status == 'active' %}badge-available{% elif property.status == 'approving' %}badge-approving{% elif property.status == 'passive' %}badge-rented{% else %}badge-deleted{% endif %}" style="left: 15px;">
+                    {% if property.status == 'active' %}
+                        AVAILABLE
+                    {% elif property.status == 'approving' %}
+                        APPROVING
+                    {% elif property.status == 'passive' %}
+                        RENTED
+                    {% else %}
+                        DELETED
+                    {% endif %}
                 </span>
 
                 <span class="type-badge" style="position: absolute; top: 15px; right: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; color: white; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(4px); z-index: 2;">
@@ -140,8 +148,10 @@
         position: absolute; top: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; 
         font-weight: 800; color: white; letter-spacing: 0.5px; z-index: 2;
     }
-    .status-badge.available { background: #1BA7FF; box-shadow: 0 4px 10px rgba(27, 167, 255, 0.3); }
-    .status-badge.rented { background: #FF7226; box-shadow: 0 4px 10px rgba(255, 114, 38, 0.3); }
+    .status-badge.badge-available { background-color: #22c55e !important; color: white; } /* Yeşil */
+    .status-badge.badge-approving { background-color: #f59e0b !important; color: white; } /* Turuncu/Sarı */
+    .status-badge.badge-rented { background-color: #ef4444 !important; color: white; }    /* Kırmızı */
+    .status-badge.badge-deleted { background-color: #64748b !important; color: white; }   /* Gri */
 
     .edit-overlay-btn {
         position: absolute; top: 15px; right: 65px;

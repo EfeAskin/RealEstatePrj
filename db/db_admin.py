@@ -130,34 +130,169 @@ def get_all_properties_with_agents_from_db():
         if cur: cur.close()
         if conn: conn.close()
 
-def get_property_by_id_from_db(property_id: str):
-    """
-    Düzenleme (Edit) modalı açıldığında, formun içini veritabanındaki 
-    mevcut verilerle doldurmak için tekil ilan verisi getirir.
-    """
+def get_property_by_id(property_id):
+    """Tek bir ilanın tüm detaylarını düzenleme formu için veritabanından çeker"""
     conn = get_db_connection()
     if not conn: return None
-    cur = None
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT * FROM properties WHERE id::text = %s", (str(property_id),))
-        property_data = cur.fetchone()
         
-        # Modal içindeki alanların (title/price/currency) boş kalmaması için fallback eşlemeleri
-        if property_data:
-            if 'name' in property_data and not property_data.get('title'):
-                property_data['title'] = property_data['name']
-            if 'title' in property_data and not property_data.get('name'):
-                property_data['name'] = property_data['title']
-            if 'price_normalized' in property_data and not property_data.get('price'):
-                property_data['price'] = property_data['price_normalized']
-            if 'currency_code' in property_data and not property_data.get('currency'):
-                property_data['currency'] = property_data['currency_code']
-                
-        return property_data
+        clean_id = int(property_id) if str(property_id).isdigit() else property_id
+        
+        query = """
+            SELECT 
+                p.*, 
+                u.first_name as agent_first_name, 
+                u.last_name as agent_last_name
+            FROM properties p
+            LEFT JOIN agents a ON p.agent_id = a.id
+            LEFT JOIN users u ON a.id = u.id
+            WHERE p.id = %s
+        """
+        cur.execute(query, (clean_id,))
+        prop = cur.fetchone()
+        
+        if prop:
+            # --- PÜRÜZ 1 FİX: Features eşleşmesi için hem id hem name listesi atanır ---
+            cur.execute("SELECT feature_id FROM property_features WHERE property_id = %s", (clean_id,))
+            features_data = cur.fetchall()
+            prop['features'] = [f['feature_id'] for f in features_data]
+            
+            # Formun isme göre de yakalayabilmesi ihtimaline karşı string listesi de eklenir
+            cur.execute("""
+                SELECT f.name FROM features f 
+                JOIN property_features pf ON f.id = pf.feature_id 
+                WHERE pf.property_id = %s
+            """, (clean_id,))
+            features_names = cur.fetchall()
+            prop['feature_names'] = [f['name'] for f in features_names]
+            
+            # --- PÜRÜZ 2 FİX: Çoklu Resimleri property_images tablosundan tam liste çekme ---
+            cur.execute("SELECT image_url FROM property_images WHERE property_id = %s ORDER BY id ASC", (clean_id,))
+            images_data = cur.fetchall()
+            prop['images'] = [img['image_url'] for img in images_data]
+            
+            if 'name' in prop and not prop.get('title'):
+                prop['title'] = prop['name']
+            if 'price_normalized' in prop and not prop.get('price'):
+                prop['price'] = prop['price_normalized']
+            if 'currency_code' in prop and not prop.get('currency'):
+                prop['currency'] = prop['currency_code']
+            if 'listing_type' in prop and not prop.get('type'):
+                prop['type'] = prop['listing_type']
+            
+            # FastAPI ve frontend eşleşmesinde çökme yaşanmaması için güvenlik garantisi
+            prop['beds'] = int(prop.get('beds')) if prop.get('beds') is not None else 0
+            prop['baths'] = int(prop.get('baths')) if prop.get('baths') is not None else 0
+            prop['guests'] = int(prop.get('guests')) if prop.get('guests') is not None else 0
+            prop['open_m2'] = int(prop.get('open_m2')) if prop.get('open_m2') is not None else 0
+            
+        cur.close()
+        return prop
     except Exception as e:
-        print(f"Tekil ilan çekme hatası (ID: {property_id}): {e}")
+        print(f"Tekil mülk çekme hatası: {e}")
         return None
     finally:
-        if cur: cur.close()
-        if conn: conn.close()
+        if conn:
+            conn.close()
+
+def update_property_in_db(property_id, data: dict):
+    """İlan kartından güncellenen verileri veritabanına yansıtır"""
+    conn = get_db_connection()
+    if not conn: return False
+    try:
+        cur = conn.cursor()
+        
+        clean_id = int(property_id) if str(property_id).isdigit() else property_id
+        
+        db_name = data.get('name') if data.get('name') is not None else data.get('title')
+        db_price = data.get('price') if data.get('price') is not None else data.get('price_normalized')
+        db_listing_type = data.get('listing_type') if data.get('listing_type') is not None else data.get('type')
+        db_currency = data.get('currency_code') if data.get('currency_code') is not None else data.get('currency', 'TRY')
+
+        existing_cursor = conn.cursor(cursor_factory=RealDictCursor)
+        existing_cursor.execute("SELECT * FROM properties WHERE id = %s", (clean_id,))
+        old_data = existing_cursor.fetchone()
+        existing_cursor.close()
+
+        if old_data:
+            if db_name is None: db_name = old_data.get('name')
+            if db_price is None: db_price = old_data.get('price_normalized')
+            if db_listing_type is None: db_listing_type = old_data.get('listing_type')
+            
+        # Sorguya 'image' (Kapak Resmi) kolonu başarıyla eklendi!
+        query = """
+            UPDATE properties SET 
+                name = %s, location = %s, district = %s, city = %s, country = %s,
+                price_normalized = %s, monthly_price = %s, currency_code = %s, listing_type = %s,
+                property_type = %s, room_count = %s, gross_m2 = %s, net_m2 = %s, building_age = %s,
+                heating = %s, deed_status = %s, dues = %s, description = %s, status = %s,
+                beds = %s, baths = %s, guests = %s, open_m2 = %s, image = %s
+            WHERE id = %s
+        """
+        
+        guests_input = data.get('guests') if data.get('guests') is not None else data.get('guest_count')
+        open_m2_input = data.get('open_m2') if data.get('open_m2') is not None else data.get('open_area_m2')
+
+        # Eğer yeni bir kapak resmi gönderilmediyse, eski kapak resmini koru
+        db_image = data.get('image', old_data.get('image') if old_data else 'placeholder.jpg')
+
+        cur.execute(query, (
+            db_name, 
+            data.get('location', old_data.get('location') if old_data else None), 
+            data.get('district', old_data.get('district') if old_data else ""), 
+            data.get('city', old_data.get('city') if old_data else ""), 
+            data.get('country', old_data.get('country') if old_data else ""),
+            db_price, 
+            db_price, 
+            db_currency, 
+            db_listing_type,
+            data.get('property_type', old_data.get('property_type') if old_data else None), 
+            data.get('room_count', old_data.get('room_count') if old_data else None), 
+            data.get('gross_m2', old_data.get('gross_m2') if old_data else None), 
+            data.get('net_m2', old_data.get('net_m2') if old_data else None), 
+            data.get('building_age', old_data.get('building_age') if old_data else None), 
+            data.get('heating', old_data.get('heating') if old_data else None), 
+            data.get('deed_status', old_data.get('deed_status') if old_data else None), 
+            data.get('dues', data.get('dues', 0) if old_data else 0),
+            data.get('description', old_data.get('description') if old_data else None),
+            data.get('status', old_data.get('status') if old_data else 'active'),
+            int(data.get('beds')) if data.get('beds') is not None else (old_data.get('beds', 0) if old_data else 0),
+            int(data.get('baths')) if data.get('baths') is not None else (old_data.get('baths', 0) if old_data else 0),
+            int(guests_input) if guests_input is not None else (old_data.get('guests', 0) if old_data else 0),
+            int(open_m2_input) if open_m2_input is not None else (old_data.get('open_m2', 0) if old_data else 0),
+            db_image, # Sorgudaki %s eşleşmesi için buraya eklendi
+            clean_id
+        ))
+        
+        # Özellikler güncellenirken senkronize edilir
+        if 'features' in data and data['features'] is not None:
+            cur.execute("DELETE FROM property_features WHERE property_id = %s", (clean_id,))
+            for feature_id in data['features']:
+                cur.execute(
+                    "INSERT INTO property_features (property_id, feature_id) VALUES (%s, %s)",
+                    (clean_id, int(feature_id))
+                )
+                
+        # --- RESİMLER GÜNCELLENİRKEN SENKRONİZE EDİLİR (İSİM UYUŞMAZLIĞI GİDERİLDİ) ---
+        # Backend 'image_urls' veya 'images' yollasa da ikisini de kabul edecek esneklik sağlandı
+        target_images = data.get('image_urls') if data.get('image_urls') is not None else data.get('images')
+        
+        if target_images is not None:
+            cur.execute("DELETE FROM property_images WHERE property_id = %s", (clean_id,))
+            for i, url in enumerate(target_images):
+                cur.execute(
+                    "INSERT INTO property_images (property_id, image_url, is_main) VALUES (%s, %s, %s)",
+                    (clean_id, url, (i == 0))
+                )
+                
+        conn.commit()
+        cur.close()
+        return True
+    except Exception as e:
+        print(f"Mülk güncelleme hatası: {e}")
+        if conn: conn.rollback()
+        return False
+    finally:
+        if conn:
+            conn.close()

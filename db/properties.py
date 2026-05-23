@@ -547,3 +547,78 @@ def get_agent_with_properties(agent_id):
     finally:
         if conn:
             conn.close()
+
+from psycopg2.extras import RealDictCursor
+from db.connection import get_db_connection
+
+def get_pending_approvals_from_db():
+    """Onay bekleyen ilanları durum filtresine göre Neon DB'den temizce çeker."""
+    conn = get_db_connection()
+    if not conn: 
+        return []
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        # Metin araması yerine doğrudan gerçek 'status' kolonuna bakıyoruz
+        cur.execute("SELECT * FROM properties WHERE LOWER(TRIM(status)) = 'approving' ORDER BY id DESC")
+        pending_list = cur.fetchall()
+        cur.close()
+        conn.close()
+        return pending_list if pending_list else []
+    except Exception as e:
+        print(f"Onay listesi çekme hatası: {e}")
+        return []
+
+def get_system_logs_from_db():
+    """Sistem hareket kayıtlarını simüle eder veya tablosundan çeker."""
+    conn = get_db_connection()
+    if not conn: 
+        return []
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT current_database() as db, version() as info")
+        logs = cur.fetchall()
+        cur.close()
+        conn.close()
+        return logs if logs else []
+    except Exception as e:
+        print(f"Sistem günlükleri çekme hatası: {e}")
+        return []
+
+def get_property_by_id_from_db(property_id: str):
+    """
+    Düzenleme (Edit) modalı açıldığında, formun içini veritabanındaki 
+    mevcut verilerle doldurmak için tekil ilan verisi getirir.
+    """
+    conn = get_db_connection()
+    if not conn: 
+        return None
+    cur = None
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        # Neon DB tipi olan Integer için güvenli dönüştürme yapıp doğrudan sorguluyoruz
+        clean_id = int(property_id) if str(property_id).isdigit() else property_id
+        cur.execute("SELECT * FROM properties WHERE id = %s", (clean_id,))
+        property_data = cur.fetchone()
+        
+        # Modal içindeki alanların (title/price/currency) boş kalmaması için fallback eşlemeleri
+        if property_data:
+            if 'name' in property_data and not property_data.get('title'):
+                property_data['title'] = property_data['name']
+            if 'title' in property_data and not property_data.get('name'):
+                property_data['name'] = property_data['title']
+            if 'price_normalized' in property_data and not property_data.get('price'):
+                property_data['price'] = property_data['price_normalized']
+            if 'monthly_price' in property_data and not property_data.get('price'):
+                property_data['price'] = property_data['monthly_price']
+            if 'currency_code' in property_data and not property_data.get('currency'):
+                property_data['currency'] = property_data['currency_code']
+                
+        return property_data
+    except Exception as e:
+        print(f"Tekil mülk çekme hatası: {e}")
+        return None
+    finally:
+        if cur: 
+            cur.close()
+        if conn: 
+            conn.close()

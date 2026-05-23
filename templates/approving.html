@@ -1,12 +1,16 @@
 {% extends "profile_base.html" %}
 
 {% block profile_subcontent %}
+
 <div class="approval-container">
     <div class="approval-header-block">
         <div class="header-title-area">
-            <h2 class="main-title">Onay Bekleyen İlanlar</h2>
-            <p class="subtitle">Sistem yöneticisi onayını bekleyen, inceleme aşamasındaki ilanlarınızın güncel listesi.</p>
+            <h2 class="main-title">Pending Property Approvals</h2>
+            <p class="subtitle">
+                Current list of properties awaiting system administrator review and approval.
+            </p>
         </div>
+
         <div class="status-badge-summary">
             <div class="status-icon-wrapper">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
@@ -14,26 +18,41 @@
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
             </div>
+
             <div class="status-text-wrapper">
-                <span class="status-count">{% if properties %}{{ properties|length }}{% else %}0{% endif %}</span>
-                <span class="status-label">Bekleyen İlan</span>
+                <span class="status-count">
+                    {# Sayfalamadan bağımsız, veritabanından gelen net toplam sayı basılıyor #}
+                    {{ total_count if total_count is defined else 0 }}
+                </span>
+
+                <span class="status-label">
+                    Pending Listings
+                </span>
             </div>
         </div>
     </div>
 
+    {# 🚀 FORM ARTIK FLEX BAŞLIĞIN İÇİNDE DEĞİL, DOĞRU YERDE VE ID'Sİ TANIMLI #}
+    <div id="embeddedFormWrapper" class="embedded-form-wrapper" style="width: 100%; margin-top: 20px; display: none;">
+        {% include "add_property.html" %}
+    </div>
+
     <div class="approval-grid">
-        {% if properties and properties|length > 0 %}
-            {% for item in properties %}
+        {% set active_list = pending_properties if (pending_properties is defined and pending_properties) else (properties if (properties is defined and properties) else []) %}
+        
+        {% if active_list and active_list|length > 0 %}
+            {% for item in active_list %}
                 <div class="approval-card" id="property-card-{{ item.id }}">
                     <div class="card-image-section">
-                        {% if item.primary_image or item.image_url or item.image %}
-                            <img src="{{ url_for('static', path='/' + (item.image if item.image else (item.primary_image or item.image_url))) }}" alt="{{ item.title or item.name }}" class="property-cover-img">
+                        {% if item.image %}
+                            <img src="{{ url_for('static', path='/' + item.image) }}" alt="{{ item.title }}" class="property-cover-img">
                         {% else %}
-                            <img src="/static/htmlfotos/placeholder.jpg" alt="Varsayılan İlan Görseli" class="property-cover-img">
+                            <img src="/static/htmlfotos/placeholder.jpg" alt="Default Image" class="property-cover-img">
                         {% endif %}
+
                         <div class="badge-overlay">
                             <span class="badge-status-waiting">
-                                <span class="pulse-dot"></span> İncelemede
+                                <span class="pulse-dot"></span> Under Review
                             </span>
                         </div>
                     </div>
@@ -41,70 +60,78 @@
                     <div class="card-details-section">
                         <div class="property-meta-row">
                             <span class="property-category">
-                                {{ item.category_name or item.display_type or item.type or "Gayrimenkul" }}
+                                {{ item.display_type or "REAL ESTATE" }}
                             </span>
-                            <span class="property-date">{{ item.created_at or "Yeni Başvuru" }}</span>
+                            <span class="property-date">
+                                {{ item.created_at }}
+                            </span>
                         </div>
-                        
-                        <h3 class="property-card-title">{{ item.title or item.name }}</h3>
-                        
+
+                        <h3 class="property-card-title">
+                            {{ item.title }}
+                        </h3>
+
                         <div class="property-location">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                 <circle cx="12" cy="10" r="3"></circle>
                             </svg>
                             <span>
-                                {% if item.location %}
-                                    {{ item.location }}
-                                {% else %}
-                                    {{ item.city or "Şehir" }}, {{ item.district or "İlçe" }}
-                                {% endif %}
+                                {{ item.location or "Location Not Specified" }}
                             </span>
                         </div>
 
                         <div class="property-specs">
-                            <div class="spec-item" title="Oda Sayısı">
-                                <span class="spec-value">{{ item.room_count or "—" }}</span>
+                            <div class="spec-item" title="Room Count">
+                                <span class="spec-value">
+                                    🛏️ {{ item.room_count or "—" }}
+                                </span>
                             </div>
-                            <div class="spec-item" title="Metrekare">
-                                <span class="spec-value">{{ item.square_meters or item.area or "—" }} m²</span>
+
+                            <div class="spec-item" title="Square Meters">
+                                <span class="spec-value">
+                                    📐 {{ item.square_meters or "—" }} m²
+                                </span>
                             </div>
+
                             {% if item.agent_name %}
-                            <div class="spec-item" title="Sorumlu Agent" style="background: #eff6ff; border-color: #bfdbfe; color: #1e40af;">
-                                <span class="spec-value"><i class="fa-solid fa-user-tie" style="margin-right: 4px;"></i>{{ item.agent_name }}</span>
-                            </div>
+                                <div class="spec-item" title="Responsible Agent" style="background: #eff6ff; border-color: #bfdbfe; color: #1e40af;">
+                                    <span class="spec-value">
+                                        💼 {{ item.agent_name }}
+                                    </span>
+                                </div>
                             {% endif %}
                         </div>
 
                         <div class="card-footer-action">
                             <div class="price-box">
-                                <span class="price-label">Talep Edilen Fiyat</span>
+                                <span class="price-label">
+                                    Requested Price
+                                </span>
                                 <span class="price-amount">
-                                    {% if item.formatted_price %}
-                                        {{ item.formatted_price }} {{ item.currency_symbol if item.currency_symbol else (item.currency if item.currency else '₺') }}
-                                    {% elif item.price %}
-                                        {{ "{:,.0f}".format(item.price) if isinstance(item.price, (int, float)) else item.price }} {{ item.currency_symbol if item.currency_symbol else (item.currency if item.currency else '₺') }}
-                                    {% else %}
-                                        —
-                                    {% endif %}
+                                    {{ item.formatted_price }} {{ item.currency_symbol }}
                                 </span>
                             </div>
-                            
-                            <div class="action-btn-group" style="display: flex; gap: 8px; align-items: center;">
-                                <a href="/property/{{ item.id }}?preview=true" class="preview-btn" target="_blank" title="İlan Önizleme">
-                                    <span>Önizleme</span>
+
+                            <div class="action-btn-group">
+                                <a href="/property/{{ item.id }}?preview=true" class="preview-btn" target="_blank" title="Preview Listing">
+                                    <span>Preview</span>
                                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
                                 </a>
 
-                                <button type="button" class="admin-approve-btn" title="İlanı Doğrudan Onayla" onclick="quickApproveProperty('{{ item.id }}')" style="display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; border: 1px solid #bbf7d0; color: #15803d; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                                    <i class="fa-solid fa-check"></i> Onayla
+                                <button type="button" class="admin-approve-btn" onclick="quickApproveProperty('{{ item.id }}')">
+                                    Approve
                                 </button>
 
-                                <button type="button" class="admin-reject-btn" title="İlanı Reddet / Pasife Al" onclick="quickRejectProperty('{{ item.id }}')" style="display: inline-flex; align-items: center; justify-content: center; background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; width: 35px; height: 35px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s;">
-                                    <i class="fa-solid fa-trash-can"></i>
+                                <button type="button" class="admin-reject-btn" onclick="quickRejectProperty('{{ item.id }}')" title="Reject / Deactivate">
+                                    Reject
+                                </button>
+
+                                <button type="button" class="admin-edit-btn" onclick="editProperty('{{ item.id }}')">
+                                    Edit
                                 </button>
                             </div>
                         </div>
@@ -119,424 +146,691 @@
                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
                 </div>
-                <h3>Onay Bekleyen İlan Bulunmuyor</h3>
-                <p>Şu anda onay havuzunda bekleyen veya inceleme aşamasında olan herhangi bir ilan başvurusu bulunmamaktadır. Yeni bir ilan eklendiğinde bu panelden sürecini anlık olarak takip edebilirsiniz.</p>
-                <a href="/listings/add" class="create-listing-btn">Yeni İlan Oluştur</a>
+                <h3>No Pending Approvals</h3>
+                <p>There are currently no property applications waiting in the approval queue.</p>
             </div>
         {% endif %}
     </div>
+
+    {# --- PAGINATION ENTEGRASYONU --- #}
+    {% if total_pages is defined and total_pages > 1 %}
+    <div class="pagination-wrapper">
+        <div class="pagination-container">
+            {% if current_page is defined and current_page > 1 %}
+                <a href="?page={{ current_page - 1 }}" class="pagination-btn prev-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous
+                </a>
+            {% else %}
+                <span class="pagination-btn disabled">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous
+                </span>
+            {% endif %}
+
+            <div class="pagination-numbers">
+                {% for p in range(1, total_pages + 1) %}
+                    {% if current_page is defined and p == current_page %}
+                        <span class="pagination-number active">{{ p }}</span>
+                    {% else %}
+                        <a href="?page={{ p }}" class="pagination-number">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if current_page is defined and current_page < total_pages %}
+                <a href="?page={{ current_page + 1 }}" class="pagination-btn next-btn">
+                    Next
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            {% else %}
+                <span class="pagination-btn disabled">
+                    Next
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <style>
-/* --- ONAY BEKLEYENLER PANELİ MODERN GÖRÜNÜMÜ --- */
-.approval-container {
-    padding: 8px;
-    font-family: 'Inter', sans-serif;
-}
+    .approval-container {
+        padding: 8px;
+        font-family: 'Inter', sans-serif;
+    }
 
-.approval-header-block {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid #f1f5f9;
-    padding-bottom: 20px;
-    margin-bottom: 28px;
-    gap: 16px;
-}
-
-.main-title {
-    margin: 0 0 6px 0;
-    font-size: 22px;
-    font-weight: 700;
-    color: #1e293b;
-}
-
-.subtitle {
-    margin: 0;
-    font-size: 13px;
-    color: #64748b;
-    line-height: 1.5;
-}
-
-.status-badge-summary {
-    display: flex;
-    align-items: center;
-    background: #fef3c7;
-    border: 1px solid #fde68a;
-    padding: 10px 16px;
-    border-radius: 12px;
-    gap: 12px;
-    min-width: 160px;
-}
-
-.status-icon-wrapper {
-    color: #d97706;
-    display: flex;
-    align-items: center;
-}
-
-.status-text-wrapper {
-    display: flex;
-    flex-direction: column;
-}
-
-.status-count {
-    font-size: 18px;
-    font-weight: 700;
-    color: #92400e;
-    line-height: 1.2;
-}
-
-.status-label {
-    font-size: 11px;
-    font-weight: 500;
-    color: #b45309;
-}
-
-/* İlan Listesi Kontrolü */
-.approval-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* Modern İlan Kartı Yapısı */
-.approval-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    overflow: hidden;
-    display: flex;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-}
-
-.approval-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-    border-color: #cbd5e1;
-}
-
-.card-image-section {
-    position: relative;
-    width: 240px;
-    min-width: 240px;
-    height: 180px;
-    background: #f1f5f9;
-}
-
-.property-cover-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.badge-overlay {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-}
-
-.badge-status-waiting {
-    background: rgba(217, 119, 6, 0.9);
-    color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 30px;
-    font-size: 11px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.pulse-dot {
-    width: 7px;
-    height: 7px;
-    background-color: #fff;
-    border-radius: 50%;
-    display: inline-block;
-    animation: approvalPulse 1.6s infinite ease-in-out;
-}
-
-@keyframes approvalPulse {
-    0% { transform: scale(0.8); opacity: 0.5; }
-    50% { transform: scale(1.2); opacity: 1; }
-    100% { transform: scale(0.8); opacity: 0.5; }
-}
-
-/* Detay ve İçerik Alanı */
-.card-details-section {
-    flex: 1;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.property-meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.property-category {
-    background: #f1f5f9;
-    color: #475569;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.property-date {
-    font-size: 12px;
-    color: #94a3b8;
-}
-
-.property-card-title {
-    margin: 0 0 8px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1e293b;
-    line-height: 1.4;
-}
-
-.property-location {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #64748b;
-    font-size: 13px;
-    margin-bottom: 12px;
-}
-
-.property-location svg {
-    flex-shrink: 0;
-}
-
-.property-specs {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-
-.spec-item {
-    background: #f8fafc;
-    border: 1px solid #edf2f7;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    color: #475569;
-    font-weight: 500;
-}
-
-/* Alt Çizgi ve Fiyat/Buton Yapısı */
-.card-footer-action {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid #f1f5f9;
-    padding-top: 14px;
-    margin-top: auto;
-    gap: 10px;
-}
-
-.price-box {
-    display: flex;
-    flex-direction: column;
-}
-
-.price-label {
-    font-size: 11px;
-    color: #94a3b8;
-    margin-bottom: 2px;
-}
-
-.price-amount {
-    font-size: 18px;
-    font-weight: 700;
-    color: #10b981;
-}
-
-.preview-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-    padding: 8px 16px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s;
-}
-
-.preview-btn:hover {
-    background: #1e293b;
-    color: #ffffff;
-    border-color: #1e293b;
-}
-
-/* Admin Aksiyon Hover Efektleri */
-.admin-approve-btn:hover {
-    background: #16a34a !important;
-    color: white !important;
-    border-color: #16a34a !important;
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
-}
-
-.admin-reject-btn:hover {
-    background: #dc2626 !important;
-    color: white !important;
-    border-color: #dc2626 !important;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
-}
-
-/* Boş Durum Tasarımı */
-.empty-approval-state {
-    text-align: center;
-    padding: 60px 40px;
-    background: #ffffff;
-    border: 2px dashed #e2e8f0;
-    border-radius: 20px;
-    max-width: 600px;
-    margin: 40px auto;
-}
-
-.empty-icon-box {
-    width: 80px;
-    height: 80px;
-    background: #ecfdf5;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px auto;
-}
-
-.empty-approval-state h3 {
-    margin: 0 0 10px 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.empty-approval-state p {
-    margin: 0 0 24px 0;
-    font-size: 14px;
-    color: #64748b;
-    line-height: 1.6;
-}
-
-.create-listing-btn {
-    display: inline-block;
-    background: #10b981;
-    color: white;
-    padding: 10px 24px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background 0.2s;
-}
-
-.create-listing-btn:hover {
-    background: #059669;
-}
-
-/* Mobil Cihaz Duyarlılığı */
-@media (max-width: 768px) {
     .approval-header-block {
-        flex-direction: column;
-        align-items: flex-start;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 20px;
+        margin-bottom: 28px;
+        gap: 16px;
     }
+
+    .header-title-area {
+        flex: 1;
+    }
+
+    .main-title {
+        margin: 0 0 6px 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .subtitle {
+        margin: 0;
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.5;
+    }
+
     .status-badge-summary {
-        width: 100%;
+        display: flex;
+        align-items: center;
+        background: #fef3c7;
+        border: 1px solid #fde68a;
+        padding: 10px 16px;
+        border-radius: 12px;
+        gap: 12px;
+        min-width: 160px;
     }
+
+    .status-icon-wrapper {
+        color: #d97706;
+        display: flex;
+        align-items: center;
+    }
+
+    .status-text-wrapper {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .status-count {
+        font-size: 18px;
+        font-weight: 700;
+        color: #92400e;
+        line-height: 1.2;
+    }
+
+    .status-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: #b45309;
+    }
+
+    .approval-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
     .approval-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
         flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
     }
+
+    .approval-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        border-color: #cbd5e1;
+    }
+
     .card-image-section {
+        position: relative;
         width: 100%;
-        height: 200px;
+        height: 170px;
+        background: #f1f5f9;
     }
-    .card-footer-action {
+
+    .property-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .badge-overlay {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+    }
+
+    .badge-status-waiting {
+        background: rgba(217, 119, 6, 0.9);
+        color: #ffffff;
+        padding: 6px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        backdrop-filter: blur(4px);
+    }
+
+    .pulse-dot {
+        width: 7px;
+        height: 7px;
+        background-color: #fff;
+        border-radius: 50%;
+        display: inline-block;
+        animation: approvalPulse 1.6s infinite ease-in-out;
+    }
+
+    @keyframes approvalPulse {
+        0%, 100% { transform: scale(0.8); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 1; }
+    }
+
+    .card-details-section {
+        flex: 1;
+        padding: 16px;
+        display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        gap: 14px;
-    }
-    .action-btn-group {
-        width: 100%;
         justify-content: space-between;
     }
-}
+
+    .property-meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .property-category {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .property-date {
+        font-size: 12px;
+        color: #94a3b8;
+    }
+
+    .property-card-title {
+        margin: 0 0 8px 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #1e293b;
+        line-height: 1.4;
+        min-height: 42px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .property-location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #64748b;
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .property-specs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .spec-item {
+        background: #f8fafc;
+        border: 1px solid #edf2f7;
+        padding: 5px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .card-footer-action {
+        display: flex;
+        flex-direction: column;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 12px;
+        margin-top: auto;
+        gap: 10px;
+    }
+
+    .price-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .price-label {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    .price-amount {
+        font-size: 17px;
+        font-weight: 700;
+        color: #10b981;
+    }
+
+    .action-btn-group {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+    }
+
+    .preview-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        padding: 8px 2px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .preview-btn:hover {
+        background: #1e293b;
+        color: #ffffff;
+        border-color: #1e293b;
+    }
+
+    .admin-approve-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #dcfce7;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+        padding: 8px 2px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .admin-approve-btn:hover {
+        background: #16a34a;
+        color: #ffffff;
+        border-color: #16a34a;
+    }
+
+    .admin-reject-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 8px 2px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .admin-reject-btn:hover {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #dc2626;
+    }
+
+    .admin-edit-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #e0f2fe;
+        border: 1px solid #bae6fd;
+        color: #0369a1;
+        padding: 8px 2px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .admin-edit-btn:hover {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+    }
+
+    .empty-approval-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 40px;
+        background: #ffffff;
+        border: 2px dashed #e2e8f0;
+        border-radius: 20px;
+        max-width: 600px;
+        margin: 40px auto;
+    }
+
+    .empty-icon-box {
+        width: 80px;
+        height: 80px;
+        background: #ecfdf5;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px auto;
+    }
+
+    .empty-approval-state h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    .empty-approval-state p {
+        margin: 0;
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+        width: 100%;
+    }
+
+    .pagination-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        padding: 6px 12px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .pagination-btn:not(.disabled):hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #1e293b;
+    }
+
+    .pagination-btn.disabled {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .pagination-numbers {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .pagination-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .pagination-number:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    .pagination-number.active {
+        background: #FF7226;
+        color: #ffffff;
+    }
+
+    @media (max-width: 1200px) {
+        .approval-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .approval-header-block {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .status-badge-summary {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .approval-grid {
+            grid-template-columns: 1fr;
+        }
+        .pagination-container {
+            width: 100%;
+            justify-content: space-between;
+        }
+        .pagination-numbers {
+            display: none;
+        }
+    }
 </style>
 
 <script>
-    // All_properties.html dosyasındaki onay motoruyla entegre hızlı onay fonksiyonu
     async function quickApproveProperty(propertyId) {
-        if (confirm("Bu ilanı onaylayarak sistemde aktif hale getirmek istediğinize emin misiniz?")) {
-            try {
-                const response = await fetch(`/admin/update-property/${propertyId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ 'status': 'active' })
-                });
-                if (response.ok) {
-                    alert("İlan başarıyla onaylandı ve yayına alındı.");
-                    const card = document.getElementById(`property-card-${propertyId}`);
-                    if (card) {
-                        card.style.transition = 'all 0.5s ease';
-                        card.style.opacity = '0';
-                        card.style.transform = 'scale(0.9)';
-                        setTimeout(() => { window.location.reload(); }, 500);
-                    } else {
+        try {
+            const response = await fetch(`/admin/approve-property/${propertyId}`, {
+                method: "POST"
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert("Property approved successfully.");
+                const card = document.getElementById(`property-card-${propertyId}`);
+                if (card) {
+                    card.style.transition = "all 0.4s ease";
+                    card.style.opacity = "0";
+                    card.style.transform = "scale(0.9) translateY(-20px)";
+                    setTimeout(() => {
+                        card.remove();
                         window.location.reload();
-                    }
-                } else {
-                    alert("İlan durumu güncellenirken sistemsel bir hata oluştu.");
+                    }, 400);
                 }
-            } catch (error) {
-                console.error("Hata:", error);
-                alert("Bağlantı hatası oluştu.");
+            } else {
+                alert(data.message || "Approval process failed.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Server connection error.");
+        }
+    }
+
+    async function quickRejectProperty(propertyId) {
+        if (!confirm("Are you sure you want to reject this property? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/reject-property/${propertyId}`, {
+                method: "POST"
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert("Property rejected successfully.");
+                const card = document.getElementById(`property-card-${propertyId}`);
+                if (card) {
+                    card.style.transition = "all 0.4s ease";
+                    card.style.opacity = "0";
+                    card.style.transform = "scale(0.9) translateY(-20px)";
+                    setTimeout(() => {
+                        card.remove();
+                        window.location.reload();
+                    }, 400);
+                }
+            } else {
+                alert(data.message || "Rejection process failed.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Server connection error.");
+        }
+    }
+
+    /* BACKEND PARAMETRELERİNE GÖRE RE-ORGANİZE EDİLMİŞ DÜZENLEME PANELİ */
+    async function editProperty(propertyId) {
+        try {
+            const response = await fetch(`/api/property/${propertyId}`);
+            if (!response.ok) throw new Error("İlan verileri alınamadı.");
+            const data = await response.json();
+            
+            openEmbeddedForm(); // Önce dahili sarmalayıcıyı aç
+            
+            if (typeof fillFormForEdit === "function") {
+                fillFormForEdit(data);
+            } else {
+                const form = document.getElementById('addPropertyForm') || document.getElementById('propertyForm');
+                if (form) {
+                    form.action = `/api/property/update/${propertyId}`;
+                    let idInput = document.getElementById('formPropertyId') || form.querySelector('input[name="property_id"]');
+                    if (!idInput) {
+                        idInput = document.createElement('input');
+                        idInput.type = 'hidden';
+                        idInput.name = 'property_id';
+                        idInput.id = 'formPropertyId';
+                        form.appendChild(idInput);
+                    }
+                    idInput.value = propertyId;
+                    
+                    if(document.getElementById('input_title')) document.getElementById('input_title').value = data.title || data.name || '';
+                    if(document.getElementById('input_location')) document.getElementById('input_location').value = data.location || '';
+                    if(document.getElementById('input_price')) document.getElementById('input_price').value = data.price_normalized || data.price || '';
+                    if(document.getElementById('input_beds')) document.getElementById('input_beds').value = data.beds || data.bed_count || '';
+                    if(document.getElementById('input_baths')) document.getElementById('input_baths').value = data.baths || data.bath_count || '';
+                    if(document.getElementById('input_net_m2')) document.getElementById('input_net_m2').value = data.net_m2 || '';
+                    if(document.getElementById('textarea_description')) document.getElementById('textarea_description').value = data.description || '';
+                }
+            }
+        } catch (error) {
+            console.error("Hata:", error);
+            alert("İlan bilgileri yüklenirken bir hata oluştu.");
+        }
+    }
+
+    function openEmbeddedForm() {
+        const wrapper = document.getElementById('embeddedFormWrapper');
+        if (wrapper) {
+            wrapper.style.display = 'block';
+            
+            // Alt dosyadaki kilitlenmeyi çözmek adına modal elementinin display özelliğini zorla görünür yapıyoruz
+            const innerModal = document.getElementById('propertyModal');
+            if (innerModal) {
+                innerModal.style.setProperty('display', 'block', 'important');
+            }
+
+            // Form açıldığında sayfayı yumuşakça formun olduğu yere kaydırır
+            wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Form alanlarını sıfırla (Yeni ilan temiz gelsin)
+        const form = document.getElementById('addPropertyForm') || document.getElementById('propertyForm');
+        if (form) {
+            if (typeof resetPropertyForm === "function") {
+                resetPropertyForm();
+            } else {
+                form.reset();
+                form.action = '/add-property-full'; // default ekleme url'i
+                const idInput = form.querySelector('input[name="property_id"]');
+                if (idInput) idInput.value = '';
             }
         }
     }
 
-    // All_properties.html dosyasındaki pasife alma motoruyla entegre hızlı reddetme fonksiyonu
-    async function quickRejectProperty(propertyId) {
-        if (confirm("Bu ilanı reddetmek ve pasif konuma almak istediğinize emin misiniz?")) {
-            try {
-                const response = await fetch(`/admin/delete-property/${propertyId}`, {
-                    method: 'POST'
-                });
-                if (response.ok) {
-                    alert("İlan reddedildi ve pasif konuma alındı.");
-                    const card = document.getElementById(`property-card-${propertyId}`);
-                    if (card) {
-                        card.style.transition = 'all 0.5s ease';
-                        card.style.opacity = '0';
-                        card.style.transform = 'scale(0.9)';
-                        setTimeout(() => { window.location.reload(); }, 500);
-                    } else {
-                        window.location.reload();
-                    }
-                } else {
-                    alert("İlan durumu güncellenemedi.");
-                }
-            } catch (error) {
-                console.error("Hata:", error);
-                alert("Bağlantı hatası oluştu.");
-            }
+    // Alt dosyadan tetiklenebilecek kapatma aksiyonunu ve sayfa kaydırmasını hatasız yöneten global fonksiyon
+    function closeEmbeddedPropertyForm() {
+        const wrapper = document.getElementById('embeddedFormWrapper');
+        const innerModal = document.getElementById('propertyModal');
+        
+        // Önce sayfa kaydırma işlemini gerçekleştiriyoruz (Element gizlenmeden önce koordinat okunabilmesi için)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Sayfa kaydıktan sonra form alanlarını kapatıyoruz
+        if (innerModal) {
+            innerModal.style.display = 'none';
+            innerModal.style.setProperty('display', 'none', 'important');
         }
+        if (wrapper) {
+            wrapper.style.display = 'none';
+        }
+        
+        if (typeof resetPropertyForm === "function") {
+            resetPropertyForm();
+        }
+    }
+
+    // add_property.html altındaki eski closeModal çağrılarını bu güvenli kapatma fonksiyonuna yönlendiriyoruz
+    function closeModal() {
+        closeEmbeddedPropertyForm();
+    }
+
+    function toggleModal() {
+        openEmbeddedForm();
     }
 </script>
 {% endblock %}
