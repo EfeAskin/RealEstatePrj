@@ -1,4 +1,488 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<style>
+    /* Genel Panel Düzeni */
+    .payment-container {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0 0 15px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* 1. ÜST KISIM: MEVCUT ABONELİK KARTI (DİNAMİK JİLET GİBİ DURUM) */
+    .subscription-overview {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+
+    .sub-main-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sub-badge {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .sub-price-huge {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1a202c;
+        margin: 10px 0;
+    }
+
+    .sub-price-huge span {
+        font-size: 14px;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    /* KOTA BARLARI (Geleceğe Dönük İlan Sınırı Takibi) */
+    .quota-container {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .quota-row {
+        font-size: 13px;
+        font-weight: 600;
+        color: #4a5568;
+    }
+
+    .quota-bar-bg {
+        background: #edf2f7;
+        height: 8px;
+        border-radius: 10px;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+
+    .quota-bar-fill {
+        background: var(--theme-color, #ff385c);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+
+    /* 2. ORTA KISIM: KART YÖNETİMİ VE PLAN SEÇİMİ (GRID) */
+    .payment-grid-two {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 25px;
+    }
+
+    /* Premium Plan Upgrade Alanı */
+    .plan-upgrade-box {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 16px;
+        padding: 25px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .plan-upgrade-box::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 150px;
+        height: 150px;
+        background: rgba(255, 56, 92, 0.15);
+        border-radius: 50%;
+        filter: blur(20px);
+    }
+
+    .upgrade-btn {
+        background: var(--theme-color, #ff385c);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        font-size: 14px;
+        font-weight: 700;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(255, 56, 92, 0.3);
+    }
+
+    .upgrade-btn:hover {
+        background: #e31c5f;
+        transform: translateY(-1px);
+    }
+
+    /* Kayıtlı Kredi Kartı Düzeni (Stripe Tarzı Elit Görünüm) */
+    .saved-card-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .credit-card-ui {
+        background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+        border-radius: 12px;
+        padding: 20px;
+        color: white;
+        position: relative;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+    }
+
+    .card-brand {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 20px;
+        font-style: italic;
+        font-weight: 800;
+    }
+
+    .card-number {
+        font-size: 18px;
+        letter-spacing: 3px;
+        margin: 25px 0 15px 0;
+        font-family: 'Courier New', monospace;
+    }
+
+    .card-holder-expiry {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        text-transform: uppercase;
+        opacity: 0.8;
+    }
+
+    .update-card-btn {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        transition: 0.2s;
+    }
+
+    .update-card-btn:hover {
+        background: #e2e8f0;
+    }
+
+    /* 3. ALT KISIM: HESAP ÖDEME GEÇMİŞİ / FATURALAR */
+    .invoice-table-container {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    .invoice-table th {
+        background: #f8fafc;
+        padding: 14px 20px;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .invoice-table td {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+    }
+
+    .invoice-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Gelişmiş Yarı Saydam Finansal Durum Badge'leri */
+    .status-paid {
+        background: rgba(220, 252, 231, 0.6);
+        color: #166534;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .status-income {
+        background: rgba(209, 250, 229, 0.7);
+        color: #065f46;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-expense {
+        background: rgba(254, 226, 226, 0.7);
+        color: #991b1b;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .download-invoice-btn {
+        background: transparent;
+        border: none;
+        color: #4f46e5;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .download-invoice-btn:hover {
+        color: #3730a3;
+        text-decoration: underline;
+    }
+</style>
+
+<div class="payment-container">
+
+    <div>
+        <div class="section-title">
+            <i class="fa-solid fa-shield-halved"></i> Current Subscription Status
+        </div>
+        <div class="subscription-overview">
+            
+            <div class="sub-main-card">
+                <div>
+                    <span class="sub-badge">CypInvest Premium Partner</span>
+                    <div class="sub-price-huge">149.00 € <span>/ Monthly Plan</span></div>
+                    <small style="color: #64748b; display: block; margin-top: 5px;">
+                        <i class="fa-regular fa-clock"></i> Next renewal date: <strong>June 15, 2026</strong> (Auto-renews)
+                    </small>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 13px; color: #64748b; display: block; margin-bottom: 6px;">Payment Method</span>
+                    <span style="font-weight: 700; color: #1e293b;"><i class="fa-brands fa-cc-visa"></i> Visa ending in 4242</span>
+                </div>
+            </div>
+
+            <div class="quota-container">
+                <div class="quota-row">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Active Listings Limit</span>
+                        <strong>18 / 50 Listings</strong>
+                    </div>
+                    <div class="quota-bar-bg">
+                        <div class="quota-bar-fill" style="width: 36%;"></div>
+                    </div>
+                </div>
+                <div class="quota-row">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Premium Boost Token</span>
+                        <strong>2 / 5 Boosts Available</strong>
+                    </div>
+                    <div class="quota-bar-bg">
+                        <div class="quota-bar-fill" style="width: 40%; background: #7c3aed;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="payment-grid-two">
+        
+        <div class="plan-upgrade-box">
+            <div>
+                <span style="color: #ff385c; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Scale Your Agency</span>
+                <h3 style="margin: 8px 0; font-size: 20px; font-weight: 700;">Need Unlimited Power?</h3>
+                <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin: 0 0 15px 0;">
+                    Upgrade to Enterprise tier to bypass listing limits, unlock advanced AI analytics, and get real-time lead generation tools.
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="upgrade-btn" style="flex: 1;" onclick="triggerPaymentDemo('plan')">Upgrade Plan</button>
+                <button type="button" class="upgrade-btn" style="flex: 1; background: #7c3aed; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);" onclick="triggerPaymentDemo('boost')">Buy Boost Tokens</button>
+            </div>
+        </div>
+
+        <div class="saved-card-box">
+            <div class="section-title" style="margin-bottom: 12px; font-size: 15px;">
+                <i class="fa-regular fa-credit-card"></i> Saved Payment Method
+            </div>
+            
+            <div class="credit-card-ui">
+                <div class="card-brand">VISA</div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Premium Corporate Card</div>
+                <div class="card-number">••••  ••••  ••••  4242</div>
+                <div class="card-holder-expiry">
+                    <div>
+                        <span style="font-size: 9px; display: block; opacity: 0.6;">Card Holder</span>
+                        <strong>Kaan Işın</strong>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 9px; display: block; opacity: 0.6;">Expires</span>
+                        <strong>12 / 29</strong>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="update-card-btn" onclick="triggerPaymentDemo('card')">
+                <i class="fa-solid fa-pen-to-square"></i> Update Payment Details
+            </button>
+        </div>
+
+    </div>
+
+    <div>
+        <div class="section-title">
+            <i class="fa-solid fa-receipt"></i> Billing & Account Financial History
+        </div>
+        <div class="invoice-table-container">
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Type / Status</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>#TRX-2026-904</strong></td>
+                        <td>May 24, 2026</td>
+                        <td>Seafront Luxury Villa Cyprus - Monthly Rental Income Received</td>
+                        <td style="color: #059669; font-weight: 700;">+2,400.00 €</td>
+                        <td><span class="status-income">Income</span></td>
+                        <td style="text-align: right;"><button class="download-invoice-btn" onclick="downloadInvoice('904')"><i class="fa-solid fa-file-arrow-down"></i> Statement</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong>#TRX-2026-903</strong></td>
+                        <td>May 20, 2026</td>
+                        <td>Premium Featured Ads & Social Media Booster Package</td>
+                        <td style="color: #dc2626; font-weight: 700;">-85.00 €</td>
+                        <td><span class="status-expense">Expense</span></td>
+                        <td style="text-align: right;"><button class="download-invoice-btn" onclick="downloadInvoice('903')"><i class="fa-solid fa-file-arrow-down"></i> PDF</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong>#TRX-2026-902</strong></td>
+                        <td>May 18, 2026</td>
+                        <td>Sunset Horizon Beach House - 1.6% Agency Commission Payout</td>
+                        <td style="color: #059669; font-weight: 700;">+5,120.00 €</td>
+                        <td><span class="status-income">Income</span></td>
+                        <td style="text-align: right;"><button class="download-invoice-btn" onclick="downloadInvoice('902')"><i class="fa-solid fa-file-arrow-down"></i> Statement</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong>#INV-2026-004</strong></td>
+                        <td>May 15, 2026</td>
+                        <td>Premium Partner Plan - Monthly Renewal</td>
+                        <td style="color: #dc2626; font-weight: 700;">-149.00 €</td>
+                        <td><span class="status-expense">Expense</span></td>
+                        <td style="text-align: right;"><button class="download-invoice-btn" onclick="downloadInvoice('004')"><i class="fa-solid fa-file-arrow-down"></i> PDF</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong>#INV-2026-003</strong></td>
+                        <td>Apr 15, 2026</td>
+                        <td>Premium Partner Plan - Monthly Renewal</td>
+                        <td style="color: #dc2626; font-weight: 700;">-149.00 €</td>
+                        <td><span class="status-expense">Expense</span></td>
+                        <td style="text-align: right;"><button class="download-invoice-btn" onclick="downloadInvoice('003')"><i class="fa-solid fa-file-arrow-down"></i> PDF</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong>#INV-2026-002</strong></td>
+                        <td>Apr 02, 2026</td>
+                        <td>5x Featured Listing Boost Bundle</td>
+                        <td style="color: #dc2626; font-weight: 700;">-49.00 €</td>
+                        <td><span class="status-expense">Expense</span></td>
+                        <td style="text-align: right;"><button class="download-invoice-btn" onclick="downloadInvoice('002')"><i class="fa-solid fa-file-arrow-down"></i> PDF</button></td>
+                    </tr>
+                    <tr>
+                        <td><strong>#INV-2026-001</strong></td>
+                        <td>Mar 15, 2026</td>
+                        <td>Premium Partner Plan - Initial Subscription</td>
+                        <td style="color: #dc2626; font-weight: 700;">-149.00 €</td>
+                        <td><span class="status-expense">Expense</span></td>
+                        <td style="text-align: right;"><button class="download-invoice-btn" onclick="downloadInvoice('001')"><i class="fa-solid fa-file-arrow-down"></i> PDF</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Dinamik Ödeme ve SaaS Yönetim Tetikleyicileri (Demo Sürüm)
+    function triggerPaymentDemo(type) {
+        if (type === 'plan') {
+            alert("Redirecting to Plan Selection Matrix... Here you will be able to select Enterprise or custom scales.");
+        } else if (type === 'boost') {
+            let count = prompt("How many Boost Tokens would you like to purchase? (1 Token = 10 €):", "3");
+            if (count) {
+                alert(`${count} Boost Tokens added to your queue! Total: ${count * 10} € will be charged from your Visa card ending in 4242.`);
+            }
+        } else if (type === 'card') {
+            alert("Opening Secure Stripe / iFrame Gateway for card verification and 3D Secure update.");
+        }
+    }
+
+    function downloadInvoice(id) {
+        alert(`Generating official PDF receipt/statement for Transaction #TRX-2026-${id}... Your local browser download process is starting.`);
+    }
+</script>
 {% endblock %}

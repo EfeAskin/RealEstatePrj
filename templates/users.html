@@ -1,4 +1,280 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<div class="admin-users-container" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; padding: 10px;">
+    
+    <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <div class="metric-box" style="background: #ffffff; border: 2px solid #333; border-radius: 8px; padding: 20px; box-shadow: 4px 4px 0px #333; text-align: center;">
+            <h4 style="margin: 0; color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Total Users</h4>
+            <p style="margin: 10px 0 0 0; font-size: 32px; font-weight: bold; color: #222;">{{ users|length }}</p>
+        </div>
+        <div class="metric-box" style="background: #ffffff; border: 2px solid #333; border-radius: 8px; padding: 20px; box-shadow: 4px 4px 0px #333; text-align: center;">
+            <h4 style="margin: 0; color: #2e7d32; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Approved Users</h4>
+            <p style="margin: 10px 0 0 0; font-size: 32px; font-weight: bold; color: #2e7d32;">
+                {% set approved_count = namespace(value=0) %}
+                {% for u in users %}{% if u.role == 'agent' or u.role == 'admin' or u.is_approved == True %}{% set approved_count.value = approved_count.value + 1 %}{% endif %}{% endfor %}
+                {{ approved_count.value }}
+            </p>
+        </div>
+        <div class="metric-box" style="background: #ffffff; border: 2px solid #333; border-radius: 8px; padding: 20px; box-shadow: 4px 4px 0px #333; text-align: center;">
+            <h4 style="margin: 0; color: #c62828; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Pending Approval</h4>
+            <p style="margin: 10px 0 0 0; font-size: 32px; font-weight: bold; color: #c62828;">
+                {% set pending_count = namespace(value=0) %}
+                {% for u in users %}{% if u.role != 'agent' and u.role != 'admin' and (u.is_approved == False or u.is_approved is not defined) %}{% set pending_count.value = pending_count.value + 1 %}{% endif %}{% endfor %}
+                {{ pending_count.value }}
+            </p>
+        </div>
+    </div>
+
+    <div id="users-list-wrapper" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        {% for u in users %}
+        {% set u_id = u.id %}
+        {% set u_name = u.full_name or (u.first_name ~ ' ' ~ u.last_name) or 'Anonymous User' %}
+        {% set u_email = u.email or 'No Email Registered' %}
+        {% set u_phone = u.phone or 'Not Provided' %}
+        {% set u_role = u.role or 'user' %}
+        {% set is_verified = u.email_verified or u.is_verified or False %}
+        
+        {% if u_role == 'agent' or u_role == 'admin' or u.is_approved == True %}
+            {% set u_approved = True %}
+        {% else %}
+            {% set u_approved = False %}
+        {% endif %}
+
+        {% set js_verified = 'true' if is_verified else 'false' %}
+        {% set js_approved = 'true' if u_approved else 'false' %}
+
+        <div class="user-row-item" data-page-index="" style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 2px solid #333; border-radius: 6px; padding: 12px 20px; transition: 0.2s;">
+            
+            <div style="display: flex; align-items: center; gap: 20px; flex: 1;">
+                <img src="/static/htmlfotos/{{ u.profile_image or 'default_avatar.png' }}" 
+                     onerror="this.src='/static/htmlfotos/default_avatar.png';" 
+                     alt="Avatar" 
+                     style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid #333; object-fit: cover;">
+                
+                <div style="min-width: 180px;">
+                    <h5 style="margin: 0; font-size: 16px; font-weight: 600;">{{ u_name }}</h5>
+                    <span style="font-size: 12px; color: #666;">{{ u_email }}</span>
+                </div>
+
+                <div style="min-width: 100px;">
+                    {# STYLE İÇİNDEKİ JINJA KIRMIZILIĞI ÇÖZÜLDÜ: Renkler doğrudan Jinja mantığıyla sınıflara bölünerek basılıyor #}
+                    {% if u_role == 'admin' %}
+                    <span style="padding: 4px 10px; font-size: 12px; font-weight: bold; border-radius: 4px; border: 1.5px solid #333; text-transform: uppercase; background: #f48fb1;">
+                        {{ u_role }}
+                    </span>
+                    {% elif u_role == 'agent' %}
+                    <span style="padding: 4px 10px; font-size: 12px; font-weight: bold; border-radius: 4px; border: 1.5px solid #333; text-transform: uppercase; background: #90caf9;">
+                        {{ u_role }}
+                    </span>
+                    {% else %}
+                    <span style="padding: 4px 10px; font-size: 12px; font-weight: bold; border-radius: 4px; border: 1.5px solid #333; text-transform: uppercase; background: #e0e0e0;">
+                        {{ u_role }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if u_approved %}
+                    <span style="color: #2e7d32; font-size: 14px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                        ● Approved
+                    </span>
+                    {% else %}
+                    <span style="color: #c62828; font-size: 14px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                        ● Unapproved
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <button type="button" 
+                        class="inspect-trigger-btn"
+                        data-id="{{ u_id }}" 
+                        data-name="{{ u_name|escape }}" 
+                        data-role="{{ u_role }}" 
+                        data-email="{{ u_email|escape }}" 
+                        data-phone="{{ u_phone|escape }}" 
+                        data-verified="{{ js_verified }}" 
+                        data-approved="{{ js_approved }}"
+                        onclick="openInspectProfileCard(this.getAttribute('data-id'), this.getAttribute('data-name'), this.getAttribute('data-role'), this.getAttribute('data-email'), this.getAttribute('data-phone'), this.getAttribute('data-verified') === 'true', this.getAttribute('data-approved') === 'true')" 
+                        style="background: #333; color: #fff; border: none; padding: 8px 16px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s;">
+                    Inspect
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 4px 4px; border: 2px dashed #999; border-radius: 6px; background: #fafafa;">
+            <p style="color: #666; margin: 0;">No system user pipeline entries loaded inside current parameters.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if users|length > 13 %}
+    <div class="pagination-control-bar" style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 25px;">
+        <button type="button" id="btn-prev-page" onclick="changeUsersPage(-1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">Prev</button>
+        <span id="page-num-display" style="font-weight: bold; font-size: 14px;">Page 1 / 1</span>
+        <button type="button" id="btn-next-page" onclick="changeUsersPage(1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">Next</button>
+    </div>
+    {% endif %}
+
+</div>
+
+<div id="inspect-profile-card-modal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    
+    <div class="card" style="width: 380px; background-color: #ffa94d; border: 3px solid #333; padding: 25px; border-radius: 10px; position: relative; box-shadow: 8px 8px 0px rgba(0,0,0,0.15);">
+        
+        <span onclick="closeInspectProfileCard()" style="position: absolute; right: 15px; top: 10px; font-size: 24px; font-weight: bold; cursor: pointer; color: #333;">&times;</span>
+        
+        <h2 id="modal-user-name" style="margin-top: 0; margin-bottom: 12px; font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 5px;">Kamil Efe Aşkın</h2>
+        
+        <p style="margin: 6px 0;"><strong>System ID Ref:</strong> <span id="modal-user-id">#0</span></p>
+        <p style="margin: 6px 0;"><strong>Account Role:</strong> <span id="modal-user-role" style="text-transform: uppercase; font-weight: bold;">USER</span></p>
+        <p style="margin: 6px 0;"><strong>Email Address:</strong> <span id="modal-user-email">email</span></p>
+        <p style="margin: 6px 0;"><strong>Phone Number:</strong> <span id="modal-user-phone">phone</span></p>
+        
+        <div id="status-check-block" style="margin: 12px 0; padding: 8px; background: rgba(255,255,255,0.4); border-radius: 4px; border: 1.5px solid #333;">
+            <p style="margin: 0; font-size: 13px;"><strong>Email Verified Status:</strong> <span id="modal-verification-check">NO</span></p>
+            <p style="margin: 3px 0 0 0; font-size: 13px;"><strong>Approval Check:</strong> <span id="modal-approval-check">Pending</span></p>
+        </div>
+
+        <p class="about" style="margin-top: 15px; font-style: italic; font-size: 13px; color: #222; border-left: 3px solid #333; padding-left: 8px;">
+            System user metadata compiled parameters evaluation review pipeline tracking state.
+        </p>
+
+        <div id="modal-actions-container" style="margin-top: 20px; display: flex; gap: 10px;">
+        </div>
+    </div>
+</div>
+
+<script>
+    // PAGINATION ENGINE
+    const rowsPerPage = 13;
+    let currentPage = 1;
+    const allRows = Array.from(document.querySelectorAll('.user-row-item'));
+    const totalPages = Math.ceil(allRows.length / rowsPerPage) || 1;
+
+    function renderPaginatedRows() {
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        allRows.forEach((row, index) => {
+            if (index >= start && index < end) {
+                row.style.display = 'flex';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const displaySpan = document.getElementById('page-num-display');
+        if (displaySpan) {
+            displaySpan.innerText = `Page ${currentPage} / ${totalPages}`;
+        }
+    }
+
+    function changeUsersPage(direction) {
+        currentPage += direction;
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        renderPaginatedRows();
+    }
+
+    // Initialize pagination run loop setup immediately
+    if (allRows.length > 0) {
+        renderPaginatedRows();
+    }
+
+    // MODAL INSPECT MANAGEMENT ENGINE
+    function openInspectProfileCard(id, name, role, email, phone, isVerified, isApproved) {
+        document.getElementById('modal-user-id').innerText = '#' + id;
+        document.getElementById('modal-user-name').innerText = name;
+        document.getElementById('modal-user-role').innerText = role;
+        document.getElementById('modal-user-email').innerText = email;
+        document.getElementById('modal-user-phone').innerText = phone;
+        
+        document.getElementById('modal-verification-check').innerText = isVerified ? "YES (Verified)" : "NO (Pending)";
+        document.getElementById('modal-verification-check').style.color = isVerified ? "#2e7d32" : "#c62828";
+        
+        document.getElementById('modal-approval-check').innerText = isApproved ? "Approved" : "Pending Approval";
+        document.getElementById('modal-approval-check').style.color = isApproved ? "#2e7d32" : "#c62828";
+
+        const actionsContainer = document.getElementById('modal-actions-container');
+        actionsContainer.innerHTML = ''; // Clear action pipeline group wrapper
+
+        // Requirement condition: If person is unapproved, show Approve and Delete button, else hide them
+        if (!isApproved) {
+            // 1. Approve Form Button Configuration
+            const approveForm = document.createElement('form');
+            approveForm.method = 'POST';
+            approveForm.action = `/admin/update-user-role/${id}`;
+            approveForm.style.flex = '1';
+            
+            // Add a hidden input to force change role to 'agent' or keep state
+            const hiddenRoleInput = document.createElement('input');
+            hiddenRoleInput.type = 'hidden';
+            hiddenRoleInput.name = 'role';
+            hiddenRoleInput.value = 'agent'; // Dynamically shifts them into approved asset visibility state
+            approveForm.appendChild(hiddenRoleInput);
+
+            const approveBtn = document.createElement('button');
+            approveBtn.type = 'submit';
+            approveBtn.innerText = 'Approve User';
+            approveBtn.style.width = '100%';
+            approveBtn.style.background = '#2e7d32';
+            approveBtn.style.color = '#fff';
+            approveBtn.style.border = '2px solid #333';
+            approveBtn.style.padding = '8px';
+            approveBtn.style.fontWeight = 'bold';
+            approveBtn.style.borderRadius = '4px';
+            approveBtn.style.cursor = 'pointer';
+            approveForm.appendChild(approveBtn);
+            
+            // 2. Delete Form Button Configuration
+            const deleteForm = document.createElement('form');
+            deleteForm.method = 'POST';
+            deleteForm.action = `/admin/delete-user/${id}`;
+            deleteForm.style.flex = '1';
+            deleteForm.onsubmit = function() { return confirm('Are you sure you want to completely erase this account from Neon DB pipeline?'); };
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'submit';
+            deleteBtn.innerText = 'Delete';
+            deleteBtn.style.width = '100%';
+            deleteBtn.style.background = '#d32f2f';
+            deleteBtn.style.color = '#fff';
+            deleteBtn.style.border = '2px solid #333';
+            deleteBtn.style.padding = '8px';
+            deleteBtn.style.fontWeight = 'bold';
+            deleteBtn.style.borderRadius = '4px';
+            deleteBtn.style.cursor = 'pointer';
+            deleteForm.appendChild(deleteBtn);
+
+            // Append structured layouts inside parent container element blocks
+            actionsContainer.appendChild(approveForm);
+            actionsContainer.appendChild(deleteForm);
+        } else {
+            // Already approved layout fallback text indicator state
+            const genericInfo = document.createElement('p');
+            genericInfo.innerText = "No outstanding actions required. This user account is synchronized active.";
+            genericInfo.style.color = "#333";
+            genericInfo.style.fontSize = "12px";
+            genericInfo.style.margin = "0";
+            actionsContainer.appendChild(genericInfo);
+        }
+
+        document.getElementById('inspect-profile-card-modal').style.display = 'flex';
+    }
+
+    function closeInspectProfileCard() {
+        document.getElementById('inspect-profile-card-modal').style.display = 'none';
+    }
+
+    // Modal close overlay catch mechanism hook bindings
+    window.onclick = function(event) {
+        const modal = document.getElementById('inspect-profile-card-modal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
 {% endblock %}

@@ -1,4 +1,370 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<style>
+    /* Dashboard Genel Grid ve Tipografi */
+    .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0 0 15px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* 1. ÜST KISIM: 4'LÜ GELECEĞE DÖNÜK METRİK KARTLARI */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
+
+    .metric-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .metric-icon {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 24px;
+        opacity: 0.15;
+        color: #1e293b;
+    }
+
+    .metric-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 8px 0;
+    }
+
+    .metric-subtext {
+        font-size: 12px;
+        font-weight: 500;
+        color: #94a3b8;
+    }
+
+    /* Finansal Kart Özel Trend Renkleri */
+    .trend-positive {
+        color: #10b981;
+        font-weight: 700;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 2px 6px;
+        border-radius: 6px;
+    }
+
+    .trend-negative {
+        color: #ef4444;
+        font-weight: 700;
+        background: rgba(239, 68, 68, 0.1);
+        padding: 2px 6px;
+        border-radius: 6px;
+    }
+
+    /* 2. ORTA KISIM: İKİLİ GRID (AI INSIGHTS & HIZLI İŞLEMLER) */
+    .dashboard-grid-two {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 25px;
+    }
+
+    /* AI Lead & İlan Analiz Kartı */
+    .insights-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: #ffffff;
+        border-radius: 16px;
+        padding: 25px;
+        position: relative;
+    }
+
+    .insight-row {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 14px;
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 13.5px;
+    }
+
+    /* Aktivite & Talep Listesi Bölümü */
+    .activity-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .activity-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    /* 3. ALT KISIM: GELECEĞE DÖNÜK PORTFÖY PERFORMANS TABLOSU */
+    .performance-table-container {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .perf-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    .perf-table th {
+        background: #f8fafc;
+        padding: 14px 20px;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .perf-table td {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+    }
+
+    .perf-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .badge-status {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-active { background: #dcfce7; color: #15803d; }
+    .badge-pending { background: #fef9c3; color: #a16207; }
+
+    /* Progress Çizgisi */
+    .progress-line-bg {
+        background: #edf2f7;
+        height: 6px;
+        border-radius: 4px;
+        margin-top: 4px;
+        width: 100px;
+    }
+    .progress-line-fill {
+        background: #3b82f6;
+        height: 100%;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="payment-container"> <div class="dashboard-container">
+
+        <div class="metrics-grid">
+            
+            <div class="metric-card" style="border-left: 4px solid #3b82f6;">
+                <i class="fa-solid fa-house-chimney metric-icon"></i>
+                <div class="metric-label">Total Portfolio</div>
+                <div class="metric-value">18 <span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/ 50 Max</span></div>
+                <div class="metric-subtext">
+                    <span style="color: #10b981; font-weight: 700;">15 Active</span> • 3 Pending Approval
+                </div>
+            </div>
+
+            <div class="metric-card" style="border-left: 4px solid #f59e0b;">
+                <i class="fa-solid fa-envelope-open-text metric-icon"></i>
+                <div class="metric-label">Pending Requests</div>
+                <div class="metric-value">7</div>
+                <div class="metric-subtext">
+                    <span style="color: #f59e0b; font-weight: 700;"><i class="fa-solid fa-bell"></i> 3 New Leads</span> since yesterday
+                </div>
+            </div>
+
+            <div class="metric-card" style="border-left: 4px solid #10b981; grid-column: span 2;">
+                <i class="fa-solid fa-wallet metric-icon"></i>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="metric-label">Monthly Net Cashflow Balance</div>
+                    <span class="trend-positive"><i class="fa-solid fa-caret-up"></i> +44.2%</span>
+                </div>
+                
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                    <div class="metric-value" style="color: #10b981; margin: 4px 0;">+7,435.00 €</div>
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">This Month (Net)</span>
+                </div>
+
+                <div style="display: flex; gap: 20px; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-top: 4px;">
+                    <div>
+                        <span style="font-size: 11px; color: #64748b; display: block; text-transform: uppercase;">Total Income</span>
+                        <strong style="color: #059669; font-size: 14px;">+7,520.00 €</strong>
+                    </div>
+                    <div style="border-left: 1px solid #e2e8f0; padding-left: 20px;">
+                        <span style="font-size: 11px; color: #64748b; display: block; text-transform: uppercase;">Total Expense</span>
+                        <strong style="color: #dc2626; font-size: 14px;">-85.00 €</strong>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="dashboard-grid-two">
+            
+            <div class="insights-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #a78bfa;"></i> AI Portfolio Advisor
+                    </h3>
+                    <span style="font-size: 11px; background: rgba(167, 139, 250, 0.2); color: #c084fc; padding: 4px 8px; border-radius: 6px; font-weight: 700;">LIVE ANALYTICS</span>
+                </div>
+                <p style="font-size: 13px; color: #94a3b8; margin: 0 0 15px 0; line-height: 1.5;">
+                    Real-time cross-matching algorithms have analyzed Cyprus property trends against your active listings:
+                </p>
+
+                <div class="insight-row">
+                    <i class="fa-solid fa-arrow-trend-up" style="color: #10b981; font-size: 16px;"></i>
+                    <div>
+                        <strong>High Demand Alert:</strong> 2-bedroom rental listings in Kyrenia have a <strong>24% higher view rate</strong> this week. Consider boosting your matching portfolios.
+                    </div>
+                </div>
+
+                <div class="insight-row">
+                    <i class="fa-solid fa-users-viewfinder" style="color: #3b82f6; font-size: 16px;"></i>
+                    <div>
+                        <strong>Lead Matching:</strong> 4 prospective buyers are currently looking for properties exactly matching your <em>"Sunset Horizon Beach House"</em> portfolio.
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity-box">
+                <div class="section-title" style="font-size: 14px; margin-bottom: 5px;">
+                    <i class="fa-solid fa-hourglass-half"></i> Recent Customer Inquiries
+                </div>
+                
+                <div class="activity-item">
+                    <div>
+                        <strong style="font-size: 13.5px; display: block; color: #1e293b;">John Doe</strong>
+                        <span style="font-size: 12px; color: #64748b;">Requested a viewing tour for Villa #904</span>
+                    </div>
+                    <span class="badge-status badge-pending">Pending</span>
+                </div>
+
+                <div class="activity-item">
+                    <div>
+                        <strong style="font-size: 13.5px; display: block; color: #1e293b;">Maria Ahmet</strong>
+                        <span style="font-size: 12px; color: #64748b;">Submitted a cash offer counter-proposal</span>
+                    </div>
+                    <span class="badge-status badge-pending">Pending</span>
+                </div>
+
+                <div class="activity-item">
+                    <div>
+                        <strong style="font-size: 13.5px; display: block; color: #1e293b;">David Vance</strong>
+                        <span style="font-size: 12px; color: #64748b;">Document verification for rental contract</span>
+                    </div>
+                    <span class="badge-status badge-active" style="background: #e0f2fe; color: #0369a1;">Reviewing</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div>
+            <div class="section-title">
+                <i class="fa-solid fa-chart-line"></i> Active Listings Performance & Health Matrix
+            </div>
+            <div class="performance-table-container">
+                <table class="perf-table">
+                    <thead>
+                        <tr>
+                            <th>Listing Title</th>
+                            <th>Type</th>
+                            <th>Total Views</th>
+                            <th>Conversion (Leads)</th>
+                            <th>Market Match Score</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Seafront Luxury Villa Cyprus</strong></td>
+                            <td><span style="color: #0284c7; font-weight: 600;">For Rent</span></td>
+                            <td>1,240 views</td>
+                            <td>
+                                <div style="font-size: 12px; color: #4a5568;">32 Serious Leads</div>
+                                <div class="progress-line-bg"><div class="progress-line-fill" style="width: 75%; background: #10b981;"></div></div>
+                            </td>
+                            <td><strong style="color: #10b981;">98% Excellent</strong></td>
+                            <td><span class="badge-status badge-active">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sunset Horizon Beach House</strong></td>
+                            <td><span style="color: #b45309; font-weight: 600;">For Sale</span></td>
+                            <td>3,450 views</td>
+                            <td>
+                                <div style="font-size: 12px; color: #4a5568;">88 Serious Leads</div>
+                                <div class="progress-line-bg"><div class="progress-line-fill" style="width: 90%; background: #7c3aed;"></div></div>
+                            </td>
+                            <td><strong style="color: #10b981;">92% High</strong></td>
+                            <td><span class="badge-status badge-active">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Modern Penthouse Near Marina</strong></td>
+                            <td><span style="color: #b45309; font-weight: 600;">For Sale</span></td>
+                            <td>142 views</td>
+                            <td>
+                                <div style="font-size: 12px; color: #4a5568;">2 Serious Leads</div>
+                                <div class="progress-line-bg"><div class="progress-line-fill" style="width: 15%; background: #f59e0b;"></div></div>
+                            </td>
+                            <td><strong style="color: #f59e0b;">54% Average</strong></td>
+                            <td><span class="badge-status badge-pending">Pending Approval</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
 {% endblock %}

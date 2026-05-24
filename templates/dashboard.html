@@ -1,4 +1,505 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<style>
+    /* Admin Dashboard Global Gelişmiş Stiller */
+    .admin-dashboard {
+        font-family: 'Inter', sans-serif;
+        color: #2d3748;
+    }
+    
+    .dashboard-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #1a202c;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* 🔥 BÜYÜK DÜŞÜNÜLEN 4'LÜ GRID DÜZENİ */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .metric-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Başlık ve Toplam Sayı Yan Yana Düzeni */
+    .card-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .card-title-group h4 {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #718096;
+        margin: 0;
+        letter-spacing: 0.5px;
+    }
+
+    /* İstediğin ": Sayısı" Dinamik Badge Yapısı */
+    .total-count-badge {
+        font-size: 13px;
+        font-weight: 800;
+        background: #edf2f7;
+        color: #2d3748;
+        padding: 2px 8px;
+        border-radius: 20px;
+    }
+
+    .main-count {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1a202c;
+        line-height: 1.2;
+    }
+
+    .sub-stats-list {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .sub-stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Renk Skalaları */
+    .text-blue { color: #3182ce; }
+    .text-orange { color: #dd6b20; }
+    .text-green { color: #38a169; }
+    .text-red { color: #e53e3e; }
+    .text-purple { color: #805ad5; }
+    .text-teal { color: #319795; }
+    .text-pink { color: #d53f8c; }
+    .text-muted-gray { color: #718096; font-weight: 500; }
+
+    /* Alt Bölüm Tasarımı */
+    .dashboard-lower-section {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+
+    .admin-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .box-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #2d3748;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Onay Sırası Tablo Yapısı */
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .admin-table th {
+        background: #f7fafc;
+        color: #4a5568;
+        text-align: left;
+        padding: 12px 10px;
+        font-weight: 700;
+        border-bottom: 2px solid #edf2f7;
+    }
+
+    .admin-table td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #edf2f7;
+        color: #4a5568;
+        vertical-align: middle;
+    }
+
+    /* Aksiyon Butonları */
+    .action-badge-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+    .btn-approve { background: #e6fffa; color: #00a389; }
+    .btn-approve:hover { background: #38a169; color: white; }
+    .btn-reject { background: #fff5f5; color: #e53e3e; margin-left: 5px; }
+    .btn-reject:hover { background: #e53e3e; color: white; }
+</style>
+
+<div class="admin-dashboard">
+    <div class="dashboard-title">
+        <i class="fa-solid fa-chart-line text-blue"></i> Admin Management Dashboard
+    </div>
+
+    <div class="metrics-grid">
+        
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>Users</h4>
+                    <span class="total-count-badge">: {{ total_users_count }}</span>
+                </div>
+                <i class="fa-solid fa-users text-blue" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count">{{ total_users_count }}</div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-blue">
+                    <span>Normal Users:</span>
+                    <span>{{ normal_users_count }}</span>
+                </div>
+                <div class="sub-stat-item text-orange">
+                    <span>Agents:</span>
+                    <span>{{ agents_count }}</span>
+                </div>
+                <div class="sub-stat-item text-muted-gray" style="border-top: 1px solid #edf2f7; padding-top: 4px; margin-top: 4px;">
+                    <span>Today's New Users:</span>
+                    <span>{{ todays_new_users }}</span>
+                </div>
+                <div class="sub-stat-item text-muted-gray">
+                    <span>Today's New Agents:</span>
+                    <span>{{ todays_new_agents }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>Properties</h4>
+                    <span class="total-count-badge">: {{ total_properties_count }}</span>
+                </div>
+                <i class="fa-solid fa-building text-green" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count">{{ total_properties_count }}</div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-green">
+                    <span>Active Listings:</span>
+                    <span>{{ active_properties_count }}</span>
+                </div>
+                <div class="sub-stat-item text-orange">
+                    <span>Approving:</span>
+                    <span>{{ approving_properties_count }}</span>
+                </div>
+                <div class="sub-stat-item text-red">
+                    <span>Passive / Draft:</span>
+                    <span>{{ passive_properties_count }}</span>
+                </div>
+                <div class="sub-stat-item text-muted-gray" style="border-top: 1px solid #edf2f7; padding-top: 4px; margin-top: 4px;">
+                    <span>Added Today:</span>
+                    <span>{{ todays_new_properties }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>Subs</h4>
+                    <span class="total-count-badge">: {{ active_subscriptions_count }}</span>
+                </div>
+                <i class="fa-solid fa-credit-card text-purple" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count">{{ active_subscriptions_count }}</div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-purple">
+                    <span>Premium Agents:</span>
+                    <span>{{ premium_agents_count }}</span>
+                </div>
+                <div class="sub-stat-item text-green">
+                    <span>Today's Subs:</span>
+                    <span>{{ todays_subscriptions_count }}</span>
+                </div>
+                <div class="sub-stat-item text-orange">
+                    <span>Expired (Month):</span>
+                    <span>{{ monthly_expired_subs }}</span>
+                </div>
+                <div class="sub-stat-item text-muted-gray" style="border-top: 1px solid #edf2f7; padding-top: 4px; margin-top: 4px; font-weight: 700; color: #1a202c;">
+                    <span>Today's Revenue:</span>
+                    <span>{{ todays_revenue }} €</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>AI Engine</h4>
+                    <span class="total-count-badge">: {{ ai_total_operations }}</span>
+                </div>
+                <i class="fa-solid fa-brain text-red" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count" style="font-size: 22px; color: #805ad5;">Automated</div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-purple">
+                    <span>Valuation Requests:</span>
+                    <span>{{ ai_valuation_count }}</span>
+                </div>
+                <div class="sub-stat-item text-green">
+                    <span>Smart Match Rate:</span>
+                    <span>%{{ ai_match_rate }}</span>
+                </div>
+                <div class="sub-stat-item text-orange">
+                    <span>Flagged Fraud:</span>
+                    <span style="background:#fff5f5; padding: 1px 6px; border-radius:4px;">{{ flagged_properties_count }}</span>
+                </div>
+                <div class="sub-stat-item text-muted-gray" style="border-top: 1px solid #edf2f7; padding-top: 4px; margin-top: 4px;">
+                    <span>AI Model Status:</span>
+                    <span style="color: #38a169;"><i class="fa-solid fa-circle" style="font-size: 9px;"></i> Synced</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="metrics-grid">
+        
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>Escrow</h4>
+                    <span class="total-count-badge">: {{ active_escrows_count }}</span>
+                </div>
+                <i class="fa-solid fa-vault text-teal" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count" style="font-size: 22px;">{{ total_escrow_volume }} €</div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-teal">
+                    <span>Pending Payouts:</span>
+                    <span>{{ pending_payouts_count }}</span>
+                </div>
+                <div class="sub-stat-item text-green">
+                    <span>Successful Deals:</span>
+                    <span>{{ successful_deals_count }}</span>
+                </div>
+                <div class="sub-stat-item text-red">
+                    <span>Disputed / Cancelled:</span>
+                    <span>{{ disputed_deals_count }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>Tickets</h4>
+                    <span class="total-count-badge">: {{ total_tickets_count }}</span>
+                </div>
+                <i class="fa-solid fa-headset text-pink" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count text-pink">{{ open_tickets_count }} <span style="font-size:14px; font-weight:600; color:#718096;">Açık</span></div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-red">
+                    <span>Urgent Priority:</span>
+                    <span>{{ urgent_tickets_count }}</span>
+                </div>
+                <div class="sub-stat-item text-blue">
+                    <span>In Progress:</span>
+                    <span>{{ progress_tickets_count }}</span>
+                </div>
+                <div class="sub-stat-item text-green">
+                    <span>Resolved Today:</span>
+                    <span>{{ resolved_tickets_today }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>Traffic</h4>
+                    <span class="total-count-badge">: Live</span>
+                </div>
+                <i class="fa-solid fa-eye text-blue" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count">{{ daily_visits_count }} <span style="font-size:13px; color:#718096; font-weight:500;">/ bugün</span></div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-blue">
+                    <span>Unique Visitors:</span>
+                    <span>{{ unique_visitors_count }}</span>
+                </div>
+                <div class="sub-stat-item text-purple">
+                    <span>AI Chat Interactions:</span>
+                    <span>{{ ai_chat_total_today }}</span>
+                </div>
+                <div class="sub-stat-item text-green">
+                    <span>Avg. Session Time:</span>
+                    <span>{{ avg_session_time }} dk</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="card-header-row">
+                <div class="card-title-group">
+                    <h4>System</h4>
+                    <span class="total-count-badge">: OK</span>
+                </div>
+                <i class="fa-solid fa-server text-green" style="font-size: 16px;"></i>
+            </div>
+            <div class="main-count" style="font-size: 20px; color: #38a169;"><i class="fa-solid fa-heartbeat"></i> 99.9% Uptime</div>
+            <div class="sub-stats-list">
+                <div class="sub-stat-item text-muted-gray">
+                    <span>DB Connection:</span>
+                    <span class="text-green">Healthy</span>
+                </div>
+                <div class="sub-stat-item text-muted-gray">
+                    <span>API Response Time:</span>
+                    <span class="text-blue">{{ api_response_ms }} ms</span>
+                </div>
+                <div class="sub-stat-item text-muted-gray">
+                    <span>Storage Usage:</span>
+                    <span>%{{ storage_usage_percent }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="dashboard-lower-section">
+        
+        <div class="admin-box">
+            <div class="box-title">
+                <span><i class="fa-solid fa-hourglass-half text-orange"></i> Pending Property Approval Queue</span>
+                <small style="font-size:12px; color:#718096;">Action Required</small>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Property Title</th>
+                            <th>Agent / Owner</th>
+                            <th>Price</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prop in pending_properties %}
+                        <tr>
+                            <td>
+                                {% if prop.image_url %}
+                                    <img src="{{ prop.image_url }}" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover;">
+                                {% else %}
+                                    <img src="/static/htmlfotos/placeholder.jpg" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover;">
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ prop.title }}</strong><br><small>{{ prop.location }}</small></td>
+                            <td>{{ prop.agent_name }}</td>
+                            <td style="font-weight:700;">{{ prop.price }} {{ prop.currency }}</td>
+                            <td>
+                                {% if prop.listing_type == 'Sale' %}
+                                    <span class="text-orange">Sale</span>
+                                {% else %}
+                                    <span class="text-blue">Rent</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="action-badge-btn btn-approve" onclick="approveProperty('{{ prop.id }}')">Approve</button>
+                                <button type="button" class="action-badge-btn btn-reject" onclick="rejectProperty('{{ prop.id }}')">Reject</button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #a0aec0; padding: 20px;">Onay bekleyen ilan bulunmuyor.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-box">
+            <div class="box-title">
+                <span><i class="fa-solid fa-bolt text-purple"></i> Recent System Logs</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+                <div style="border-left: 3px solid #3182ce; padding-left: 10px;">
+                    <span style="color:#718096; display: block;">14:32</span>
+                    <strong>New Agent Registered:</strong> Ahmet Yılmaz requested enterprise status.
+                </div>
+                <div style="border-left: 3px solid #38a169; padding-left: 10px;">
+                    <span style="color:#718096; display: block;">13:11</span>
+                    <strong>Subscription Upgraded:</strong> User #4024 bought Platinum Package.
+                </div>
+                <div style="border-left: 3px solid #e53e3e; padding-left: 10px;">
+                    <span style="color:#718096; display: block;">11:05</span>
+                    <strong>AI Flagged Action:</strong> Listing #1094 suspended due to duplicate photos.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function approveProperty(id) {
+        if(confirm("Bu ilanın sitede canlıya alınmasını onaylıyor musunuz?")) {
+            const row = event.target.closest('tr');
+            row.style.background = '#e6fffa';
+            setTimeout(() => {
+                row.remove();
+                alert("İlan başarıyla onaylandı ve yayınlandı. ID: " + id);
+            }, 400);
+        }
+    }
+
+    function rejectProperty(id) {
+        const reason = prompt("Lütfen ilanın reddedilme nedenini giriniz (Emlakçıya bildirilecektir):");
+        if(reason) {
+            const row = event.target.closest('tr');
+            row.style.background = '#fff5f5';
+            setTimeout(() => {
+                row.remove();
+                alert("İlan reddedildi. ID: " + id);
+            }, 400);
+        }
+    }
+</script>
 {% endblock %}

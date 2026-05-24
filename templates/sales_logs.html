@@ -1,4 +1,142 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<div class="admin-sales-logs-container" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; padding: 10px;">
+    
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 3px solid #333; padding-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Aktif Satış & Finans Portföy Günlükleri</h3>
+        <span style="padding: 6px 12px; font-size: 12px; font-weight: bold; background: #b3e5fc; border: 2px solid #333; border-radius: 4px; text-transform: uppercase;">
+            Toplam Portföy: {{ sales|length }}
+        </span>
+    </div>
+
+    <div style="margin-bottom: 25px; position: relative;">
+        <input type="text" id="sales-search-bar" onkeyup="filterSalesTable()" placeholder="🔍 Type here to filter title, agent, type or price..." 
+               style="width: 100%; padding: 12px 15px; border: 2px solid #333; border-radius: 6px; font-size: 14px; box-shadow: 3px 3px 0px #333; outline: none; transition: 0.2s;">
+    </div>
+
+    <div id="sales-logs-wrapper" style="background: #ffffff; border: 2px solid #333; border-radius: 8px; box-shadow: 5px 5px 0px #333; padding: 20px; margin-bottom: 20px;">
+        <h4 style="margin-top: 0; margin-bottom: 15px; font-size: 15px; font-weight: 600; text-transform: uppercase; border-bottom: 2px dashed #ccc; padding-bottom: 8px; color: #555;">
+            Sistem Finansal Akış Dağılım Çizelgesi
+        </h4>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f5f5f5; border-bottom: 2px solid #333; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">
+                        <th style="padding: 12px; font-weight: bold;">Title</th>
+                        <th style="padding: 12px; font-weight: bold;">Property Type</th>
+                        <th style="padding: 12px; font-weight: bold;">Agent</th>
+                        <th style="padding: 12px; font-weight: bold;">Listed Price</th>
+                        <th style="padding: 12px; font-weight: bold;">Sold Price (Est)</th>
+                        <th style="padding: 12px; font-weight: bold;">Commission %</th>
+                        <th style="padding: 12px; font-weight: bold;">Platform Cut</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-log-rows">
+                    {% for item in sales %}
+                    {% set raw_price = (item.monthly_price or 0) | float %}
+                    {% set sym = item.currency_code or '₺' %}
+                    <tr class="sales-log-item-row" style="border-bottom: 1px solid #eee; transition: 0.2s;">
+                        
+                        <td class="target-title" style="padding: 12px; font-weight: 600; color: #222;">{{ item.name }}</td>
+                        
+                        <td class="target-type" style="padding: 12px; text-transform: capitalize; color: #555; font-weight: 500;">
+                            {{ item.status or 'Sale' }}
+                        </td>
+                        
+                        <td class="target-agent" style="padding: 12px; color: #333; font-weight: 500;">Mina / System</td>
+                        
+                        <td class="target-listed" style="padding: 12px; font-weight: bold; color: #222;">
+                            {{ sym }}{{ "{:,.0f}".format(raw_price) }}
+                        </td>
+                        
+                        <td style="padding: 12px; font-weight: bold; color: #2e7d32;">
+                            {{ sym }}{{ "{:,.0f}".format(raw_price * 0.98) }}
+                        </td>
+                        
+                        <td style="padding: 12px; font-weight: bold; color: #666;">1.6%</td>
+                        
+                        <td style="padding: 12px; font-weight: bold; color: #1565c0; background: #f9fbe7;">
+                            {{ sym }}{{ "{:,.0f}".format(raw_price * 0.016) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 30px; color: #777; font-style: italic; background: #fafafa; border-radius: 6px;">
+                            Şu anda sistemde listelenecek aktif portföy verisi bulunamadı.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if sales|length > 13 %}
+    <div class="pagination-control-bar" style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 25px;">
+        <button type="button" onclick="changeSalesPage(-1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">Geri</button>
+        <span id="sales-page-num" style="font-weight: bold; font-size: 14px;">Sayfa 1 / 1</span>
+        <button type="button" onclick="changeSalesPage(1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">İleri</button>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    // FIGMA LIVE FILTER ENGINE
+    function filterSalesTable() {
+        const input = document.getElementById('sales-search-bar');
+        const filter = input.value.toLowerCase();
+        const rows = document.querySelectorAll('.sales-log-item-row');
+
+        rows.forEach(row => {
+            const title = row.querySelector('.target-title').innerText.toLowerCase();
+            const type = row.querySelector('.target-type').innerText.toLowerCase();
+            const agent = row.querySelector('.target-agent').innerText.toLowerCase();
+            const listed = row.querySelector('.target-listed').innerText.toLowerCase();
+
+            if (title.includes(filter) || type.includes(filter) || agent.includes(filter) || listed.includes(filter)) {
+                row.style.removeAttribute ? row.style.removeAttribute('display') : row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // SALES LOG PAGINATION ENGINE
+    const salesRowsPerPage = 13;
+    let currentSalesPage = 1;
+    const allSalesRows = Array.from(document.querySelectorAll('.sales-log-item-row'));
+    const totalSalesPages = Math.ceil(allSalesRows.length / salesRowsPerPage) || 1;
+
+    function renderSalesPagination() {
+        const start = (currentSalesPage - 1) * salesRowsPerPage;
+        const end = start + salesRowsPerPage;
+
+        allSalesRows.forEach((row, index) => {
+            if (index >= start && index < end) {
+                row.style.display = 'table-row';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const pageDisplay = document.getElementById('sales-page-num');
+        if (pageDisplay) {
+            pageDisplay.innerText = `Sayfa ${currentSalesPage} / ${totalSalesPages}`;
+        }
+    }
+
+    function changeSalesPage(direction) {
+        currentSalesPage += direction;
+        if (currentSalesPage < 1) currentSalesPage = 1;
+        if (currentSalesPage > totalSalesPages) currentSalesPage = totalSalesPages;
+        renderSalesPagination();
+    }
+
+    if (allSalesRows.length > 0) {
+        renderSalesPagination();
+    }
+</script>
 {% endblock %}
