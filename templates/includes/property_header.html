@@ -85,13 +85,67 @@
         width: 25px;
         border-radius: 10px;
     }
+
+    /* 🚀 DİNAMİK KALP BUTONU MODERN STİLLERİ */
+    .actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .actions i, .actions button {
+        cursor: pointer;
+        font-size: 24px;
+        transition: all 0.25s ease;
+    }
+    
+    .detail-fav-trigger-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        color: #94a3b8; /* İlk hali soft gri-mavi */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+    }
+
+    .detail-fav-trigger-btn:hover {
+        color: #ef4444; /* Üzerine gelince kırmızılaşma */
+        transform: scale(1.2);
+    }
+
+    /* 🚀 FAVORİYE EKLENDİĞİNDE ATEŞ KIRMIZISI OLACAK KISIM */
+    .detail-fav-trigger-btn.is-favorite {
+        color: #dc2626 !important; /* Premium Canlı Kırmızı */
+    }
+
+    .detail-fav-trigger-btn.is-favorite i {
+        font-weight: 900 !important; /* fa-solid olmasını kesinleştirir */
+        animation: heartPopEffect 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes heartPopEffect {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.35); }
+        100% { transform: scale(1); }
+    }
 </style>
 
 <div class="title-header">
-    <h1>{{ property.name }}</h1>
+    <h1>{{ property.name if property.name is defined else (property.title if property.title is defined else '') }}</h1>
     <div class="actions">
         <i class="fa-solid fa-arrow-up-from-bracket" title="Share"></i>
-        <i class="fa-regular fa-heart" title="Save"></i>
+        
+        <button type="button" 
+                class="detail-fav-trigger-btn {% if favorite_ids is defined and property.id in favorite_ids %}is-favorite{% endif %}" 
+                id="detailFavBtn" 
+                data-property-id="{{ property.id }}" 
+                title="{% if favorite_ids is defined and property.id in favorite_ids %}Favorilerden Kaldır{% else %}Favorilere Ekle{% endif %}">
+            <i class="{% if favorite_ids is defined and property.id in favorite_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+        </button>
     </div>
 </div>
 
@@ -108,10 +162,10 @@
     <div class="slider-container" id="sliderContainer">
         {% if property_images %}
             {% for img_url in property_images %}
-                <img src="{{ '/static/' + img_url if 'http' not in img_url else img_url }}" alt="{{ property.name }}">
+                <img src="{{ '/static/' + img_url if 'http' not in img_url else img_url }}" alt="{{ property.name if property.name is defined else '' }}">
             {% endfor %}
         {% else %}
-            <img src="/static/htmlfotos/{{ property.image_url if property.image_url else property.image }}" alt="{{ property.name }}">
+            <img src="/static/htmlfotos/{{ property.image_url if property.image_url else (property.image if property.image is defined else 'placeholder.jpg') }}" alt="{{ property.name if property.name is defined else '' }}">
         {% endif %}
     </div>
 
@@ -135,6 +189,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- MEVCUT SLIDER LOGİKLERİ ---
         let currentIndex = 0;
         const imageBox = document.getElementById('imageBox');
         const container = document.getElementById('sliderContainer');
@@ -145,7 +200,9 @@
         const totalSlides = parseInt(imageBox.getAttribute('data-total-slides')) || 1;
 
         function updateSlider() {
-            container.style.transform = `translateX(-${currentIndex * 100}%)`;
+            if (container) {
+                container.style.transform = `translateX(-${currentIndex * 100}%)`;
+            }
             dots.forEach((dot, index) => {
                 dot.classList.toggle('active', index === currentIndex);
             });
@@ -163,11 +220,9 @@
             updateSlider();
         }
 
-        // Event Listener'lar (HTML içindeki onclick="..." yerine modern yaklaşım)
         if (prevBtn) prevBtn.addEventListener('click', () => moveSlider(-1));
         if (nextBtn) nextBtn.addEventListener('click', () => moveSlider(1));
 
-        // Noktalara tıklama özelliğini JS ile atıyoruz
         dots.forEach((dot, index) => {
             dot.addEventListener('click', () => {
                 currentIndex = index;
@@ -175,10 +230,90 @@
             });
         });
 
-        // Klavye kontrolü
         document.addEventListener('keydown', (e) => {
             if (e.key === "ArrowLeft") moveSlider(-1);
             if (e.key === "ArrowRight") moveSlider(1);
         });
+
+        // --- 🚀 FAVORİ TOGGLE VE DOĞRULAMA SİSTEMİ ---
+        const favBtn = document.getElementById('detailFavBtn');
+        if (favBtn) {
+            const propertyId = favBtn.getAttribute('data-property-id');
+
+            // JavaScript Fallback Kontrolü (Veritabanı senkronizasyon kontrolü)
+            async function checkFavoriteStatus() {
+                try {
+                    const response = await fetch('/api/favorites/my-list');
+                    if (response.ok) {
+                        const list = await response.json();
+                        // Gelen ID listesindeki verileri sayıya cast edip mevcut ilan id'si ile karşılaştırıyoruz
+                        if (list && list.map(Number).includes(Number(propertyId))) {
+                            favBtn.classList.add('is-favorite');
+                            const icon = favBtn.querySelector('i');
+                            if (icon) {
+                                icon.className = "fa-solid fa-heart";
+                            }
+                            favBtn.title = "Favorilerden Kaldır";
+                        }
+                    }
+                } catch (err) {
+                    console.error("Favori durumu çekilirken hata oluştu:", err);
+                }
+            }
+
+            // Tıklama Olayı (Optimistic UI - Kullanıcı tıklamasında anlık tepki hızı)
+            favBtn.addEventListener('click', async () => {
+                const isFav = favBtn.classList.contains('is-favorite');
+                // Backend API endpoint rota yapınıza göre endpoint'ler dinamik seçilir
+                const endpoint = isFav ? `/api/favorites/remove/${propertyId}` : `/api/favorites/add/${propertyId}`;
+                const icon = favBtn.querySelector('i');
+                
+                // UX İyileştirmesi: Sunucu yanıtını beklemeden UI durumunu hemen güncelle
+                if (isFav) {
+                    favBtn.classList.remove('is-favorite');
+                    if (icon) icon.className = "fa-regular fa-heart";
+                    favBtn.title = "Favorilere Ekle";
+                } else {
+                    favBtn.classList.add('is-favorite');
+                    if (icon) icon.className = "fa-solid fa-heart";
+                    favBtn.title = "Favorilerden Kaldır";
+                }
+                
+                try {
+                    const response = await fetch(endpoint, { method: "POST" });
+                    const data = await response.json();
+
+                    // İstek başarısız olursa veya sunucu hata dönerse UI durumunu geri al (Rollback)
+                    if (!response.ok || !data.success) {
+                        alert(data.message || "Favori işlemi gerçekleştirilemedi.");
+                        if (isFav) {
+                            favBtn.classList.add('is-favorite');
+                            if (icon) icon.className = "fa-solid fa-heart";
+                            favBtn.title = "Favorilerden Kaldır";
+                        } else {
+                            favBtn.classList.remove('is-favorite');
+                            if (icon) icon.className = "fa-regular fa-heart";
+                            favBtn.title = "Favorilere Ekle";
+                        }
+                    }
+                } catch (err) {
+                    console.error("Favori toggle hatası:", err);
+                    alert("Sunucuyla bağlantı kurulamadı.");
+                    // Bağlantı kopması durumunda rollback
+                    if (isFav) {
+                        favBtn.classList.add('is-favorite');
+                        if (icon) icon.className = "fa-solid fa-heart";
+                        favBtn.title = "Favorilerden Kaldır";
+                    } else {
+                        favBtn.classList.remove('is-favorite');
+                        if (icon) icon.className = "fa-regular fa-heart";
+                        favBtn.title = "Favorilere Ekle";
+                    }
+                }
+            });
+
+            // Sayfa yüklendiğinde arka planda API check mekanizmasını çalıştır
+            checkFavoriteStatus();
+        }
     });
 </script>

@@ -23,8 +23,23 @@
     .content-area { flex: 2; }
     .title-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
     .title-header h1 { font-size: 34px; margin: 0; letter-spacing: -1px; }
+    
+    /* 🎯 GENEL ACTIONS VE HOVER ÇAKIŞMALARINI ENGELLEYEN YENİ CSS DÜZENLEMESİ */
     .actions i { cursor: pointer; padding: 10px; border-radius: 50%; color: var(--text-muted); }
     .actions i:hover { background: #f1f2f6; color: var(--primary-blue); }
+
+    /* 🚀 AIRBNB KIRMIZISI DESTEĞİ VE KESİN EZİCİ RENK KURALLARI */
+    .detail-fav-trigger-btn.is-favorite,
+    .detail-fav-trigger-btn.is-favorite i,
+    .actions i.active-favorite {
+        color: #ff385c !important; /* Gerçek Premium Airbnb Kırmızısı */
+    }
+
+    .detail-fav-trigger-btn.is-favorite:hover i,
+    .detail-fav-trigger-btn.is-favorite:hover {
+        color: #e31c5f !important; /* Hover edildiğinde hafif koyu asil kırmızı */
+        transform: scale(1.2);
+    }
 
     .image-box { width: 100%; border-radius: 16px; overflow: hidden; margin-bottom: 30px; box-shadow: var(--shadow); }
     .image-box img { width: 100%; height: 500px; object-fit: cover; display: block; transition: transform 0.5s; }
@@ -228,7 +243,7 @@
             <button type="button" onclick="changeGuest('pet', 1)">+</button>
         </div>
     </div>
-    <button class="request-button" onclick="closeAll()" style="margin-top:10px;">Save</button>
+    <button class="request-button" onclick="closeAll()" style="margin-top:10px;">Favorite</button>
 </div>
 
 {% include "includes/chat_widget.html" %}
@@ -441,6 +456,33 @@
     function changeMonth(step) {
         currentViewDate.setMonth(currentViewDate.getMonth() + step);
         renderCalendar();
+    }
+
+    async function toggleFavorite(propertyId) {
+        const heartIcon = document.getElementById('favorite-heart');
+        if (!heartIcon) return;
+
+        const isFavorite = heartIcon.classList.contains('active-favorite');
+        const endpoint = isFavorite ? `/api/favorites/remove/${propertyId}` : `/api/favorites/add/${propertyId}`;
+
+        try {
+            const response = await fetch(endpoint, { method: 'POST' });
+            const data = await response.json();
+
+            if (data.success || response.ok) {
+                if (isFavorite) {
+                    heartIcon.classList.remove('active-favorite', 'fa-solid');
+                    heartIcon.classList.add('fa-regular');
+                } else {
+                    heartIcon.classList.add('active-favorite', 'fa-solid');
+                    heartIcon.classList.remove('fa-regular');
+                }
+            } else {
+                alert(data.message || "Bir hata oluştu.");
+            }
+        } catch (error) {
+            console.error("Favori işlemi sırasında hata:", error);
+        }
     }
 </script>
 {% endblock %}

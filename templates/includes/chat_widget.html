@@ -6,7 +6,7 @@
 <div id="mini-chat-widget" class="mini-chat-wrapper" style="display: none;">
     <div class="mini-chat-header">
         <div class="agent-info-mini">
-            <img id="chat-agent-avatar" src="/static/htmlfotos/default-avatar.png" alt="Agent PP" class="chat-avatar-img">
+            <img id="chat-agent-avatar" src="/static/htmlfotos/default_user.png" alt="Agent PP" class="chat-avatar-img">
             <div class="agent-text-mini">
                 <h4 id="chat-agent-name">Agent Name</h4>
                 <p id="chat-agent-company">Company Name</p>
@@ -275,7 +275,7 @@ function handleChatTrigger(e, buttonElement) {
     const agentId = buttonElement.getAttribute("data-agent-id");
     const agentName = buttonElement.getAttribute("data-agent-name") || "Emlak Yetkilisi";
     const agentCompany = buttonElement.getAttribute("data-agent-company") || "Kurumsal Acente";
-    const agentAvatar = buttonElement.getAttribute("data-agent-avatar") || "/static/htmlfotos/default-avatar.png";
+    const agentAvatar = buttonElement.getAttribute("data-agent-avatar") || "/static/htmlfotos/default_user.png";
     const propertyTitle = buttonElement.getAttribute("data-property-title") || "İlan Detayı";
 
     if (!propertyId || agentId === 'null' || !agentId) {

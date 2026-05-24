@@ -1,4 +1,244 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<div class="favorites-container">
+    <div class="favorites-header-block">
+        <div class="header-title-area">
+            <h2 class="main-title">Favori İlanlarım</h2>
+            <p class="subtitle">
+                Hızlıca erişmek ve takip etmek için kaydettiğiniz tüm ilanlar aşağıda listelenmiştir.
+            </p>
+        </div>
+
+        <div class="status-badge-summary">
+            <div class="status-icon-wrapper">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+            </div>
+            <div class="status-text-wrapper">
+                <span class="status-count">
+                    {{ favorite_properties|length if favorite_properties is defined else 0 }}
+                </span>
+                <span class="status-label">Toplam Favori</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="propertiesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 25px; flex-grow: 1;">
+        {% if favorite_properties and favorite_properties|length > 0 %}
+            {% for property in favorite_properties %}
+            <div class="property-card" id="property-card-{{ property.id }}" data-status="{{ property.status }}" onclick="window.location.href='/property/{{ property.id }}'" style="cursor: pointer; position: relative;">
+                
+                <div class="card-image-wrap" style="position: relative; overflow: hidden; border-radius: 16px 16px 0 0;">
+                    {% if property.image %}
+                        <img src="{{ url_for('static', path='/' + property.image) }}" alt="Property" style="width: 100%; height: 220px; object-fit: cover;">
+                    {% else %}
+                        <img src="/static/htmlfotos/placeholder.jpg" alt="Property" style="width: 100%; height: 220px; object-fit: cover;">
+                    {% endif %}
+
+                    <button type="button" class="remove-fav-overlay-btn" onclick="event.stopPropagation(); removePropertyFromFavoritesPage('{{ property.id }}', this)" title="Favorilerden Kaldır">
+                        <i class="fa-solid fa-heart"></i>
+                    </button>
+                    
+                    <span class="type-badge" style="position: absolute; top: 15px; right: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; color: white; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(4px); z-index: 2;">
+                        {{ property.display_type or "EMLAK" }}
+                    </span>
+                </div>
+
+                <div class="card-content" style="padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 1.15rem; color: #1e293b; font-weight: 700; line-height: 1.3;">{{ property.title or property.name }}</h3>
+                        
+                        <span style="color: #FF7226; font-weight: 800; font-size: 1.1rem; white-space: nowrap; margin-left: 10px;">
+                            {% if property.formatted_price %}
+                                {{ property.formatted_price }} {{ property.currency_symbol }}
+                            {% else %}
+                                0 ₺
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 18px 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-location-dot" style="color: #94a3b8;"></i> {{ property.location or "Konum Belirtilmedi" }}
+                    </p>
+                    
+                    <div class="card-footer" style="display: flex; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                        <div class="stat-item" style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #64748b;">
+                            <i class="fa-solid fa-bed" style="color: #94a3b8;"></i> 
+                            <span>{{ property.beds or property.bed_count or property.room_count or '0' }} Beds</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #64748b;">
+                            <i class="fa-solid fa-bath" style="color: #94a3b8;"></i> 
+                            <span>{{ property.baths or property.bath_count or '0' }} Bath</span>
+                        </div>
+                        <div class="stat-item" style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #64748b;">
+                            <i class="fa-solid fa-ruler-combined" style="color: #94a3b8;"></i> 
+                            <span>{{ property.net_m2 or property.square_meters or '0' }} m²</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-approval-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                <div class="empty-icon-box" style="background: #fff5f5; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#f43f5e" stroke-width="1.5">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </div>
+                <h3 style="color: #1e293b; font-size: 1.4rem; margin-bottom: 8px; font-weight: 700;">Henüz Favori İlanınız Yok</h3>
+                <p style="color: #64748b; font-size: 0.95rem; max-width: 400px; margin: 0 auto;">Beğendiğiniz ilanların yanındaki kalp simgesine tıklayarak bu listeye ekleme yapabilirsiniz.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .favorites-container {
+        padding: 8px;
+        font-family: 'Inter', sans-serif;
+    }
+    .favorites-header-block {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 20px;
+        margin-bottom: 28px;
+        gap: 16px;
+    }
+    .header-title-area {
+        flex: 1;
+    }
+    .main-title {
+        margin: 0 0 6px 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    .subtitle {
+        margin: 0;
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.5;
+    }
+    .status-badge-summary {
+        display: flex;
+        align-items: center;
+        background: #ffe4e6;
+        border: 1px solid #fecdd3;
+        padding: 10px 16px;
+        border-radius: 12px;
+        gap: 12px;
+        min-width: 160px;
+    }
+    .status-icon-wrapper {
+        color: #e11d48;
+        display: flex;
+        align-items: center;
+    }
+    .status-text-wrapper {
+        display: flex;
+        flex-direction: column;
+    }
+    .status-count {
+        font-size: 18px;
+        font-weight: 700;
+        color: #9f1239;
+        line-height: 1.2;
+    }
+    .status-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: #be123c;
+    }
+
+    /* ❤️ Sol Üst Köşedeki Kalıcı Sabit Kalp Buton Stili */
+    .remove-fav-overlay-btn {
+        position: absolute;
+        top: 15px; /* AVAILABLE Rozetinin tam altına estetik hizalama */
+        left: 15px;
+        z-index: 10;
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 50%;
+        color: #dc2626; /* Canlı Premium Kırmızı */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Üzerine gelindiğinde hafif büyüme ve gölge derinliği vurgusu */
+    .remove-fav-overlay-btn:hover {
+        transform: scale(1.12);
+        background: #ffffff;
+        box-shadow: 0 6px 15px rgba(220, 38, 38, 0.3);
+        color: #b91c1c;
+    }
+
+    /* Properties Stil Kart Şablonu Geçişleri */
+    .property-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    .property-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    async function removePropertyFromFavoritesPage(propertyId, buttonElement) {
+        if(!confirm("Bu ilanı favorilerinizden kaldırmak istediğinize emin misiniz?")) return;
+        
+        try {
+            const response = await fetch(`/api/favorites/remove/${propertyId}`, { method: "POST" });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Tıklanan butondan kartın ana kapsayıcısını buluyoruz
+                const card = document.getElementById(`property-card-${propertyId}`);
+                if (card) {
+                    // Pürüzsüz kaybolma animasyonu (Fade out & Shrink)
+                    card.style.transition = "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)";
+                    card.style.opacity = "0";
+                    card.style.transform = "scale(0.8) translateY(10px)";
+                    
+                    setTimeout(() => {
+                        card.remove();
+                        
+                        // Üst bardaki favori sayacını dinamik olarak düşür
+                        const countSpan = document.querySelector('.status-count');
+                        if(countSpan) {
+                            let currentCount = parseInt(countSpan.innerText) || 0;
+                            countSpan.innerText = Math.max(0, currentCount - 1);
+                        }
+
+                        // Eğer hiç favori kalmadıysa sayfayı yenile ve boş ekranı göster
+                        const grid = document.getElementById('propertiesGrid');
+                        if (grid && grid.querySelectorAll('.property-card').length === 0) {
+                            location.reload();
+                        }
+                    }, 350);
+                }
+            } else {
+                alert(data.message || "İşlem başarısız oldu.");
+            }
+        } catch (error) {
+            console.error("Favori kaldırma hatası:", error);
+            alert("Sunucu bağlantısı kurulamadı.");
+        }
+    }
+</script>
 {% endblock %}

@@ -1,4 +1,452 @@
 {% extends "profile_base.html" %}
+
 {% block profile_subcontent %}
-   <h3>Bu sayfa yakında eklenecek.</h3>
+<style>
+    /* Sayfa Başlığı Düzeni */
+    .transactions-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #edf2f7;
+    }
+    
+    .transactions-header h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0;
+    }
+
+    .transactions-count {
+        font-size: 14px;
+        color: #718096;
+        background: #edf2f7;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    /* Yatay Dikdörtgen Kart Yapısı */
+    .transaction-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 35px;
+    }
+
+    .transaction-card {
+        display: flex;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .transaction-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+        border-color: #cbd5e0;
+    }
+
+    /* Sol Kısım: Resim */
+    .tx-image {
+        width: 140px;
+        height: 100px;
+        border-radius: 12px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: #f7fafc;
+    }
+
+    /* Orta Kısım: Detaylar Grid Yapısı (Soldan Sağa Akış) */
+    .tx-info-grid {
+        display: grid;
+        grid-template-columns: 2.5fr 1.5fr 2fr;
+        gap: 20px;
+        width: 100%;
+        margin-left: 20px;
+        align-items: center;
+    }
+
+    /* 1. Sütun: Başlık ve Fiyat */
+    .tx-main-details h4 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a202c;
+        margin: 0 0 8px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tx-price {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--theme-color, #ff385c);
+    }
+
+    .tx-price span {
+        font-size: 13px;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    /* 2. Sütun: Emlakçı Bilgisi */
+    .tx-agent-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #4a5568;
+        font-size: 14px;
+    }
+
+    .tx-agent-info i {
+        color: #a0aec0;
+        font-size: 16px;
+    }
+
+    .tx-agent-name {
+        font-weight: 600;
+        display: block;
+        color: #2d3748;
+    }
+
+    /* 3. Sütun: İşlem / Kiralama Tarihleri */
+    .tx-date-info {
+        font-size: 13px;
+        color: #4a5568;
+        line-height: 1.5;
+    }
+
+    .tx-date-info .date-label {
+        font-weight: 700;
+        color: #718096;
+        text-transform: uppercase;
+        font-size: 11px;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .tx-date-info .date-value {
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    /* Sağ Kısım: Durum Rozetleri ve İptal Butonu Dikey Hizalama */
+    .tx-actions-status {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 12px;
+        min-width: 160px;
+        margin-left: 20px;
+    }
+
+    /* 🚀 DURUM BADGE (ROZET) STİLLERİ */
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+        text-align: center;
+    }
+
+    /* rented-approving (Kiralama Onay Bekliyor) */
+    .status-rented-approving { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+    
+    /* purchase-approving (Satın Alma Onay Bekliyor) */
+    .status-purchase-approving { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+
+    /* rented (Şuan Kirada - Aktif) */
+    .status-rented { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+
+    /* purchased (Satın Alındı) */
+    .status-purchased { background: #f3e8ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+
+    /* rented-expired (Süresi Bitti) */
+    .status-rented-expired { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+
+/* payment-pending (Ödeme Bekliyor Rozeti) */
+.status-payment-pending { 
+    background: #ecfdf5; 
+    color: #059669; 
+    border: 1px solid #a7f3d0; 
+}
+
+/* 💳 GO TO PAYMENT BUTONU */
+.tx-payment-btn {
+    background: #ff385c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(255, 56, 92, 0.2);
+}
+
+.tx-payment-btn:hover {
+    background: #e31c5f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(255, 56, 92, 0.3);
+}
+
+    /* ❌ İPTAL BUTONU */
+    .tx-cancel-btn {
+        background: transparent;
+        border: 1px solid #e2e8f0;
+        color: #e53e3e;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .tx-cancel-btn:hover {
+        background: #fff5f5;
+        border-color: #feb2b2;
+        transform: scale(1.03);
+    }
+
+    /* 📄 MODERN PAGINATION (SAYFALAMA) */
+    .tx-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 30px;
+    }
+
+    .page-node {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #4a5568;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .page-node:hover:not(.active):not(.disabled) {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .page-node.active {
+        background: var(--theme-color, #ff385c);
+        color: white;
+        border-color: var(--theme-color, #ff385c);
+    }
+
+    .page-node.disabled {
+        color: #cbd5e0;
+        cursor: not-allowed;
+        background: #f7fafc;
+    }
+</style>
+
+<div class="transactions-header">
+    <h2>My Transactions</h2>
+    <span class="transactions-count">6 Total Transactions</span>
+</div>
+
+<div class="transaction-list">
+
+    <div class="transaction-card">
+        <img src="/static/htmlfotos/prop_1779566578_8.jpeg" alt="Property Image" class="tx-image">
+        <div class="tx-info-grid">
+            <div class="tx-main-details">
+                <h4>Seafront Luxury Villa Cyprus</h4>
+                <div class="tx-price">2.400 € <span>/ Monthly</span></div>
+            </div>
+            <div class="tx-agent-info">
+                <i class="fa-solid fa-user-tie"></i>
+                <div>
+                    <span class="tx-agent-name">Ahmet Yılmaz</span>
+                    <small style="color: #718096;">CypInvest Agent</small>
+                </div>
+            </div>
+            <div class="tx-date-info">
+                <span class="date-label">Requested Rental Period:</span>
+                <span class="date-value"><i class="fa-regular fa-calendar-days"></i> 01.06.2026 - 01.12.2026</span>
+            </div>
+        </div>
+        <div class="tx-actions-status">
+            <span class="status-badge status-rented-approving">Rented - Approving</span>
+            <button type="button" class="tx-cancel-btn" onclick="cancelTransaction(1)">Cancel Request</button>
+        </div>
+    </div>
+
+    <div class="transaction-card">
+        <img src="/static/htmlfotos/prop_1779564729_9.jpeg" alt="Property Image" class="tx-image">
+        <div class="tx-info-grid">
+            <div class="tx-main-details">
+                <h4>Modern Penthouse Loft</h4>
+                <div class="tx-price">18.500 ₺ <span>/ Monthly</span></div>
+            </div>
+            <div class="tx-agent-info">
+                <i class="fa-solid fa-user-tie"></i>
+                <div>
+                    <span class="tx-agent-name">Eren Demir</span>
+                    <small style="color: #718096;">Gold Estate</small>
+                </div>
+            </div>
+            <div class="tx-date-info">
+                <span class="date-label">Active Rental Period:</span>
+                <span class="date-value" style="color: #16a34a;"><i class="fa-solid fa-clock"></i> 15.03.2026 - 15.03.2027</span>
+            </div>
+        </div>
+        <div class="tx-actions-status">
+            <span class="status-badge status-rented">Rented</span>
+            <button type="button" class="tx-cancel-btn" style="color: #ff0000;" onclick="terminateRental(2)">Terminate Rental</button>
+        </div>
+    </div>
+
+    <div class="transaction-card">
+        <img src="/static/htmlfotos/9ff64e0c-c4b3-4be0-a8b2-2c3758d9f188.jpeg" alt="Property Image" class="tx-image">
+        <div class="tx-info-grid">
+            <div class="tx-main-details">
+                <h4>Exclusive Golf Resort Apartment</h4>
+                <div class="tx-price">145.000 £ <span>Base Price</span></div>
+            </div>
+            <div class="tx-agent-info">
+                <i class="fa-solid fa-user-tie"></i>
+                <div>
+                    <span class="tx-agent-name">Sarah Jenkins</span>
+                    <small style="color: #718096;">Elite Cyprus Brokers</small>
+                </div>
+            </div>
+            <div class="tx-date-info">
+                <span class="date-label">Purchase Application Date:</span>
+                <span class="date-value"><i class="fa-regular fa-calendar"></i> 20.05.2026</span>
+            </div>
+        </div>
+        <div class="tx-actions-status">
+            <span class="status-badge status-purchase-approving">Purchase - Approving</span>
+            <button type="button" class="tx-cancel-btn" onclick="cancelTransaction(3)">Withdraw the offer</button>
+        </div>
+    </div>
+
+    <div class="transaction-card">
+    <img src="/static/htmlfotos/prop_1779567872_13.jpeg" alt="Property Image" class="tx-image">
+    <div class="tx-info-grid">
+        <div class="tx-main-details">
+            <h4>Modern Triplex Villa with Private Pool</h4>
+            <div class="tx-price">245.000 € <span>During the Payment Process</span></div>
+        </div>
+        <div class="tx-agent-info">
+            <i class="fa-solid fa-user-tie"></i>
+            <div>
+                <span class="tx-agent-name">Melis Töre</span>
+                <small style="color: #718096;">CypInvest Premium</small>
+            </div>
+        </div>
+        <div class="tx-date-info">
+            <span class="date-label">Approval Date:</span>
+            <span class="date-value" style="color: #059669;"><i class="fa-solid fa-calendar-check"></i> Approved Today</span>
+        </div>
+    </div>
+    <div class="tx-actions-status">
+        <span class="status-badge status-payment-pending">Approved - Payment Pending</span>
+        <button type="button" class="tx-payment-btn" onclick="goToPayment(6)">
+            <i class="fa-solid fa-credit-card"></i> Go to Payment
+        </button>
+    </div>
+   </div>
+
+    <div class="transaction-card">
+        <img src="/static/htmlfotos/a28a663c-0297-4a51-8b96-d54383bc6ad4.png" alt="Property Image" class="tx-image">
+        <div class="tx-info-grid">
+            <div class="tx-main-details">
+                <h4>Sunset Horizon Beach House</h4>
+                <div class="tx-price">320.000 € <span>Purchased</span></div>
+            </div>
+            <div class="tx-agent-info">
+                <i class="fa-solid fa-user-tie"></i>
+                <div>
+                    <span class="tx-agent-name">Ahmet Yılmaz</span>
+                    <small style="color: #718096;">CypInvest Agent</small>
+                </div>
+            </div>
+            <div class="tx-date-info">
+                <span class="date-label">Deed / Sale Completion Date:</span>
+                <span class="date-value"><i class="fa-solid fa-circle-check" style="color: #7c3aed;"></i> 12.01.2025</span>
+            </div>
+        </div>
+        <div class="tx-actions-status">
+            <span class="status-badge status-purchased">Purchased</span>
+        </div>
+    </div>
+
+    <div class="transaction-card">
+        <img src="/static/htmlfotos/ac1ee602-fe53-43ea-a013-36155f10e7b4.jpeg" alt="Property Image" class="tx-image">
+        <div class="tx-info-grid">
+            <div class="tx-main-details">
+                <h4>Cozy Studio Near University</h4>
+                <div class="tx-price">450 £ <span>/ Monthly</span></div>
+            </div>
+            <div class="tx-agent-info">
+                <i class="fa-solid fa-user-tie"></i>
+                <div>
+                    <span class="tx-agent-name">Buse Serter</span>
+                    <small style="color: #718096;">Independent Agent</small>
+                </div>
+            </div>
+            <div class="tx-date-info">
+                <span class="date-label">Previous Rental Period:</span>
+                <span class="date-value" style="text-decoration: line-through; color: #a0aec0;"><i class="fa-regular fa-calendar-check"></i> 01.09.2025 - 01.02.2026</span>
+            </div>
+        </div>
+        <div class="tx-actions-status">
+            <span class="status-badge status-rented-expired">Rented - Expired</span>
+        </div>
+    </div>
+
+</div>
+
+<div class="tx-pagination">
+    <a href="#" class="page-node disabled"><i class="fa-solid fa-chevron-left"></i></a>
+    <a href="#" class="page-node active">1</a>
+    <a href="#" class="page-node">2</a>
+    <a href="#" class="page-node">3</a>
+    <a href="#" class="page-node"><i class="fa-solid fa-chevron-right"></i></a>
+</div>
+
+<script>
+    // Demo İptal Buton Fonksiyonları
+    function cancelTransaction(id) {
+        if(confirm("Bu işlem talebini iptal etmek istediğinize emin misiniz? Arka planda talebiniz silinecektir.")) {
+            alert("Talep başarıyla iptal edildi (Demo).");
+        }
+    }
+
+    function terminateRental(id) {
+        if(confirm("Aktif kiralama sözleşmesini sonlandırmak için emlakçıya bildirim göndermek istiyor musunuz?")) {
+            alert("Fesih ve sonlandırma talebi emlakçıya iletildi (Demo).");
+        }
+    }
+</script>
 {% endblock %}

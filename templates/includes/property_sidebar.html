@@ -50,7 +50,7 @@
                 data-agent-id="{% if agent.id is mapping %}{{ agent.id['id'] }}{% else %}{{ agent.id }}{% endif %}"
                 data-agent-name="{{ agent.full_name if agent.full_name else 'Emlak Yetkilisi' }}"
                 data-agent-company="{{ agent.agency_name if agent.agency_name else 'Cypinvest Global' }}"
-                data-agent-avatar="{% if agent.agent_image %}/static/htmlfotos/{{ agent.agent_image }}{% else %}/static/htmlfotos/default-avatar.png{% endif %}"
+                data-agent-avatar="{% if agent.agent_image %}/static/htmlfotos/{{ agent.agent_image }}{% else %}/static/htmlfotos/default_user.png{% endif %}"
                 data-property-title="{{ property.name }}">
             Send Message to Agent
         </button>
@@ -74,7 +74,7 @@
                 data-agent-id="{% if agent.id is mapping %}{{ agent.id['id'] }}{% else %}{{ agent.id }}{% endif %}"
                 data-agent-name="{{ agent.full_name if agent.full_name else 'Emlak Yetkilisi' }}"
                 data-agent-company="{{ agent.agency_name if agent.agency_name else 'Cypinvest Global' }}"
-                data-agent-avatar="{% if agent.agent_image %}/static/htmlfotos/{{ agent.agent_image }}{% else %}/static/htmlfotos/default-avatar.png{% endif %}"
+                data-agent-avatar="{% if agent.agent_image %}/static/htmlfotos/{{ agent.agent_image }}{% else %}/static/htmlfotos/default_user.png{% endif %}"
                 data-property-title="{{ property.name }}">
             Contact Agent
         </button>

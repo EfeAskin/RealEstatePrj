@@ -9,7 +9,8 @@ from fastapi.templating import Jinja2Templates
 # Router Modüllerini İçeri Aktar
 from routers import admin, auth, chat, listings, profile
 from routers import pages, messages, properties
-from routers import property_filter  # Dosyanın klasör yoluna göre import et # Yeni ayrılan modüller
+from routers import property_filter
+from routers import favorites  # Dosyanın klasör yoluna göre import et # Yeni ayrılan modüller
 
 app = FastAPI()
 
@@ -119,7 +120,7 @@ app.include_router(pages.router)
 app.include_router(messages.router)
 app.include_router(properties.router)
 app.include_router(property_filter.router)
-
+app.include_router(favorites.router)  # Yeni favoriler router'ını ekle
 
 if __name__ == "__main__":
     import uvicorn

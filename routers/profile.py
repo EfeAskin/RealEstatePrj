@@ -334,16 +334,71 @@ async def my_messages(request: Request, chat_id: Optional[str] = None):
 
 @router.get("/favourites", response_class=HTMLResponse)
 async def my_favourites(request: Request):
-    """Favoriler Sayfası"""
-    _, user_data = get_safe_current_user()
+    """Favoriler Sayfası (Canlı Neon DB Bağlantılı ve listings.py Entegrasyonlu)"""
+    user_email, user_data = get_safe_current_user()
+    if not user_email:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    current_user_id = user_data.get("id")
+    favorite_properties = []
+    
+    # listings.py içerisindeki veri işleme fonksiyonlarını güvenle çağırıyoruz
+    try:
+        from routers.listings import process_property_data
+    except ImportError:
+        def process_property_data(item): return item
+
+    conn = db.get_db_connection()
+    if conn:
+        try:
+            from psycopg2.extras import RealDictCursor
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # Kullanıcının favorilediği ilanları ilişkisel (JOIN) olarak çekiyoruz
+            query = """
+                SELECT p.* FROM properties p
+                JOIN user_favorites f ON p.id = f.property_id
+                WHERE f.user_id = %s AND p.status != 'passive'
+            """
+            cur.execute(query, (current_user_id,))
+            rows = cur.fetchall()
+            
+            for row in rows:
+                item_dict = dict(row)
+                processed = process_property_data(item_dict) 
+                favorite_properties.append(processed)
+                
+            cur.close()
+        except Exception as e:
+            print(f"❌ PROFILE FAVORITES DB ERROR: {e}")
+        finally:
+            conn.close()
+
     return templates.TemplateResponse(request, "favourites.html", {
         "role": getattr(db, "current_user_role", "user"),
         "is_admin": get_admin_status(),
         "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
-        "p_page": "favourites"
+        "properties": favorite_properties,            # HTML'deki döngünün beslendiği yer 1
+        "favorite_properties": favorite_properties,   # HTML'deki alternatif döngü adı
+        "p_page": "favourites",
+        "user": user_data
     })
+
+@router.get("/dashboard1", response_class=HTMLResponse)
+async def my_dashboard1(request: Request):
+    """Dashboard Sayfası"""
+    _, user_data = get_safe_current_user()
+    return templates.TemplateResponse(request, "dashboard1.html", {
+        "role": getattr(db, "current_user_role", "user"),
+        "is_admin": get_admin_status(),
+        "first_name": user_data.get("first_name", ""),
+        "last_name": user_data.get("last_name", ""),
+        "profile_image": user_data.get("profile_image", "default_user.png"),
+        "p_page": "dashboard1"
+    })
+
 
 # --- ROL DEĞİŞTİRME ROTALARI ---
 
