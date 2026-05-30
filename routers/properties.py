@@ -124,7 +124,7 @@ async def add_property(request: Request):
         "building_age": building_age, "heating": heating, "is_site": clean_is_site,
         "site_name": clean_site_name, "is_credit": clean_is_credit, "is_trade": clean_is_trade,
         "currency_code": currency_code, "currency": currency_code, "deed_status": deed_status,
-        "description": description, "image": image_urls_list[0], "status": "approving"
+        "description": description, "image": image_urls_list[0], "status": "pending"
     }
 
     agent_id = user_data.get('id')
@@ -200,6 +200,14 @@ async def get_single_property_api(property_id: str):
 @router.post("/api/property/update/{property_id}")
 async def update_property_endpoint(property_id: str, request: Request):
     try:
+        # --- YETKİ KONTROLÜ: Sadece admin veya ilanın sahibi agent güncelleyebilir ---
+        current_user = db.get_user_from_request(request)
+        if not current_user:
+            return JSONResponse(status_code=401, content={"error": "Bu işlem için giriş yapmalısınız."})
+        if not db.can_user_modify_property(current_user, property_id):
+            return JSONResponse(status_code=403, content={"error": "Bu ilanı düzenleme yetkiniz yok."})
+        user_role = current_user.get("role", "guest")
+
         form_data = await request.form()
         update_data = {}
 
@@ -293,9 +301,6 @@ async def update_property_endpoint(property_id: str, request: Request):
             if "image" not in update_data: update_data["image"] = new_image_urls[0]
 
         clean_id = int(property_id) if str(property_id).isdigit() else property_id
-        user_id_cookie = request.cookies.get("user_id")
-        user_data = db.get_user_from_cookie(user_id_cookie) if user_id_cookie else None
-        user_role = user_data.get("role") if user_data else "guest"
 
         success = False
         if hasattr(db, 'update_property_in_db'): success = db.update_property_in_db(clean_id, update_data)

@@ -5,25 +5,25 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 5px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
         <div>
             <h2 style="margin: 0; color: #1e293b; font-weight: 800; font-size: 1.6rem;">
-                <i class="fa-solid fa-shield-halved" style="color: #1BA7FF; margin-right: 12px;"></i>Tüm İlanlar (Yönetim Paneli)
+                <i class="fa-solid fa-shield-halved" style="color: #1BA7FF; margin-right: 12px;"></i>All Listings (Admin Panel)
             </h2>
             <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">
-                Sistemdeki tüm aktif ve pasif ilanları denetleyin. Toplam <b>{{ all_properties|length }}</b> ilan listeleniyor.
+                Review all active and inactive listings in the system. <b>{{ all_properties|length }}</b> listings shown in total.
             </p>
         </div>
         
         <div style="display: flex; align-items: center; gap: 12px;">
             <div style="display: flex; gap: 5px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 4px 10px; align-items: center;">
-                <input type="text" id="adminSearchInput" placeholder="İlan ID veya Başlık Ara..." style="padding: 8px 10px; border: none; outline: none; width: 220px; font-size: 0.9rem;">
+                <input type="text" id="adminSearchInput" placeholder="Search by listing ID or title..." style="padding: 8px 10px; border: none; outline: none; width: 220px; font-size: 0.9rem;">
                 <button onclick="filterSearch()" style="background: #1BA7FF; color: white; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </div>
 
             <div style="display: flex; background: #f1f5f9; padding: 6px; border-radius: 14px; gap: 5px; border: 1px solid #e2e8f0;">
-                <button class="tab-btn active" onclick="switchAdminTab('all', this)">Tümü</button>
-                <button class="tab-btn" onclick="switchAdminTab('active', this)">Aktifler</button>
-                <button class="tab-btn" onclick="switchAdminTab('passive', this)">Pasifler</button>
+                <button class="tab-btn active" onclick="switchAdminTab('all', this)">All</button>
+                <button class="tab-btn" onclick="switchAdminTab('active', this)">Active</button>
+                <button class="tab-btn" onclick="switchAdminTab('inactive', this)">Inactive</button>
             </div>
         </div>
     </div>
@@ -32,25 +32,25 @@
         {% for property in all_properties %}
         <div class="property-card admin-mode" data-status="{{ property.status|lower if property.status else 'active' }}" data-id="{{ property.id }}" data-title="{{ property.title or property.name or '' }}" onclick="window.location.href='/property/{{ property.id }}'" style="cursor: pointer;">
             <div class="card-image-wrap">
-                <img src="/static/{{ property.image if property.image else 'htmlfotos/placeholder.jpg' }}" alt="Property">
+                <img src="{% if property.image and property.image.startswith('http') %}{{ property.image }}{% else %}/static/{{ property.image if property.image else 'htmlfotos/placeholder.jpg' }}{% endif %}" alt="Property" onerror="this.src='/static/htmlfotos/placeholder.jpg'">
                 
                 <span class="status-badge {{ property.status|lower if property.status else 'active' }}" style="left: 15px;">
                     {{ property.status|upper if property.status else 'ACTIVE' }}
                 </span>
 
                 <span class="type-badge" style="position: absolute; top: 15px; right: 15px; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; color: white; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(4px); z-index: 2;">
-                    {{ property.listing_type|upper if property.listing_type else (property.type|upper if property.type else 'İLAN') }}
+                    {{ property.listing_type|upper if property.listing_type else (property.type|upper if property.type else 'LISTING') }}
                 </span>
-                
-                <button type="button" class="delete-overlay-btn" title="İlanı Sil / Pasife Al" onclick="event.stopPropagation(); deleteAdminProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
+
+                <button type="button" class="delete-overlay-btn" title="Deactivate / Delete Listing" onclick="event.stopPropagation(); deleteAdminProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
 
-                <button type="button" class="edit-overlay-btn" title="İlanı Düzenle" onclick="event.stopPropagation(); editProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
+                <button type="button" class="edit-overlay-btn" title="Edit Listing" onclick="event.stopPropagation(); editProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
 
-                <button type="button" class="approve-overlay-btn" title="İlanı Onayla / Geri Getir" onclick="event.stopPropagation(); approveAdminProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
+                <button type="button" class="approve-overlay-btn" title="Approve / Restore Listing" onclick="event.stopPropagation(); approveAdminProperty('{{ property.id }}')" style="border: none; cursor: pointer;">
                     <i class="fa-solid fa-square-check"></i>
                 </button>
             </div>
@@ -78,7 +78,7 @@
                 </p>
                 
                 <div class="card-footer">
-                    <div class="stat-item"><i class="fa-solid fa-eye"></i> <span>{{ property.views if property.views else '0' }} İzlenme</span></div>
+                    <div class="stat-item"><i class="fa-solid fa-eye"></i> <span>{{ property.views if property.views else '0' }} Views</span></div>
                     <div class="stat-item" style="margin-left: auto;"><i class="fa-solid fa-calendar-days"></i> <span>{{ property.created_at }}</span></div>
                 </div>
             </div>
@@ -88,7 +88,7 @@
             <div style="background: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 10px 20px rgba(0,0,0,0.05);">
                 <i class="fa-solid fa-folder-open" style="font-size: 2rem; color: #cbd5e1;"></i>
             </div>
-            <h3 style="color: #1e293b; margin-bottom: 10px;">Sistemde ilan bulunamadı</h3>
+            <h3 style="color: #1e293b; margin-bottom: 10px;">No listings found in the system</h3>
         </div>
         {% endfor %}
     </div>
@@ -158,7 +158,8 @@
     }
     .status-badge.active, .status-badge.available { background: #22c55e; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
     .status-badge.rented { background: #FF7226; box-shadow: 0 4px 10px rgba(255, 114, 38, 0.3); }
-    .status-badge.passive { background: #ef4444; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+    .status-badge.inactive { background: #ef4444; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+    .status-badge.pending { background: #f59e0b; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3); }
 
     .edit-overlay-btn {
         position: absolute; top: 15px; right: 65px;
@@ -234,9 +235,9 @@
             if (currentTabType === 'all') {
                 matchTab = true; 
             } else if (currentTabType === 'active') {
-                matchTab = (status !== 'passive');
-            } else if (currentTabType === 'passive') {
-                matchTab = (status === 'passive');
+                matchTab = (status !== 'inactive');
+            } else if (currentTabType === 'inactive') {
+                matchTab = (status === 'inactive');
             }
 
             let matchSearch = true;
@@ -258,7 +259,7 @@
     async function editProperty(propertyId) {
         try {
             const response = await fetch(`/api/property/${propertyId}`);
-            if (!response.ok) throw new Error("İlan verileri alınamadı.");
+            if (!response.ok) throw new Error("Could not load listing data.");
             const data = await response.json();
             
             openEmbeddedForm(); // Önce dahili sarmalayıcıyı aç
@@ -290,36 +291,36 @@
             }
         } catch (error) {
             console.error("Hata:", error);
-            alert("İlan bilgileri yüklenirken bir hata oluştu.");
+            alert("An error occurred while loading the listing details.");
         }
     }
 
     /* DOĞRULANMIŞ AMİN SILME PANELI - DURUMU PASSIVE YAPAR */
     async function deleteAdminProperty(propertyId) {
-        if (confirm("Bu ilanı pasif konuma getirmek (silmek) istediğinize emin misiniz?")) {
+        if (confirm("Are you sure you want to deactivate (remove) this listing?")) {
             try {
                 // adminpy.txt üzerindeki @router.post("/delete-property/{property_id}") yapısına bağlandı!
                 const response = await fetch(`/admin/delete-property/${propertyId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ 'status': 'passive' })
+                    body: new URLSearchParams({ 'status': 'inactive' })
                 });
                 if (response.ok) {
-                    alert("İlan başarıyla pasif duruma getirildi.");
+                    alert("Listing successfully set to inactive.");
                     window.location.reload();
                 } else {
-                    alert("İlan durumu güncellenemedi.");
+                    alert("Could not update the listing status.");
                 }
             } catch (error) {
                 console.error("Hata:", error);
-                alert("Bağlantı hatası.");
+                alert("Connection error.");
             }
         }
     }
 
     /* DOĞRULANMIŞ ADMIN ONAYLAMA PANELI - DURUMU ACTIVE YAPAR */
     async function approveAdminProperty(propertyId) {
-        if (confirm("Bu ilanı tekrar aktif hale getirmek istiyor musunuz?")) {
+        if (confirm("Do you want to make this listing active again?")) {
             try {
                 // adminpy.txt üzerindeki @router.post("/approve-property/{property_id}") yapısına bağlandı!
                 const response = await fetch(`/admin/approve-property/${propertyId}`, {
@@ -328,14 +329,14 @@
                     body: new URLSearchParams({ 'status': 'active' })
                 });
                 if (response.ok) {
-                    alert("İlan başarıyla aktif hale getirildi.");
+                    alert("Listing successfully activated.");
                     window.location.reload();
                 } else {
-                    alert("İlan durumu güncellenemedi.");
+                    alert("Could not update the listing status.");
                 }
             } catch (error) {
                 console.error("Hata:", error);
-                alert("Bağlantı hatası.");
+                alert("Connection error.");
             }
         }
     }

@@ -4,9 +4,9 @@
 <div class="admin-sales-logs-container" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; padding: 10px;">
     
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 3px solid #333; padding-bottom: 10px;">
-        <h3 style="margin: 0; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Aktif Satış & Finans Portföy Günlükleri</h3>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Active Sales & Finance Portfolio Logs</h3>
         <span style="padding: 6px 12px; font-size: 12px; font-weight: bold; background: #b3e5fc; border: 2px solid #333; border-radius: 4px; text-transform: uppercase;">
-            Toplam Portföy: {{ sales|length }}
+            Total Portfolio: {{ sales|length }}
         </span>
     </div>
 
@@ -17,7 +17,7 @@
 
     <div id="sales-logs-wrapper" style="background: #ffffff; border: 2px solid #333; border-radius: 8px; box-shadow: 5px 5px 0px #333; padding: 20px; margin-bottom: 20px;">
         <h4 style="margin-top: 0; margin-bottom: 15px; font-size: 15px; font-weight: 600; text-transform: uppercase; border-bottom: 2px dashed #ccc; padding-bottom: 8px; color: #555;">
-            Sistem Finansal Akış Dağılım Çizelgesi
+            System Financial Flow Distribution Chart
         </h4>
         
         <div style="overflow-x: auto;">
@@ -64,7 +64,7 @@
                     {% else %}
                     <tr>
                         <td colspan="7" style="text-align: center; padding: 30px; color: #777; font-style: italic; background: #fafafa; border-radius: 6px;">
-                            Şu anda sistemde listelenecek aktif portföy verisi bulunamadı.
+                            There is currently no active portfolio data to list in the system.
                         </td>
                     </tr>
                     {% endfor %}
@@ -75,9 +75,9 @@
 
     {% if sales|length > 13 %}
     <div class="pagination-control-bar" style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 25px;">
-        <button type="button" onclick="changeSalesPage(-1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">Geri</button>
+        <button type="button" onclick="changeSalesPage(-1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">Back</button>
         <span id="sales-page-num" style="font-weight: bold; font-size: 14px;">Sayfa 1 / 1</span>
-        <button type="button" onclick="changeSalesPage(1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">İleri</button>
+        <button type="button" onclick="changeSalesPage(1)" style="background: #ffffff; border: 2px solid #333; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;">Next</button>
     </div>
     {% endif %}
 

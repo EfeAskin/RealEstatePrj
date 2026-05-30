@@ -11,3 +11,15 @@ Thumbs.db
 
 # Eğer kullanıyorsan veri tabanı yedekleri (isteğe bağlı)
 *.bak
+
+# Generated graph output (graphify) - excluded from code review
+graphify-out/
+
+.claude
+.claude/
+
+# Local-only helper/maintenance scripts and migrations — not pushed to GitHub
+scripts/
+
+# Claude Code project instructions (local only)
+CLAUDE.md

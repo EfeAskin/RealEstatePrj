@@ -85,7 +85,7 @@ def get_properties_from_db(include_passive: bool = False):
                 FROM properties p
                 LEFT JOIN agents a ON p.agent_id = a.id
                 LEFT JOIN users u ON a.id = u.id
-                WHERE (p.status != 'passive' AND p.status != 'approving') OR p.status IS NULL 
+                WHERE (LOWER(TRIM(p.status)) NOT IN ('inactive', 'passive', 'pending', 'approving')) OR p.status IS NULL
                 ORDER BY p.id DESC
             """
             cur.execute(query)
@@ -282,13 +282,13 @@ def update_property_in_db(property_id, data: dict):
             conn.close()
 
 def delete_property_from_db(property_id):
-    """İlanı veritabanından tamamen silmez, durumunu 'passive' yapar (Soft Delete)"""
+    """İlanı veritabanından tamamen silmez, durumunu 'inactive' yapar (Soft Delete)"""
     conn = get_db_connection()
     if not conn: return False
     try:
         cur = conn.cursor()
         clean_id = int(property_id) if str(property_id).isdigit() else property_id
-        cur.execute("UPDATE properties SET status = 'passive' WHERE id = %s", (clean_id,))
+        cur.execute("UPDATE properties SET status = 'inactive' WHERE id = %s", (clean_id,))
         conn.commit()
         cur.close()
         return True
@@ -377,7 +377,7 @@ def add_full_property_to_db(agent_id, data: dict, selected_features: list, image
         """
         
         price_val = data['price']
-        status_val = data.get('status', 'approving')
+        status_val = data.get('status', 'pending')
         clean_agent_id = int(agent_id) if str(agent_id).isdigit() else agent_id
         
         guests_input = data.get('guests') if data.get('guests') is not None else data.get('guest_count')
@@ -446,7 +446,7 @@ def add_new_property_to_db(agent_id, data: dict):
                 description, image, agent_id, status, beds, baths, guests, open_m2
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        status_val = data.get('status', 'approving')
+        status_val = data.get('status', 'pending')
         clean_agent_id = int(agent_id) if str(agent_id).isdigit() else agent_id
         
         guests_input = data.get('guests') if data.get('guests') is not None else data.get('guest_count')
@@ -522,7 +522,7 @@ def get_agent_with_properties(agent_id):
             cur.close()
             return None, []
             
-        props_query = "SELECT * FROM properties WHERE agent_id = %s AND (status != 'passive' OR status IS NULL) ORDER BY id DESC"
+        props_query = "SELECT * FROM properties WHERE agent_id = %s AND (LOWER(TRIM(status)) NOT IN ('inactive', 'passive') OR status IS NULL) ORDER BY id DESC"
         cur.execute(props_query, (clean_agent_id,))
         properties_list = cur.fetchall()
         
@@ -559,7 +559,7 @@ def get_pending_approvals_from_db():
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
         # Metin araması yerine doğrudan gerçek 'status' kolonuna bakıyoruz
-        cur.execute("SELECT * FROM properties WHERE LOWER(TRIM(status)) = 'approving' ORDER BY id DESC")
+        cur.execute("SELECT * FROM properties WHERE LOWER(TRIM(status)) IN ('pending', 'approving') ORDER BY id DESC")
         pending_list = cur.fetchall()
         cur.close()
         conn.close()

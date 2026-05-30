@@ -332,7 +332,7 @@
                 </div>
                 <i class="fa-solid fa-headset text-pink" style="font-size: 16px;"></i>
             </div>
-            <div class="main-count text-pink">{{ open_tickets_count }} <span style="font-size:14px; font-weight:600; color:#718096;">Açık</span></div>
+            <div class="main-count text-pink">{{ open_tickets_count }} <span style="font-size:14px; font-weight:600; color:#718096;">Open</span></div>
             <div class="sub-stats-list">
                 <div class="sub-stat-item text-red">
                     <span>Urgent Priority:</span>
@@ -357,7 +357,7 @@
                 </div>
                 <i class="fa-solid fa-eye text-blue" style="font-size: 16px;"></i>
             </div>
-            <div class="main-count">{{ daily_visits_count }} <span style="font-size:13px; color:#718096; font-weight:500;">/ bugün</span></div>
+            <div class="main-count">{{ daily_visits_count }} <span style="font-size:13px; color:#718096; font-weight:500;">/ today</span></div>
             <div class="sub-stats-list">
                 <div class="sub-stat-item text-blue">
                     <span>Unique Visitors:</span>
@@ -480,24 +480,24 @@
 
 <script>
     function approveProperty(id) {
-        if(confirm("Bu ilanın sitede canlıya alınmasını onaylıyor musunuz?")) {
+        if(confirm("Do you approve publishing this listing live on the site?")) {
             const row = event.target.closest('tr');
             row.style.background = '#e6fffa';
             setTimeout(() => {
                 row.remove();
-                alert("İlan başarıyla onaylandı ve yayınlandı. ID: " + id);
+                alert("Listing approved and published successfully. ID: " + id);
             }, 400);
         }
     }
 
     function rejectProperty(id) {
-        const reason = prompt("Lütfen ilanın reddedilme nedenini giriniz (Emlakçıya bildirilecektir):");
+        const reason = prompt("Please enter the reason for rejecting the listing (it will be sent to the agent):");
         if(reason) {
             const row = event.target.closest('tr');
             row.style.background = '#fff5f5';
             setTimeout(() => {
                 row.remove();
-                alert("İlan reddedildi. ID: " + id);
+                alert("Listing rejected. ID: " + id);
             }, 400);
         }
     }

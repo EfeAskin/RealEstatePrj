@@ -61,16 +61,9 @@ def get_synchronized_db_connection():
     Böylece veritabanı tarafında tetiklenen NOW() veya CURRENT_TIMESTAMP 
     fonksiyonları saat hatası üretmez.
     """
-    conn = get_db_connection()
-    if conn:
-        try:
-            cur = conn.cursor()
-            # PostgreSQL oturum saat dilimini kalıcı olarak Türkiye saatine set ediyoruz
-            cur.execute("SET TIME ZONE 'Europe/Istanbul';")
-            cur.close()
-        except Exception as e:
-            print(f"Veritabanı Zaman Dilimi Senkronizasyon Hatası: {e}")
-    return conn
+    # Saat dilimi artık bağlantı havuzunda (db/connection.py options) bağlantı anında
+    # ayarlanıyor; burada ayrı bir round-trip yapmaya gerek yok (her istekte ~0.17s tasarruf).
+    return get_db_connection()
 
 
 # --- 2. YOL İÇİN EKLENEN SİHİRLİ SESSIONS / COOKIE KORUMA FONKSİYONU ---
@@ -272,5 +265,56 @@ def update_property_status(property_id: str, status: str) -> bool:
 
 
 def soft_delete_property_in_db(property_id: str) -> bool:
-    """İlanı sistemden tamamen silmek yerine durumunu 'passive' çekerek soft-delete uygular."""
-    return update_property_status(property_id, "passive")
+    """İlanı sistemden tamamen silmek yerine durumunu 'inactive' çekerek soft-delete uygular."""
+    return update_property_status(property_id, "inactive")
+
+
+# --- YETKİLENDİRME (AUTHORIZATION) YARDIMCILARI ---
+# Bu fonksiyonlar istek kimliğini KÜRESEL (global) değişkenlerden değil, doğrudan
+# çağıran katmandan gelen istek/çerez bilgisinden türetmek için eklenmiştir.
+# Böylece eşzamanlı (concurrent) isteklerde rol/sahiplik karışması engellenir.
+
+def get_property_owner_id(property_id):
+    """Bir ilanın sahibi olan agent_id değerini döner (yoksa None)."""
+    conn = get_synchronized_db_connection()
+    if not conn:
+        return None
+    try:
+        cur = conn.cursor()
+        clean_id = int(property_id) if str(property_id).isdigit() else property_id
+        cur.execute("SELECT agent_id FROM properties WHERE id = %s", (clean_id,))
+        row = cur.fetchone()
+        cur.close()
+        return row[0] if row else None
+    except Exception as e:
+        print(f"get_property_owner_id hatası: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_user_from_request(request):
+    """FastAPI Request nesnesindeki 'user_id' çerezinden o ANKİ isteğin kullanıcısını çeker.
+    Küresel state yerine kullanılmalıdır (eşzamanlılık güvenliği)."""
+    try:
+        cookie_id = request.cookies.get("user_id")
+    except Exception:
+        cookie_id = None
+    if not cookie_id:
+        return None
+    return get_user_from_cookie(cookie_id)
+
+
+def is_admin_user(user) -> bool:
+    return bool(user) and user.get("role") == "admin"
+
+
+def can_user_modify_property(user, property_id) -> bool:
+    """Kullanıcı admin ise VEYA ilanın sahibi agent ise True döner."""
+    if not user:
+        return False
+    if user.get("role") == "admin":
+        return True
+    owner_id = get_property_owner_id(property_id)
+    return owner_id is not None and str(owner_id) == str(user.get("id"))

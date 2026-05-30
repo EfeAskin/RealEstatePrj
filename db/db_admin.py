@@ -1,6 +1,26 @@
 from psycopg2.extras import RealDictCursor
 from db.connection import get_db_connection
 
+# PERFORMANS: 'properties.embedding' (vector(1536)) kolonu satır başına ~6KB'dır ve
+# admin liste ekranlarında hiç kullanılmaz. "SELECT p.*" onu da çektiği için 83 ilanlık
+# liste ~1.6s sürüyordu; bu kolonu hariç tutmak süreyi ~0.4s'ye düşürür.
+# Kolon listesini bir kez hesaplayıp önbelleğe alıyoruz (şema nadiren değişir).
+_PROP_COLS_CACHE = None
+
+
+def _property_columns(cur, alias="p", exclude=("embedding",)):
+    """Return 'p.col1, p.col2, ...' for the properties table, minus heavy/unused columns."""
+    global _PROP_COLS_CACHE
+    if _PROP_COLS_CACHE is None:
+        cur.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'properties' ORDER BY ordinal_position"
+        )
+        _PROP_COLS_CACHE = [r[0] if not isinstance(r, dict) else r["column_name"]
+                            for r in cur.fetchall()]
+    cols = [c for c in _PROP_COLS_CACHE if c not in exclude]
+    return ", ".join(f"{alias}.{c}" for c in cols)
+
 def get_pending_approvals_from_db():
     """Onay bekleyen ilanlar ya da emlakçı başvuruları havuzu (İleride genişletilebilir)"""
     conn = get_db_connection()
@@ -68,10 +88,10 @@ def update_property_status(property_id: str, status: str) -> bool:
 
 def soft_delete_property_in_db(property_id: str) -> bool:
     """
-    İlanı veritabanından kalıcı olarak silmek yerine durumunu 'passive' yapar.
+    İlanı veritabanından kalıcı olarak silmek yerine durumunu 'inactive' yapar.
     Router katmanındaki çağrı alternatifi için tam güvence sağlar.
     """
-    return update_property_status(property_id, "passive")
+    return update_property_status(property_id, "inactive")
 
 
 # --- FRONTEND HATALARI VE MODAL BAĞLANTISI İÇİN EKLENEN YENİ FONKSİYONLAR ---
@@ -87,12 +107,15 @@ def get_all_properties_with_agents_from_db():
     cur = None
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # KESİN ÇÖZÜM: Sorgu p.user_id veya a.user_id yerine tamamen senin belirttiğin ve 
+
+        # PERFORMANS: "p.*" yerine embedding hariç kolonları seç (bkz. _property_columns).
+        prop_cols = _property_columns(cur, alias="p")
+
+        # KESİN ÇÖZÜM: Sorgu p.user_id veya a.user_id yerine tamamen senin belirttiğin ve
         # Neonda onayladığın gerçek şemaya göre (properties.agent_id -> agents.id -> users.id) bağlanır.
         # Eğer agents tablosu bypass edilip doğrudan users tablosuna bağlanıyorsa COALESCE ve LEFT JOIN zinciri tam koruma sağlar.
-        query = """
-            SELECT p.*, 
+        query = f"""
+            SELECT {prop_cols},
                    COALESCE(u.first_name || ' ' || u.last_name, u2.first_name || ' ' || u2.last_name, 'Sistem Yöneticisi') as agent_name,
                    COALESCE(u.first_name, u2.first_name, '') as agent_first_name,
                    COALESCE(u.last_name, u2.last_name, '') as agent_last_name,

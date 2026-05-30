@@ -16,7 +16,7 @@
     </div>
     
     <div class="mini-chat-property-bar">
-        <span class="property-tag">İlan:</span>
+        <span class="property-tag">Listing:</span>
         <span id="chat-property-title" class="property-title-text">Property Title</span>
     </div>
 
@@ -24,7 +24,7 @@
     </div>
 
     <div class="mini-chat-footer">
-        <input type="text" id="mini-chat-input" class="mini-chat-input-field" placeholder="Mesajınızı yazın..." autocomplete="off">
+        <input type="text" id="mini-chat-input" class="mini-chat-input-field" placeholder="Type your message..." autocomplete="off">
         <button id="mini-chat-send-btn" class="chat-send-btn">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
@@ -267,7 +267,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function handleChatTrigger(e, buttonElement) {
     if (currentUserId === 'null' || !currentUserId) {
-        alert("Mesaj göndermek için lütfen önce giriş yapınız.");
+        alert("Please log in first to send a message.");
         return;
     }
 
@@ -284,7 +284,7 @@ function handleChatTrigger(e, buttonElement) {
     }
 
     if (String(currentUserId) === String(agentId)) {
-        alert("Kendi ilanınız için kendinize mesaj gönderemezsiniz.");
+        alert("You cannot message yourself about your own listing.");
         return;
     }
 
@@ -309,7 +309,7 @@ async function initiateMiniChatRoom(propertyId) {
             await loadMiniChatHistory(currentActiveRoomId);
             connectMiniChatWebSocket();
         } else {
-            alert(result.error || "Sohbet odası başlatılamadı.");
+            alert(result.error || "Could not start the chat room.");
         }
     } catch (err) {
         console.error("Sohbet başlatma hatası:", err);
@@ -323,7 +323,7 @@ async function loadMiniChatHistory(roomId) {
     
     try {
         const response = await fetch(`/chat/room/${roomId}/messages`);
-        if (!response.ok) throw new Error("Geçmiş yüklenemedi");
+        if (!response.ok) throw new Error("Could not load history");
         
         const messages = await response.json();
         if (Array.isArray(messages)) {
@@ -419,7 +419,7 @@ function sendMiniChatMessage() {
             if (miniChatSocket && miniChatSocket.readyState === WebSocket.OPEN) {
                 executeSend();
             } else {
-                alert("Soket bağlantısı kurulamadı. Lütfen sayfayı yenileyip tekrar deneyin.");
+                alert("Could not establish a socket connection. Please refresh the page and try again.");
             }
         }, 500);
         return;

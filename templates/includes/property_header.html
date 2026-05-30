@@ -143,7 +143,7 @@
                 class="detail-fav-trigger-btn {% if favorite_ids is defined and property.id in favorite_ids %}is-favorite{% endif %}" 
                 id="detailFavBtn" 
                 data-property-id="{{ property.id }}" 
-                title="{% if favorite_ids is defined and property.id in favorite_ids %}Favorilerden Kaldır{% else %}Favorilere Ekle{% endif %}">
+                title="{% if favorite_ids is defined and property.id in favorite_ids %}Remove from Favorites{% else %}Add to Favorites{% endif %}">
             <i class="{% if favorite_ids is defined and property.id in favorite_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
         </button>
     </div>
@@ -165,7 +165,8 @@
                 <img src="{{ '/static/' + img_url if 'http' not in img_url else img_url }}" alt="{{ property.name if property.name is defined else '' }}">
             {% endfor %}
         {% else %}
-            <img src="/static/htmlfotos/{{ property.image_url if property.image_url else (property.image if property.image is defined else 'placeholder.jpg') }}" alt="{{ property.name if property.name is defined else '' }}">
+            {% set _himg = property.image_url or property.image or 'htmlfotos/placeholder.jpg' %}
+            <img src="{% if _himg.startswith('http') %}{{ _himg }}{% elif '/' in _himg %}/static/{{ _himg }}{% else %}/static/htmlfotos/{{ _himg }}{% endif %}" alt="{{ property.name if property.name is defined else '' }}" onerror="this.src='/static/htmlfotos/placeholder.jpg'">
         {% endif %}
     </div>
 
@@ -253,7 +254,7 @@
                             if (icon) {
                                 icon.className = "fa-solid fa-heart";
                             }
-                            favBtn.title = "Favorilerden Kaldır";
+                            favBtn.title = "Remove from Favorites";
                         }
                     }
                 } catch (err) {
@@ -272,11 +273,11 @@
                 if (isFav) {
                     favBtn.classList.remove('is-favorite');
                     if (icon) icon.className = "fa-regular fa-heart";
-                    favBtn.title = "Favorilere Ekle";
+                    favBtn.title = "Add to Favorites";
                 } else {
                     favBtn.classList.add('is-favorite');
                     if (icon) icon.className = "fa-solid fa-heart";
-                    favBtn.title = "Favorilerden Kaldır";
+                    favBtn.title = "Remove from Favorites";
                 }
                 
                 try {
@@ -285,29 +286,29 @@
 
                     // İstek başarısız olursa veya sunucu hata dönerse UI durumunu geri al (Rollback)
                     if (!response.ok || !data.success) {
-                        alert(data.message || "Favori işlemi gerçekleştirilemedi.");
+                        alert(data.message || "The favorite action could not be completed.");
                         if (isFav) {
                             favBtn.classList.add('is-favorite');
                             if (icon) icon.className = "fa-solid fa-heart";
-                            favBtn.title = "Favorilerden Kaldır";
+                            favBtn.title = "Remove from Favorites";
                         } else {
                             favBtn.classList.remove('is-favorite');
                             if (icon) icon.className = "fa-regular fa-heart";
-                            favBtn.title = "Favorilere Ekle";
+                            favBtn.title = "Add to Favorites";
                         }
                     }
                 } catch (err) {
                     console.error("Favori toggle hatası:", err);
-                    alert("Sunucuyla bağlantı kurulamadı.");
+                    alert("Could not connect to the server.");
                     // Bağlantı kopması durumunda rollback
                     if (isFav) {
                         favBtn.classList.add('is-favorite');
                         if (icon) icon.className = "fa-solid fa-heart";
-                        favBtn.title = "Favorilerden Kaldır";
+                        favBtn.title = "Remove from Favorites";
                     } else {
                         favBtn.classList.remove('is-favorite');
                         if (icon) icon.className = "fa-regular fa-heart";
-                        favBtn.title = "Favorilere Ekle";
+                        favBtn.title = "Add to Favorites";
                     }
                 }
             });

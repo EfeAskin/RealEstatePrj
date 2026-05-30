@@ -19,12 +19,29 @@ RealEstatePrj/
 │   │   └── style.css      # Stylesheets (Glassmorphism)
 │   ├── htmlfotos/         # Project Images, Backgrounds & Property Photos
 │   └── js/                # Client-side Logic & Modals
-├── routers/               # Modular Route Handlers
-│   ├── __init__.py        # Makes the directory a Python package
-│   ├── auth.py            # Authentication Logic (Login/Register)
-│   ├── profile.py         # Profile & Role Management Logic
-│   └── listings.py        # Property Listings & Management Logic
-├── services/              # Logic for specific business operations
+├── routers/               # Modular Route Handlers (registered in backend.py)
+│   ├── auth.py            # Authentication (Login/Register)
+│   ├── profile.py         # Profile & Role Management
+│   ├── listings.py        # Property listings, detail page & reviews
+│   ├── property_filter.py # /search — filtering + AI semantic search
+│   ├── ai_search.py       # JSON AI endpoints (/api/ai-search, recommendations)
+│   ├── admin.py           # Admin panel (approval, user/property management)
+│   ├── favorites.py       # Saved properties
+│   ├── chat.py / messages.py / pages.py / properties.py
+├── db/                    # Data layer
+│   ├── connection.py      # Neon pooled connection (ThreadedConnectionPool)
+│   ├── properties.py      # Property/agent SQL data-access
+│   └── auth_user.py / db_admin.py
+├── database.py            # Re-exports db/* + request-scoped auth helpers
+├── services/              # AI layer (semantic search + recommendations)
+│   ├── openai_client.py   # The ONLY module that calls OpenAI
+│   ├── query_pipeline.py  # 4-stage search (normalize→GPT→filter→pgvector rerank)
+│   ├── constraint_extractor.py / document_builder.py / recommendations.py
+│   ├── place_aliases.py / currency.py / ai_config.py
+├── scripts/               # Migrations + data tooling
+│   ├── migrations/        # *.sql schema migrations (run via run_migration.py)
+│   ├── backfill_embeddings.py    # generate property embeddings
+│   └── import_from_other_db.py / enrich_from_101evler.py
 └── templates/             # Jinja2 HTML Templates
     ├── setrole.html       # Landing / Role Selection
     ├── choose_role.html   # Alternative Role Selection
@@ -89,7 +106,9 @@ The application will be available at: http://127.0.0.1:8000
 🔑 Core Technologies & Logic
 ➢ Backend (FastAPI): Modular architecture using APIRouter for clean code separation. Routes are organized into auth, profile, and listings.
 
-➢ Database (Neon DB): Utilizing Neon Serverless PostgreSQL for reliable, scalable, and cloud-based data persistence. Gone are the days of in-memory storage; we now use a real-world relational database.
+➢ Database (Neon DB): Utilizing Neon Serverless PostgreSQL (with the `pgvector` extension) for reliable, scalable, cloud-based persistence. Access goes through a pooled connection (`db/connection.py`, `ThreadedConnectionPool`) — there is no in-memory storage.
+
+➢ AI Layer (OpenAI + pgvector): Natural-language semantic search and content-based recommendations. Queries are normalized, parsed into structured hard-filters by GPT, filtered in SQL, then re-ranked by vector similarity (pgvector HNSW). All OpenAI access is isolated in `services/openai_client.py` and degrades gracefully to keyword search when no API key is configured.
 
 ➢ Security: Passwords are never stored in plain text. Utilizing bcrypt for hashing and verification.
 
@@ -103,7 +122,7 @@ The application will be available at: http://127.0.0.1:8000
 
 ➢Authentication & Role Logic:
 
-    ➥In-Memory Store: Currently uses database.py for persistence (Migration to SQL planned).
+    ➥Persistence: All users/sessions live in Neon PostgreSQL; cookie-based sessions (`user_id` cookie) resolved per request via `database.get_user_from_request()`.
 
     ➥Dynamic Profiles: Profile fields adapt based on the role (e.g., IBAN/Company for Agents).
 
@@ -159,13 +178,19 @@ git push origin demoproject
 
 [x] Modular Routing & Component-Based UI (Includes).
 
-[ ] Multiple Photo Upload & Infinite Image Slider. 
+[x] Multiple Photo Upload & Property Image Gallery.
 
-[ ] Advanced Search Engine & Property Filtering.
+[x] Advanced Search Engine & Property Filtering.
 
-[ ] Agent Property Upload & Management Portal.
+[x] Agent Property Upload & Management Portal.
 
-[ ] Administrative Approval & Verification Workflow.
+[x] Administrative Approval & Verification Workflow.
+
+[x] AI Semantic Search & Recommendation Engine (OpenAI + pgvector).
+
+[ ] Onboarding preferences UI to seed personalized recommendations.
+
+[ ] Behavioral recommendation signals (views/favorites weighting).
 
 📧 Contact
 For any technical queries or architectural discussions, please reach out to the repository owner.

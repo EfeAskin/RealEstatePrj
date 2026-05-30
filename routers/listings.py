@@ -188,7 +188,7 @@ async def add_property_full(
         clean_is_trade = "Hayır"
 
     # 2. Veritabanına Gönderilecek Veri
-    # YENİ İŞ MANTIĞI UYUMU: Yeni ilanlar ilk kayıt esnasında onay havuzuna ('approving') düşecek şekilde statülendirildi.
+    # YENİ İŞ MANTIĞI UYUMU: Yeni ilanlar ilk kayıt esnasında onay havuzuna ('pending') düşecek şekilde statülendirildi.
     property_data = {
         "name": title, 
         "title": title,          # Geriye dönük uyumluluk güvencesi
@@ -218,7 +218,7 @@ async def add_property_full(
         "deed_status": deed_status, 
         "dues": dues,
         "description": description,
-        "status": "approving"
+        "status": "pending"
     }
 
     # Özellik ID'lerinin tam sayı formatında db katmanına iletilmesini garanti altına alıyoruz
@@ -443,11 +443,12 @@ async def about_page(request: Request):
     })
 
 @router.get("/property/{property_id}", response_class=HTMLResponse)
-async def property_detail(request: Request, property_id: str):
+def property_detail(request: Request, property_id: str):
     conn = db.get_db_connection()
     property_item = None
     property_features = []
     property_images = []
+    property_reviews = []
     agent_info = None
 
     # Neon DB Tipi için güvenli ID temizleme yapılıyor
@@ -457,24 +458,61 @@ async def property_detail(request: Request, property_id: str):
         try:
             from psycopg2.extras import RealDictCursor
             cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute("SELECT * FROM properties WHERE id = %s", (clean_id,))
-            property_item = cur.fetchone()
-            
-            if property_item:
-                feature_query = """
-                    SELECT f.name 
-                    FROM features f
-                    JOIN property_features pf ON f.id = pf.feature_id
-                    WHERE pf.property_id = %s
+            # TEK SORGU: mülk + emlakçı + özellik adları (array) + resim url'leri (array).
+            # Önceki 5 sorgu (+ ayrı bağlantı) yerine 1 round-trip.
+            cur.execute(
                 """
-                cur.execute(feature_query, (clean_id,))
-                property_features = [r['name'] for r in cur.fetchall()]
+                SELECT p.*,
+                    u.id AS _agent_uid,
+                    (u.first_name || ' ' || u.last_name) AS _agent_full_name,
+                    u.email AS _agent_email, u.profile_image AS _agent_profile_image,
+                    a.agency_name AS _agency_name, a.phone_number AS _agent_phone,
+                    a.agent_image AS _agent_image, a.is_verified AS _agent_verified,
+                    a.joined_at AS _agent_joined,
+                    COALESCE((SELECT array_agg(f.name) FROM property_features pf
+                              JOIN features f ON f.id = pf.feature_id
+                              WHERE pf.property_id = p.id), ARRAY[]::varchar[]) AS _feature_names,
+                    COALESCE((SELECT array_agg(image_url ORDER BY id) FROM property_images
+                              WHERE property_id = p.id), ARRAY[]::text[]) AS _image_urls
+                FROM properties p
+                LEFT JOIN agents a ON p.agent_id = a.id
+                LEFT JOIN users u ON a.id = u.id
+                WHERE p.id = %s
+                """,
+                (clean_id,),
+            )
+            row = cur.fetchone()
 
-                cur.execute("SELECT image_url FROM property_images WHERE property_id = %s", (clean_id,))
-                property_images = [r['image_url'] for r in cur.fetchall()]
-                
-                agent_info = db.get_property_agent_info(clean_id)
-            
+            if row:
+                row = dict(row)
+                property_features = list(row.pop("_feature_names", None) or [])
+                property_images = list(row.pop("_image_urls", None) or [])
+                _aid = row.pop("_agent_uid", None)
+                if _aid is not None:
+                    agent_info = {
+                        "id": _aid,
+                        "full_name": row.get("_agent_full_name"),
+                        "email": row.get("_agent_email"),
+                        "agency_name": row.get("_agency_name"),
+                        "phone_number": row.get("_agent_phone"),
+                        "agent_image": row.get("_agent_image"),
+                        "is_verified": row.get("_agent_verified"),
+                        "joined_at": row.get("_agent_joined"),
+                        "profile_image": row.get("_agent_profile_image"),
+                    }
+                # geçici emlakçı kolonlarını mülk sözlüğünden temizle
+                for _k in ("_agent_full_name", "_agent_email", "_agent_profile_image",
+                           "_agency_name", "_agent_phone", "_agent_image",
+                           "_agent_verified", "_agent_joined"):
+                    row.pop(_k, None)
+                property_item = row
+
+                cur.execute(
+                    "SELECT * FROM reviews WHERE property_id = %s ORDER BY created_at DESC NULLS LAST, id DESC",
+                    (clean_id,),
+                )
+                property_reviews = [dict(r) for r in cur.fetchall()]
+
             cur.close()
             conn.close()
         except Exception as e:
@@ -484,24 +522,75 @@ async def property_detail(request: Request, property_id: str):
         return RedirectResponse(url="/home")
 
     property_item = process_property_data(property_item.copy())
+    property_item["reviews"] = property_reviews
 
     fields = ["room_count", "net_m2", "gross_m2", "dues", "property_type"]
     for field in fields:
         if property_item.get(field) is None:
             property_item[field] = "N/A" if field in ["room_count", "property_type"] else 0
-        
+
+    # İstek-kapsamlı kullanıcı (global state yerine -> threadpool güvenli)
+    _detail_user = db.get_user_from_request(request)
+    _detail_role = _detail_user.get("role", "guest") if _detail_user else "guest"
     return templates.TemplateResponse(request, "desktop1.html", {
-        "request": request, 
+        "request": request,
         "property": property_item,
         "property_features": property_features,
         "property_images": property_images,
         "agent": agent_info,
-        "role": db.current_user_role, 
-        "user": getattr(db, 'current_user_data', None),
-        "current_user_data": getattr(db, 'current_user_data', None),
-        "current_user_role": db.current_user_role,
+        "role": _detail_role,
+        "user": _detail_user,
+        "current_user_data": _detail_user,
+        "current_user_role": _detail_role,
         "page_id": "search"
     })
+
+@router.post("/add-review")
+async def add_review(
+    request: Request,
+    property_id: int = Form(...),
+    comment: str = Form(...),
+    avg_rating: float = Form(0),
+):
+    """İlan detay sayfasındaki 'Send Review' formunu işler. Eksik olan bu endpoint
+    404 (detail: Not Found) hatasına sebep oluyordu."""
+    user = db.get_user_from_request(request)
+    if user:
+        user_name = ((user.get("first_name") or "") + " " + (user.get("last_name") or "")).strip() \
+            or user.get("email") or "Misafir"
+    else:
+        user_name = "Misafir"
+
+    rating_main = avg_rating if avg_rating and avg_rating > 0 else None
+
+    conn = db.get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO reviews (property_id, user_name, comment, rating_main, created_at) "
+                "VALUES (%s, %s, %s, %s, NOW())",
+                (property_id, user_name, comment, rating_main),
+            )
+            # İlanın ortalama puanını yeniden hesapla
+            cur.execute(
+                "UPDATE properties SET avg_rating = "
+                "(SELECT ROUND(AVG(rating_main), 1) FROM reviews WHERE property_id = %s AND rating_main IS NOT NULL) "
+                "WHERE id = %s",
+                (property_id, property_id),
+            )
+            conn.commit()
+            cur.close()
+        except Exception as e:
+            print(f"Yorum ekleme hatası: {e}")
+            if conn:
+                conn.rollback()
+        finally:
+            conn.close()
+
+    # POST -> GET yönlendirmesi: kullanıcı ilana geri döner ve yorumunu görür
+    return RedirectResponse(url=f"/property/{property_id}", status_code=303)
+
 
 # --- MY PROPERTIES (PROFİL) ROUTER'I ---
 

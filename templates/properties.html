@@ -7,12 +7,12 @@
             <h2 style="margin: 0; color: #1e293b; font-weight: 800; font-size: 1.6rem;">
                 <i class="fa-solid fa-house-chimney-user" style="margin-right: 12px; color: #FF7226;"></i>My Properties
             </h2>
-            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">Toplam <b>{{ properties|length }}</b> ilanınız listeleniyor.</p>
+            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">You have <b>{{ properties|length }}</b> listings in total.</p>
         </div>
         
         <div style="display: flex; align-items: center; gap: 12px;">
             <button type="button" onclick="openEmbeddedForm()" style="display: flex; align-items: center; gap: 8px; background: #FF7226; color: white; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 700; text-decoration: none; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 114, 38, 0.2);">
-                <i class="fa-solid fa-plus"></i> <span>Yeni İlan Ekle</span>
+                <i class="fa-solid fa-plus"></i> <span>Add New Listing</span>
             </button>
 
             <div style="display: flex; background: #f1f5f9; padding: 6px; border-radius: 14px; gap: 5px; border: 1px solid #e2e8f0;">
@@ -26,15 +26,15 @@
         {% for property in properties %}
         <div class="property-card" data-status="{{ property.status }}" onclick="window.location.href='/property/{{ property.id }}'" style="cursor: pointer;">
             <div class="card-image-wrap">
-                <img src="{{ url_for('static', path='/' + (property.image if property.image else 'htmlfotos/placeholder.jpg')) }}" alt="Property">
+                <img src="{% if property.image and property.image.startswith('http') %}{{ property.image }}{% else %}{{ url_for('static', path='/' + (property.image if property.image else 'htmlfotos/placeholder.jpg')) }}{% endif %}" alt="Property" onerror="this.src='/static/htmlfotos/placeholder.jpg'">
                 
-                <span class="status-badge {% if property.status == 'active' %}badge-available{% elif property.status == 'approving' %}badge-approving{% elif property.status == 'passive' %}badge-rented{% else %}badge-deleted{% endif %}" style="left: 15px;">
+                <span class="status-badge {% if property.status == 'active' %}badge-available{% elif property.status == 'pending' %}badge-approving{% elif property.status == 'inactive' %}badge-rented{% else %}badge-deleted{% endif %}" style="left: 15px;">
                     {% if property.status == 'active' %}
                         AVAILABLE
-                    {% elif property.status == 'approving' %}
-                        APPROVING
-                    {% elif property.status == 'passive' %}
-                        RENTED
+                    {% elif property.status == 'pending' %}
+                        PENDING
+                    {% elif property.status == 'inactive' %}
+                        INACTIVE
                     {% else %}
                         DELETED
                     {% endif %}
@@ -82,10 +82,10 @@
             <div style="background: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 10px 20px rgba(0,0,0,0.05);">
                 <i class="fa-solid fa-house-chimney-medical" style="font-size: 2rem; color: #cbd5e1;"></i>
             </div>
-            <h3 style="color: #1e293b; margin-bottom: 10px;">Henüz bir ilanınız yok</h3>
-            <p style="color: #64748b; max-width: 300px; margin: 0 auto 25px auto;">Portföyünüzü oluşturmaya başlamak için hemen yeni bir ilan ekleyin.</p>
+            <h3 style="color: #1e293b; margin-bottom: 10px;">You don't have any listings yet</h3>
+            <p style="color: #64748b; max-width: 300px; margin: 0 auto 25px auto;">Add a new listing now to start building your portfolio.</p>
             <button type="button" onclick="openEmbeddedForm()" style="display: inline-block; padding: 12px 25px; background: #FF7226; color: white; border: none; border-radius: 12px; text-decoration: none; font-weight: 700; transition: 0.3s; cursor: pointer;">
-                İlk İlanı Oluştur
+                Create Your First Listing
             </button>
         </div>
         {% endfor %}
@@ -281,7 +281,7 @@
     async function editProperty(propertyId) {
         try {
             const response = await fetch(`/api/property/${propertyId}`);
-            if (!response.ok) throw new Error("İlan verileri alınamadı.");
+            if (!response.ok) throw new Error("Could not load listing data.");
             const data = await response.json();
             
             openEmbeddedForm(); // Önce dahili sarmalayıcıyı aç
@@ -313,13 +313,13 @@
             }
         } catch (error) {
             console.error("Hata:", error);
-            alert("İlan bilgileri yüklenirken bir hata oluştu.");
+            alert("An error occurred while loading the listing details.");
         }
     }
 
     /* İlan Silme Fonksiyonu */
     async function deleteProperty(propertyId) {
-        if (confirm("Bu ilanı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+        if (confirm("Are you sure you want to permanently delete this listing? This action cannot be undone.")) {
             try {
                 const response = await fetch(`/api/property/delete/${propertyId}`, {
                     method: 'DELETE'
@@ -327,14 +327,14 @@
                 const result = await response.json();
                 
                 if (response.ok && (result.status === "success" || result.success)) {
-                    alert("İlan başarıyla silindi.");
+                    alert("Listing successfully deleted.");
                     window.location.reload();
                 } else {
-                    alert(result.message || "İlan silinirken bir hata oluştu.");
+                    alert(result.message || "An error occurred while deleting the listing.");
                 }
             } catch (error) {
                 console.error("Silme hatası:", error);
-                alert("Bağlantı hatası nedeniyle işlem gerçekleştirilemedi.");
+                alert("The operation could not be completed due to a connection error.");
             }
         }
     }

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Form, status, File, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import database as db
 import os
@@ -358,7 +358,7 @@ async def my_favourites(request: Request):
             query = """
                 SELECT p.* FROM properties p
                 JOIN user_favorites f ON p.id = f.property_id
-                WHERE f.user_id = %s AND p.status != 'passive'
+                WHERE f.user_id = %s AND LOWER(TRIM(p.status)) NOT IN ('inactive', 'passive')
             """
             cur.execute(query, (current_user_id,))
             rows = cur.fetchall()
@@ -530,8 +530,14 @@ async def agent_payment_page(request: Request):
 # --- DİNAMİK İLAN SİLME / KALDIRMA API ENDPOINT ---
 
 @router.delete("/api/property/delete/{property_id}")
-async def delete_property(property_id: int):
+async def delete_property(property_id: int, request: Request):
     """properties.html üzerinden tetiklenen dinamik ilan silme işleyicisi"""
+    # --- YETKİ KONTROLÜ: Sadece admin veya ilanın sahibi agent silebilir ---
+    current_user = db.get_user_from_request(request)
+    if not current_user:
+        return JSONResponse(status_code=401, content={"status": "error", "message": "Bu işlem için giriş yapmalısınız."})
+    if not db.can_user_modify_property(current_user, property_id):
+        return JSONResponse(status_code=403, content={"status": "error", "message": "Bu ilanı silme yetkiniz yok."})
     try:
         success = db.delete_property_from_db(property_id)
         if success:
@@ -553,16 +559,13 @@ async def calculate_booking(
     nights: int = Form(...), 
     guest_info: str = Form(...)
 ):
-    properties_from_db = []
+    # İlanı doğrudan ID ile çek — get_properties_from_db() 'approving'/'passive'
+    # ilanları dışladığı için booking'de "Mülk bulunamadı" siyah sayfasına yol açıyordu.
+    property_item = None
     try:
-        properties_from_db = db.get_properties_from_db()
+        property_item = db.get_property_by_id_from_db(property_id)
     except Exception as e:
-        print(f"Properties listeleme hatası: {e}")
-        
-    property_item = next((p for p in properties_from_db if str(p.get('id')) == property_id), None)
-    
-    if not property_item and hasattr(db, "properties"):
-        property_item = db.properties.get(property_id)
+        print(f"Booking mülk arama hatası: {e}")
 
     if not property_item:
         return {"error": "Mülk bulunamadı"}

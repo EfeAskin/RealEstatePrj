@@ -338,6 +338,11 @@ async def initiate_chat(property_id: int, request: Request):
             conn.close()
             return JSONResponse(status_code=404, content={"error": "İlan bulunamadı."})
             
+        if prop.get("agent_id") is None:
+            cur.close()
+            conn.close()
+            return JSONResponse(status_code=400, content={"error": "Bu ilan için bir emlakçı atanmamış."})
+
         agent_id = int(prop.get("agent_id"))
         if user_id == agent_id:
             cur.close()

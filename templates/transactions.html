@@ -438,14 +438,14 @@
 <script>
     // Demo İptal Buton Fonksiyonları
     function cancelTransaction(id) {
-        if(confirm("Bu işlem talebini iptal etmek istediğinize emin misiniz? Arka planda talebiniz silinecektir.")) {
-            alert("Talep başarıyla iptal edildi (Demo).");
+        if(confirm("Are you sure you want to cancel this transaction request? Your request will be deleted in the background.")) {
+            alert("Request successfully cancelled (Demo).");
         }
     }
 
     function terminateRental(id) {
-        if(confirm("Aktif kiralama sözleşmesini sonlandırmak için emlakçıya bildirim göndermek istiyor musunuz?")) {
-            alert("Fesih ve sonlandırma talebi emlakçıya iletildi (Demo).");
+        if(confirm("Do you want to send a notification to the agent to terminate the active rental contract?")) {
+            alert("The termination request has been sent to the agent (Demo).");
         }
     }
 </script>

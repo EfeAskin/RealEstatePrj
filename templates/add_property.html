@@ -4,7 +4,7 @@
         <div class="modal-header" style="padding: 18px 0 !important; border-bottom: 2px solid #f1f5f9 !important; display: flex; justify-content: space-between; align-items: center;">
             <div class="header-title">
                 <i id="modalHeaderIcon" class="fas fa-plus-circle" style="color: #ff8c00;"></i>
-                <span id="modalHeaderTitle">Yeni İlan Ekle</span>
+                <span id="modalHeaderTitle">Add New Listing</span>
             </div>
             <span class="close-modal" onclick="closeEmbeddedPropertyForm()" style="font-size: 24px; cursor: pointer; color: #94a3b8; transition: 0.2s;">&times;</span>
         </div>
@@ -16,24 +16,24 @@
             <div class="modal-body-embedded">
                 
                 <div class="form-section">
-                    <label class="section-title">Temel Bilgiler</label>
+                    <label class="section-title">Basic Information</label>
                     <div class="form-row multi-input" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
                         <div class="input-group" style="flex: 2; min-width: 200px;">
-                            <span>İlan Başlığı</span>
-                            <input type="text" name="name" id="input_title" placeholder="Örn: Citrus Garden Villa" required>
+                            <span>Listing Title</span>
+                            <input type="text" name="name" id="input_title" placeholder="e.g. Citrus Garden Villa" required>
                         </div>
                         <div class="input-group" style="flex: 1; min-width: 150px;">
-                            <span>Konum</span>
-                            <input type="text" name="location" id="input_location" placeholder="Örn: Lefke, North Cyprus" required>
+                            <span>Location</span>
+                            <input type="text" name="location" id="input_location" placeholder="e.g. Lefke, North Cyprus" required>
                         </div>
                     </div>
                     <div class="form-row multi-input" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
                         <div class="input-group" style="flex: 1.5; min-width: 120px;">
-                            <span>Fiyat</span>
+                            <span>Price</span>
                             <input type="number" name="monthly_price" id="input_price" placeholder="0.00" step="0.01" required>
                         </div>
                         <div class="input-group" style="flex: 0.5; min-width: 80px;">
-                            <span>Para Birimi</span>
+                            <span>Currency</span>
                             <select name="currency_code" id="select_currency_code">
                                 <option value="TRY">₺ (TRY)</option>
                                 <option value="GBP">£ (GBP)</option>
@@ -42,10 +42,10 @@
                             </select>
                         </div>
                         <div class="input-group" style="flex: 1; min-width: 100px;">
-                            <span>İlan Türü</span>
+                            <span>Listing Type</span>
                             <select name="listing_type" id="select_listing_type">
-                                <option value="sale">Satılık</option>
-                                <option value="rent">Kiralık</option>
+                                <option value="sale">For Sale</option>
+                                <option value="rent">For Rent</option>
                             </select>
                         </div>
                     </div>
@@ -54,23 +54,23 @@
                         <div class="input-group" style="flex: 1; min-width: 180px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
                             <input type="hidden" name="is_credit" id="hidden_is_credit" value="Hayır">
                             <input type="checkbox" id="input_is_credit" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #ff8c00;" onchange="document.getElementById('hidden_is_credit').value = this.checked ? 'Evet' : 'Hayır'">
-                            <span style="margin: 0; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;" onclick="document.getElementById('input_is_credit').click()">Krediye Uygun</span>
+                            <span style="margin: 0; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;" onclick="document.getElementById('input_is_credit').click()">Credit Eligible</span>
                         </div>
                         <div class="input-group" style="flex: 1; min-width: 180px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
                             <input type="hidden" name="is_trade" id="hidden_is_trade" value="Hayır">
                             <input type="checkbox" id="input_is_trade" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #ff8c00;" onchange="document.getElementById('hidden_is_trade').value = this.checked ? 'Evet' : 'Hayır'">
-                            <span style="margin: 0; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;" onclick="document.getElementById('input_is_trade').click()">Takasa Uygun</span>
+                            <span style="margin: 0; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;" onclick="document.getElementById('input_is_trade').click()">Swap Available</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-section">
-                    <label class="section-title">Teknik Detaylar</label>
+                    <label class="section-title">Technical Details</label>
                     <div class="form-grid">
                         <div class="input-group">
-                            <span>Emlak Tipi</span>
+                            <span>Property Type</span>
                             <select name="property_type" id="select_property_type">
-                                <optgroup label="Residential (Konut)">
+                                <optgroup label="Residential">
                                     <option value="Apartment">Apartment / Flat</option>
                                     <option value="Studio">Studio Apartment (1+0)</option>
                                     <option value="Penthouse">Penthouse</option>
@@ -81,14 +81,14 @@
                                     <option value="Bungalow">Bungalow</option>
                                     <option value="Gated Community">Gated Community House</option>
                                 </optgroup>
-                                <optgroup label="Commercial (Ticari)">
+                                <optgroup label="Commercial">
                                     <option value="Office">Office</option>
                                     <option value="Retail">Retail Shop</option>
                                     <option value="Warehouse">Warehouse</option>
                                     <option value="Hotel">Hotel / Resort</option>
                                     <option value="Business Center">Business Center</option>
                                 </optgroup>
-                                <optgroup label="Land (Arsa / Arazi)">
+                                <optgroup label="Land">
                                     <option value="Residential Land">Residential Land</option>
                                     <option value="Commercial Land">Commercial Land</option>
                                     <option value="Agricultural">Agricultural Land</option>
@@ -96,47 +96,47 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <span>Brüt Alan (m²)</span>
+                            <span>Gross Area (m²)</span>
                             <input type="number" name="gross_m2" id="input_gross_m2" value="0" placeholder="168">
                         </div>
                         <div class="input-group">
-                            <span>Net Alan (m²)</span>
+                            <span>Net Area (m²)</span>
                             <input type="number" name="net_m2" id="input_net_m2" value="0" placeholder="135">
                         </div>
                         <div class="input-group">
-                            <span>Açık Alan / Teras (m²)</span>
+                            <span>Open Area / Terrace (m²)</span>
                             <input type="number" name="open_m2" id="input_open_m2" placeholder="30" value="0" min="0">
                         </div>
                         <div class="input-group">
-                            <span>Bina Yaşı</span>
+                            <span>Building Age</span>
                             <input type="text" name="building_age" id="input_building_age" value="-" placeholder="5-10 Years">
                         </div>
                         <div class="input-group">
-                            <span>Isıtma</span>
+                            <span>Heating</span>
                             <input type="text" name="heating" id="input_heating" value="-" placeholder="Air Conditioning">
                         </div>
                         <div class="input-group">
-                            <span>Tapu Durumu (Deed)</span>
-                            <input type="text" name="deed_status" id="input_deed_status" value="-" placeholder="Müstakil Tapu">
+                            <span>Deed Status</span>
+                            <input type="text" name="deed_status" id="input_deed_status" value="-" placeholder="Freehold Title">
                         </div>
                         <div class="input-group">
-                            <span>Oda Sayısı</span>
-                            <input type="text" name="room_count" id="input_room_count" value="0" placeholder="Örn: 3+2 veya 4">
+                            <span>Number of Rooms</span>
+                            <input type="text" name="room_count" id="input_room_count" value="0" placeholder="e.g. 3+2 or 4">
                         </div>
                         <div class="input-group">
-                            <span>Yatak Sayısı (Beds)</span>
+                            <span>Beds</span>
                             <input type="number" name="beds" id="input_beds" value="0" placeholder="3" min="0">
                         </div>
                         <div class="input-group">
-                            <span>Banyo Sayısı (Baths)</span>
+                            <span>Baths</span>
                             <input type="number" name="baths" id="input_baths" value="0" placeholder="2" min="0">
                         </div>
                         <div class="input-group">
-                            <span>Misafir Kapasitesi</span>
+                            <span>Guest Capacity</span>
                             <input type="number" name="guests" id="input_guests" value="0" placeholder="4" min="0">
                         </div>
                         <div class="input-group">
-                            <span>Aidat (Maintenance)</span>
+                            <span>Maintenance Fee</span>
                             <input type="number" name="dues" id="input_dues" value="0" step="0.01" placeholder="0">
                         </div>
                     </div>
@@ -145,31 +145,31 @@
                         <div class="input-group" style="flex: 1; min-width: 150px; display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
                             <input type="hidden" name="is_site" id="hidden_is_site" value="Hayır">
                             <input type="checkbox" id="input_is_site" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #ff8c00;" onchange="toggleSiteNameField(this.checked)">
-                            <span style="margin: 0; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;" onclick="document.getElementById('input_is_site').click()">Site İçerisinde</span>
+                            <span style="margin: 0; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;" onclick="document.getElementById('input_is_site').click()">In Complex</span>
                         </div>
                         <div class="input-group" style="flex: 2; min-width: 200px;" id="siteNameGroup">
-                            <span>Site Adı</span>
-                            <input type="text" name="site_name" id="input_site_name" placeholder="Site adı girilmedi" value="-" disabled style="background: #f1f5f9; color: #94a3b8;">
+                            <span>Complex Name</span>
+                            <input type="text" name="site_name" id="input_site_name" placeholder="Complex name not entered" value="-" disabled style="background: #f1f5f9; color: #94a3b8;">
                         </div>
                     </div>
                 </div>
 
                 <div class="form-row-flexible" style="display: flex; flex-wrap: wrap; gap: 20px;">
                     <div class="form-section flex-1" style="flex: 1; min-width: 250px;">
-                        <label class="section-title">Özellikler (Features)</label>
+                        <label class="section-title">Features</label>
                         <div id="featuresContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 12px; min-height: 50px;">
-                            <span style="color: #ff8c00;">Özellikler yükleniyor...</span>
+                            <span style="color: #ff8c00;">Loading features...</span>
                         </div>
                     </div>
 
                     <div class="form-section flex-1" style="flex: 1; min-width: 250px;">
-                        <label class="section-title">Fotoğraflar</label>
+                        <label class="section-title">Photos</label>
                         <div style="display: flex; gap: 12px; align-items: flex-start;">
                             
                             <div class="cover-upload-square" onclick="document.getElementById('singleCoverImage').click()" style="width: 100px; height: 100px; border: 2.5px dashed #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748b; background: #f8fafc; transition: 0.2s; position: relative; overflow: hidden; flex-shrink: 0;">
                                 <div id="coverUploadPlaceholder" style="text-align: center; padding: 5px;">
                                     <i class="fas fa-camera" style="font-size: 18px; color: #ff8c00; margin-bottom: 4px;"></i>
-                                    <span style="display: block; font-size: 10px; font-weight: 700;">Kapak Seç</span>
+                                    <span style="display: block; font-size: 10px; font-weight: 700;">Select Cover</span>
                                 </div>
                                 <img id="coverImagePreview" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;">
                                 <input type="file" name="single_cover" id="singleCoverImage" accept="image/*" onchange="handleSingleCoverPreview(event)" style="display:none">
@@ -177,7 +177,7 @@
 
                             <div class="upload-zone-compact" onclick="document.getElementById('propertyImages').click()" style="flex: 1; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; padding: 10px;">
                                 <i class="fas fa-images" style="font-size: 20px; margin-bottom: 5px;"></i>
-                                <span style="font-size: 12px; font-weight: 600;">Resim Ekle (Çoklu Seçim)</span>
+                                <span style="font-size: 12px; font-weight: 600;">Add Images (Multiple)</span>
                                 <input type="file" name="main_image" id="propertyImages" accept="image/*" multiple onchange="handleImagePreview(event)" style="display:none">
                             </div>
 
@@ -187,14 +187,14 @@
                 </div>
 
                 <div class="form-section last-section" style="border-bottom: none; margin-bottom: 20px;">
-                    <label class="section-title">İlan Açıklaması</label>
-                    <textarea name="description" id="textarea_description" rows="3" placeholder="İlan hakkında detaylı bilgi girin..."></textarea>
+                    <label class="section-title">Listing Description</label>
+                    <textarea name="description" id="textarea_description" rows="3" placeholder="Enter detailed information about the listing..."></textarea>
                 </div>
             </div>
 
             <div class="modal-footer" style="padding: 15px 0 !important; border-top: 1px solid #f1f5f9 !important; display: flex; justify-content: flex-end; gap: 12px; background: #fff;">
-                <button type="button" class="btn-secondary" onclick="closeEmbeddedPropertyForm()">Vazgeç</button>
-                <button type="submit" class="btn-primary" id="submitBtn">İlanı Kaydet ve Yayınla</button>
+                <button type="button" class="btn-secondary" onclick="closeEmbeddedPropertyForm()">Cancel</button>
+                <button type="submit" class="btn-primary" id="submitBtn">Save and Publish Listing</button>
             </div>
         </form>
     </div>
@@ -289,12 +289,12 @@ async function fetchFeaturesData() {
     
     try {
         const response = await fetch('/api/features?cache_buster=' + Date.now());
-        if (!response.ok) throw new Error('API hatası');
+        if (!response.ok) throw new Error('API error');
         globalFeaturesData = await response.json();
         renderFeatures(globalFeaturesData);
     } catch (err) {
-        console.error("Özellik yükleme hatası:", err);
-        container.innerHTML = '<span style="color: red;">Yükleme Hatası!</span>';
+        console.error("Feature loading error:", err);
+        container.innerHTML = '<span style="color: red;">Loading Error!</span>';
     }
 }
 
@@ -310,7 +310,7 @@ function renderFeatures(features) {
             </label>
         `).join('');
     } else {
-        container.innerHTML = '<span style="color: #94a3b8;">Hiç özellik bulunamadı.</span>';
+        container.innerHTML = '<span style="color: #94a3b8;">No features found.</span>';
     }
 }
 
@@ -386,7 +386,7 @@ function handleImagePreview(event) {
             wrapper.appendChild(img);
             
             const label = document.createElement('span');
-            label.innerText = `Aktif ${index + 1}`;
+            label.innerText = `New ${index + 1}`;
             label.style.cssText = "position:absolute; bottom:0; left:0; right:0; background:rgba(71,85,105,0.8); color:white; font-size:9px; text-align:center; border-radius:0 0 6px 6px;";
             wrapper.appendChild(label);
             
@@ -397,7 +397,7 @@ function handleImagePreview(event) {
 }
 
 function fillFormForEdit(data) {
-    document.getElementById('modalHeaderTitle').innerText = "İlanı Düzenle / Güncelle";
+    document.getElementById('modalHeaderTitle').innerText = "Edit / Update Listing";
     const headerIcon = document.getElementById('modalHeaderIcon');
     if(headerIcon) headerIcon.className = "fas fa-pen-to-square";
 
@@ -483,12 +483,12 @@ function fillFormForEdit(data) {
         }
     }
 
-    document.getElementById('submitBtn').innerText = "Değişiklikleri Kaydet";
+    document.getElementById('submitBtn').innerText = "Save Changes";
     openEmbeddedPropertyForm();
 }
 
 function resetPropertyForm() {
-    document.getElementById('modalHeaderTitle').innerText = "Yeni İlan Ekle";
+    document.getElementById('modalHeaderTitle').innerText = "Add New Listing";
     const headerIcon = document.getElementById('modalHeaderIcon');
     if(headerIcon) headerIcon.className = "fas fa-plus-circle";
     
@@ -498,7 +498,7 @@ function resetPropertyForm() {
         form.reset();
     }
     document.getElementById('formPropertyId').value = "";
-    document.getElementById('submitBtn').innerText = "İlanı Kaydet ve Yayınla";
+    document.getElementById('submitBtn').innerText = "Save and Publish Listing";
     
     // Kapak önizleme sıfırlama
     document.getElementById('coverImagePreview').style.display = 'none';
@@ -523,7 +523,7 @@ document.getElementById('addPropertyForm').onsubmit = async (e) => {
     const btn = document.getElementById('submitBtn');
     const originalText = btn.innerText;
     btn.disabled = true;
-    btn.innerText = "Yükleniyor...";
+    btn.innerText = "Loading...";
 
     const formData = new FormData(e.target);
     const targetAction = e.target.action;
@@ -543,7 +543,7 @@ document.getElementById('addPropertyForm').onsubmit = async (e) => {
                 if (response.redirected) {
                     window.location.href = response.url;
                 } else {
-                    alert("Hata: " + (result.error || result.message || "İşlem gerçekleştirilemedi"));
+                    alert("Error: " + (result.error || result.message || "The operation could not be completed"));
                     btn.disabled = false;
                     btn.innerText = originalText;
                 }
@@ -552,12 +552,12 @@ document.getElementById('addPropertyForm').onsubmit = async (e) => {
             if (response.ok) {
                 window.location.href = "/profile/properties";
             } else {
-                throw new Error("Sunucu yanıt vermedi.");
+                throw new Error("The server did not respond.");
             }
         }
     } catch (err) {
         console.error(err);
-        alert("Hata: " + err.message);
+        alert("Error: " + err.message);
         btn.disabled = false;
         btn.innerText = originalText;
     }

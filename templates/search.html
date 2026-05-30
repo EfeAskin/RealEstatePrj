@@ -336,7 +336,7 @@
         {% for property in properties %}
         <div class="card" onclick="window.location.href='/property/{{ property.id }}'">
             <div style="position: relative;">
-                <img src="/{{ property.image }}" alt="{{ property.name }}">
+                <img src="{% if property.image and property.image.startswith('http') %}{{ property.image }}{% else %}/{{ property.image }}{% endif %}" alt="{{ property.name }}">
                 <div style="position: absolute; top: 15px; right: 15px; z-index: 10;">
                     {% if property.is_sale %}
                         <span class="badge-sale">{{ property.display_type }}</span>
@@ -408,7 +408,7 @@
                 <label for="select_property_type">Property Type</label>
                 <select id="select_property_type" class="filter-control">
                     <option value="">All Types</option>
-                    <optgroup label="Residential (Konut)">
+                    <optgroup label="Residential">
                         <option value="Apartment">Apartment / Flat</option>
                         <option value="Studio">Studio Apartment (1+0)</option>
                         <option value="Penthouse">Penthouse</option>
@@ -419,14 +419,14 @@
                         <option value="Bungalow">Bungalow</option>
                         <option value="Gated Community">Gated Community House</option>
                     </optgroup>
-                    <optgroup label="Commercial (Ticari)">
+                    <optgroup label="Commercial">
                         <option value="Office">Office</option>
                         <option value="Retail">Retail Shop</option>
                         <option value="Warehouse">Warehouse</option>
                         <option value="Hotel">Hotel / Resort</option>
                         <option value="Business Center">Business Center</option>
                     </optgroup>
-                    <optgroup label="Land (Arsa / Arazi)">
+                    <optgroup label="Land">
                         <option value="Residential Land">Residential Land</option>
                         <option value="Commercial Land">Commercial Land</option>
                         <option value="Agricultural">Agricultural Land</option>
@@ -485,7 +485,7 @@
             </div>
 
             <div class="filter-input-group">
-                <label>Gross Square Meter (Brüt m²)</label>
+                <label>Gross Square Meter (m²)</label>
                 <div style="display: flex; gap: 10px;">
                     <input type="number" id="filterMinGrossM2" placeholder="Min m²" class="filter-control">
                     <input type="number" id="filterMaxGrossM2" placeholder="Max m²" class="filter-control">
@@ -493,7 +493,7 @@
             </div>
 
             <div class="filter-input-group">
-                <label>Open Area (Açık Alan m²)</label>
+                <label>Open Area (m²)</label>
                 <div style="display: flex; gap: 10px;">
                     <input type="number" id="filterMinOpenM2" placeholder="Min m²" class="filter-control">
                     <input type="number" id="filterMaxOpenM2" placeholder="Max m²" class="filter-control">
@@ -516,9 +516,9 @@
                 <label for="filterHeating">Heating</label>
                 <select id="filterHeating" class="filter-control">
                     <option value="">Any Heating</option>
-                    <option value="Air Conditioner">Air Conditioner (Klima)</option>
-                    <option value="Central Heating">Central Heating (Merkezi Isıtma)</option>
-                    <option value="Underfloor Heating">Underfloor Heating (Yerden Isıtma)</option>
+                    <option value="Air Conditioner">Air Conditioner</option>
+                    <option value="Central Heating">Central Heating</option>
+                    <option value="Underfloor Heating">Underfloor Heating</option>
                     <option value="No Heating">None</option>
                 </select>
             </div>
@@ -548,7 +548,7 @@
             <div class="filter-input-group">
                 <label style="font-weight: 700; color: var(--theme-color); font-size: 15px; margin-bottom: 5px;"><i class="fas fa-tags"></i> Property Features</label>
                 
-                <div class="features-section-title">Özellikler (Features)</div>
+                <div class="features-section-title">Features</div>
                 <div class="features-grid-container">
                     {% if all_features %}
                         {% for feature in all_features %}
@@ -565,11 +565,11 @@
             <div class="filter-input-group" style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #f1f5f9;">
                 <label style="font-weight: 700; color: #1e293b; font-size: 14px;"><i class="fas fa-hand-holding-usd"></i> Financial & Structure Options</label>
                 
-                <div class="features-section-title">Yatırım ve Altyapı Durumu</div>
+                <div class="features-section-title">Investment & Infrastructure Status</div>
                 <div class="features-grid-container">
-                    <label class="feature-checkbox-label"><input type="checkbox" id="filterIsSite" value="yes"> Site İçinde (In Complex)</label>
-                    <label class="feature-checkbox-label"><input type="checkbox" id="filterCredit" value="yes"> Krediye Uygun (Credit Eligible)</label>
-                    <label class="feature-checkbox-label"><input type="checkbox" id="filterSwap" value="yes"> Takasa Uygun (Swap Available)</label>
+                    <label class="feature-checkbox-label"><input type="checkbox" id="filterIsSite" value="yes"> In Complex</label>
+                    <label class="feature-checkbox-label"><input type="checkbox" id="filterCredit" value="yes"> Credit Eligible</label>
+                    <label class="feature-checkbox-label"><input type="checkbox" id="filterSwap" value="yes"> Swap Available</label>
                 </div>
             </div>
         </div>
