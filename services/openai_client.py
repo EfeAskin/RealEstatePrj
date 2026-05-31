@@ -146,6 +146,105 @@ def chat_reply(user_message: str, filters: dict, count: int,
         return None
 
 
+# ----------------------------------------------------- relevance / intent gate
+
+_answerable_cache: dict = {}
+
+
+def is_answerable(query: str) -> Optional[bool]:
+    """Decide whether our residential catalog could plausibly answer this query.
+
+    Robust where a cosine floor fails: short legit queries ('pool', 'sea view') score
+    as low as nonsense, but the model still knows they're real property features while
+    'castle with a private beach' / 'spaceship' are not. Returns True/False, or None
+    on any failure. Fail-OPEN by design (callers treat None as answerable) so the gate
+    never wrongly hides results when the model is unavailable. Cached per query.
+    """
+    if not query:
+        return None
+    if query in _answerable_cache:
+        return _answerable_cache[query]
+    client = _get_client()
+    if client is None:
+        return None
+    system = (
+        "You are a gatekeeper for a North Cyprus / Turkey RESIDENTIAL real-estate search "
+        "(apartments, villas, penthouses, houses, land; rent or sale). Decide if the user's "
+        "query is a plausible request our listings could satisfy. "
+        "answerable=true for anything about ordinary homes, their features, locations or price "
+        "(e.g. 'sea view', 'pool', 'penthouse', '2+1 in Kyrenia', 'cheap rental near the beach'). "
+        "answerable=false ONLY for things we do not list or that are jokes/fiction "
+        "(e.g. 'castle with a private beach', 'haunted dungeon', 'spaceship on mars', 'a unicorn'). "
+        'When unsure, answer true. Return ONLY JSON: {"answerable": true|false}.'
+    )
+    try:
+        resp = client.chat.completions.create(
+            model=ai_config.CHAT_MODEL,
+            messages=[{"role": "system", "content": system},
+                      {"role": "user", "content": query}],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        ans = bool((json.loads(resp.choices[0].message.content) or {}).get("answerable", True))
+        _answerable_cache[query] = ans
+        return ans
+    except Exception as e:
+        print(f"[openai_client] is_answerable failed: {e}")
+        return None
+
+
+# ----------------------------------------------------- LLM rerank (precision pass)
+
+def rerank_results(query: str, items: List[dict]) -> Optional[List[int]]:
+    """Cross-encoder-style rerank: reorder candidate listings by relevance to the query.
+
+    `items` is [{"id": int, "text": str}] — one compact summary per candidate (title +
+    key specs). Returns the ids ordered best->worst (a subset/permutation of the input
+    ids), or None on any failure so the caller keeps the hybrid order. Grounded: GPT only
+    reorders the candidates we give it — it cannot invent listings or facts.
+    """
+    client = _get_client()
+    if client is None or not query or not items:
+        return None
+    valid_ids = {it["id"] for it in items}
+    listing = "\n".join(f'{it["id"]}: {it["text"]}' for it in items)
+    system = (
+        "You are a real-estate search reranker. Given a user query and a numbered list of "
+        "candidate listings, order the listing ids from MOST to LEAST relevant to the query "
+        "(consider type, location, size, budget and described features). Return ONLY JSON: "
+        '{"order": [ids...]}. Use only ids from the candidates, no duplicates, no new ids.'
+    )
+    try:
+        resp = client.chat.completions.create(
+            model=ai_config.CHAT_MODEL,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": f"Query: {query}\n\nCandidates:\n{listing}"},
+            ],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        raw = json.loads(resp.choices[0].message.content) or {}
+        order = raw.get("order")
+        if not isinstance(order, list):
+            return None
+        # Keep only known ids, drop dupes, then append any the model omitted (stable).
+        seen, ranked = set(), []
+        for x in order:
+            try:
+                i = int(x)
+            except (TypeError, ValueError):
+                continue
+            if i in valid_ids and i not in seen:
+                seen.add(i)
+                ranked.append(i)
+        ranked.extend(it["id"] for it in items if it["id"] not in seen)
+        return ranked or None
+    except Exception as e:
+        print(f"[openai_client] rerank_results failed: {e}")
+        return None
+
+
 # ---------------------------------------------------------------- vector helper
 
 def to_vector_literal(vec: List[float]) -> str:

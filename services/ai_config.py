@@ -21,6 +21,30 @@ CANDIDATE_LIMIT = 200      # Stage 3 candidate-set ceiling before vector rerank
 MIN_RESULTS = 10           # below this, Stage 3 relaxes constraints and retries
 DEFAULT_TOP_K = 20         # Stage 4 results returned
 
+# --- Hybrid ranking weights (Stage 4) ---
+# Vector similarity stays DOMINANT so semantic search is never diluted; the rest
+# are nudges/tie-breakers. Tune here without touching SQL. See
+# query_pipeline.build_hybrid_order_sql.
+HYBRID_W_VECTOR = 0.70     # cosine similarity to the query embedding
+HYBRID_W_LEXICAL = 0.15    # full-text keyword overlap (ts_rank) on name+description
+HYBRID_W_RATING = 0.10     # avg_rating / 5
+HYBRID_W_RECENCY = 0.05    # mild freshness boost for newer listings
+
+# --- LLM rerank (Stage 5, optional precision pass) ---
+# After hybrid ranking, optionally let GPT reorder the top-N candidates by their
+# relevance to the query (cross-encoder style). Fails soft to the hybrid order.
+# Costs ONE extra gpt call per search; flip off here to trade precision for latency.
+LLM_RERANK = os.getenv("LLM_RERANK", "1") not in ("0", "false", "False", "")
+LLM_RERANK_TOP_N = 20      # how many top hybrid hits to hand the reranker
+
+# --- Relevance gate (reject off-topic queries) ---
+# Vector search always returns the *nearest* rows, even for off-topic queries
+# ("castle", "spaceship"). A cosine floor can't fix this — short legit queries
+# ('pool', 'sea view') score as low as nonsense — so for a PURELY semantic query
+# (no hard filters) we ask the LLM whether our catalog can plausibly answer it, and
+# return empty when it can't. Skipped whenever concrete filters are present.
+RELEVANCE_GATE = os.getenv("RELEVANCE_GATE", "1") not in ("0", "false", "False", "")
+
 
 def ai_enabled() -> bool:
     """True only when an API key is present AND the openai SDK is importable.
