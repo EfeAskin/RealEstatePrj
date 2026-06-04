@@ -22,6 +22,11 @@ from db.connection import get_db_connection
 from services import ai_config, openai_client, query_pipeline
 from routers.property_filter import process_property_data
 
+# Eğer arkadaşının openai_client servisi içinde doğrudan openai kütüphanesine erişim yoksa 
+# ve ham api çağrısı gerekirse diye standart client importu:
+from openai import OpenAI
+import os
+
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
@@ -279,36 +284,104 @@ def ai_chat(request: Request, body: ChatRequest):
     # Persist the user's turn first, so history is correct even if the pipeline errors.
     _save_message(user_id, conversation_id, "user", message)
 
-    # min_results=1: only broaden the search when *nothing* matched the user's hard
-    # constraints, so we respect budget/location instead of padding with off-target rows.
-    out = query_pipeline.semantic_search(message, top_k=CHAT_TOP_K, user_id=user_id,
-                                         min_results=1)
-    rows = out.get("results", [])
-    cards = [_slim_card(r) for r in rows]
-    count = len(cards)
-    dropped = out.get("dropped", [])
-
-    reply = None
+    # --- 🧠 LLM TABANLI AKILLI NİYET (INTENT) DENETLEYİCİSİ ---
+    is_real_estate_query = True
     if ai_config.ai_enabled():
-        reply = openai_client.chat_reply(
-            message,
-            out.get("filters", {}),
-            count,
-            sample_titles=[c["name"] for c in cards],
-            dropped=dropped,
-        )
-    if not reply:
-        reply = _fallback_reply(message, count)
+        try:
+            # Arkadaşının env yapılandırmasından anahtarı alıp geçici bir hızlı denetleyici oluşturuyoruz
+            api_key = os.getenv("OPENAI_API_KEY")
+            if api_key:
+                checker_client = OpenAI(api_key=api_key)
+                intent_check = checker_client.chat.completions.create(
+                    model="gpt-4o-mini", # Son derece hızlı ve ucuz bir model seçtik sunumu yavaşlatmaz
+                    messages=[
+                        {"role": "system", "content": (
+                            "You are an intent detection referee. Analyze the user's message. "
+                            "If the user is asking to search for a property, apartment, villa, house, rent, sale, "
+                            "specifying a location or budget in Cyprus, reply ONLY with the word 'SEARCH'. "
+                            "If the user is doing small talk, asking general questions (e.g. 'nasılsın', 'what day is it', 'weather', 'selam'), "
+                            "or anything unrelated to a real estate inventory database query, reply ONLY with the word 'TALK'."
+                        )},
+                        {"role": "user", "content": message}
+                    ],
+                    max_tokens=5,
+                    temperature=0.0
+                )
+                verdict = intent_check.choices[0].message.content.strip().upper()
+                if "TALK" in verdict:
+                    is_real_estate_query = False
+        except Exception as e:
+            print(f"[aichat] Intent detection failed, defaulting to search flow: {e}")
 
-    # Persist the assistant's reply (with the cards it surfaced) for replay on reload.
+    # --- 🔀 AKIŞ YÖNLENDİRME ---
+    if not is_real_estate_query:
+        # Eğer kullanıcı ilan aramıyorsa, veritabanına haksız yere dokunmuyoruz ve kart üretmiyoruz.
+        cards = []
+        count = 0
+        mode = "semantic"
+        filters = {}
+        
+        # Doğrudan kullanıcıyla dertleşen, çok dilli akıllı bir serbest LLM yanıtı üretiyoruz.
+        try:
+            api_key = os.getenv("OPENAI_API_KEY")
+            talk_client = OpenAI(api_key=api_key)
+            response = talk_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": (
+                        "You are a sophisticated, friendly, and elite real estate AI consultant for CypInvest in Cyprus. "
+                        "The user is making small talk or asking an off-topic question. "
+                        "Respond to their question naturally and politely in the SAME language they used (TR, EN, or Mixed). "
+                        "After giving a clever or friendly response, always elegantly guide them back to real estate in Cyprus. "
+                        "Keep it short (max 2 sentences)."
+                    )},
+                    {"role": "user", "content": message}
+                ],
+                max_tokens=150,
+                temperature=0.7
+            )
+            reply = response.choices[0].message.content.strip()
+        except Exception:
+            reply = "I'm here to help you find your dream property in Cyprus! What kind of home are you looking for today?"
+            
+    else:
+        # Orijinal İlan Arama Akışı (Arkadaşının kodu - Dokunulmadı)
+        out = query_pipeline.semantic_search(message, top_k=CHAT_TOP_K, user_id=user_id, min_results=1)
+        rows = out.get("results", [])
+        cards = [_slim_card(r) for r in rows]
+        count = len(cards)
+        dropped = out.get("dropped", [])
+        mode = out.get("mode")
+        filters = {k: v for k, v in (out.get("filters") or {}).items() if v not in (None, "")}
+
+        reply = None
+        if ai_config.ai_enabled():
+            context_injection = (
+                "IMPORTANT DIRECTIVE FOR SYSTEM INTELLIGENCE:\n"
+                "1. Language Adaptation: Detect the user's language pattern. If they use Turkish, reply in Turkish. "
+                "If they use English, reply in English. If they mix both languages (e.g., 'Girne'de 2+1 apartment with sea view'), "
+                "respond in a highly natural, fluent blending or in the dominant language preference, acting as an elite Cyprus agent.\n"
+                "2. Framing: Act as an upscale real estate agent. Keep the reply to ONE single polite, short framing sentence introducing the matching properties."
+            )
+            reply = openai_client.chat_reply(
+                f"{context_injection}\n\nUser Message: {message}",
+                out.get("filters", {}),
+                count,
+                sample_titles=[c["name"] for c in cards],
+                dropped=dropped,
+            )
+        if not reply:
+            reply = _fallback_reply(message, count)
+
+    # Assistant yanıtını geçmişe kaydet
     _save_message(user_id, conversation_id, "assistant", reply, properties=cards)
 
     return JSONResponse({
         "reply": reply,
         "count": count,
-        "mode": out.get("mode"),
+        "mode": mode,
         "ai_enabled": ai_config.ai_enabled(),
-        "filters": {k: v for k, v in (out.get("filters") or {}).items() if v not in (None, "")},
+        "filters": filters,
         "properties": cards,
         "conversation_id": conversation_id,
         "title": title,
