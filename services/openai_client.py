@@ -127,7 +127,9 @@ def chat_reply(user_message: str, filters: dict, count: int,
         "the closest matches.' Never claim a constraint was satisfied when it is listed in "
         "relaxed_constraints. If result_count is 0, gently say nothing matched and suggest "
         "widening the budget or location. Never invent specific listings, prices, or counts "
-        "beyond result_count. Reply in the user's language. Output only the sentence."
+        "beyond result_count. Reply in the SAME language as the user's message: the user writes in "
+        "either English or Turkish, so use English for an English message and Turkish for a Turkish "
+        "one, and NEVER use any other language. Output only the sentence."
     )
     try:
         resp = client.chat.completions.create(
@@ -168,14 +170,20 @@ def is_answerable(query: str) -> Optional[bool]:
     if client is None:
         return None
     system = (
-        "You are a gatekeeper for a North Cyprus / Turkey RESIDENTIAL real-estate search "
-        "(apartments, villas, penthouses, houses, land; rent or sale). Decide if the user's "
-        "query is a plausible request our listings could satisfy. "
-        "answerable=true for anything about ordinary homes, their features, locations or price "
-        "(e.g. 'sea view', 'pool', 'penthouse', '2+1 in Kyrenia', 'cheap rental near the beach'). "
-        "answerable=false ONLY for things we do not list or that are jokes/fiction "
-        "(e.g. 'castle with a private beach', 'haunted dungeon', 'spaceship on mars', 'a unicorn'). "
-        'When unsure, answer true. Return ONLY JSON: {"answerable": true|false}.'
+        "You are a gatekeeper for a North Cyprus / Turkey RESIDENTIAL real-estate search. "
+        "We list ordinary homes and plots: apartments, flats, villas, penthouses, houses, "
+        "bungalows, studios, duplexes and land — for rent or sale, described by their features "
+        "(sea view, pool, garden, furnished, parking...), location, room count and price. "
+        "Decide whether our listings could plausibly satisfy the query. "
+        "answerable=true when the query describes such an ordinary property, INCLUDING very short "
+        "feature/location/price/room queries (e.g. 'pool', 'sea view', '2+1 in Kyrenia', "
+        "'cheap rental near EMU', 'furnished flat', 'land in Iskele'). Default to true when in doubt. "
+        "answerable=false ONLY when the user asks for something we could never list: a non-residential "
+        "structure (castle, fortress, palace, dungeon, hotel, office, shop, factory, private island, "
+        "spaceship) or a fictional/impossible property (underwater, floating, haunted, on mars, a unicorn). "
+        "A real location or feature does NOT rescue these — 'castle or fortress with sea view near EMU' "
+        "and 'private island near Kyrenia' are both false. "
+        'Return ONLY JSON: {"answerable": true|false}.'
     )
     try:
         resp = client.chat.completions.create(

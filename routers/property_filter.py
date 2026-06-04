@@ -366,11 +366,13 @@ def dynamic_search_filter_engine(
         cur.execute(query, tuple(params))
         all_filtered_rows = cur.fetchall()
 
-        # Relevance floor: for a PURELY semantic search (free text, no UI dropdown
-        # filters and no GPT-extracted hard filters), drop everything when even the
-        # nearest match is too far — so off-topic queries ("castle") return empty
-        # instead of nearest-neighbor junk. With any concrete filter set, we skip the
-        # gate and honor the filters.
+        # Relevance gate: for a free-text semantic search, ask the LLM whether our
+        # catalog can plausibly answer the query and drop everything when it can't — so
+        # off-topic queries ("castle or fortress near EMU") return empty instead of
+        # nearest-neighbor junk. A place/type the GPT extractor parsed out of the query
+        # must NOT bypass this — otherwise "fortress in Famagusta" smuggles an off-topic
+        # query past the gate via a city filter. Only an explicit UI-dropdown filter
+        # (a deliberate browse) skips the gate.
         _ui_filters_present = any([
             listing_type and str(listing_type).strip().lower() not in ("", "all", "mix"),
             property_type and property_type != "all",
@@ -384,9 +386,8 @@ def dynamic_search_filter_engine(
             country and country != "all", city and city != "all", district and district != "all",
             is_site, credit, swap, property_status, title_type, furniture, otopark, features,
         ])
-        _gpt_hard = bool(gpt_filters) and query_pipeline.has_hard_filters(gpt_filters)
         if (_qvec is not None and all_filtered_rows
-                and not _ui_filters_present and not _gpt_hard
+                and not _ui_filters_present
                 and query_pipeline.is_off_topic(q.strip(), False)):
             all_filtered_rows = []
 

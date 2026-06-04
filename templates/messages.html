@@ -35,11 +35,17 @@
                                 {% else %}
                                     User #{{ chat.room_id }}
                                 {% endif %}
+                                {% if is_admin %}<i class="fa-solid fa-right-left" style="font-size: 9px; color: #cbd5e1; margin: 0 3px;"></i>{{ chat.agent_name }}{% endif %}
                             </h5>
                             <span class="sidebar-chat-time" data-utc="{{ chat.last_message_time if chat.last_message_time else '' }}" style="font-size: 11px; color: #94a3b8;">
                                 {{ chat.last_message_time if chat.last_message_time else '' }}
                             </span>
                         </div>
+                        {% if is_admin and chat.property_title %}
+                        <div style="font-size: 11px; color: var(--active-color); font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <i class="fa-solid fa-building" style="font-size: 9px;"></i> {{ chat.property_title }}
+                        </div>
+                        {% endif %}
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <p id="sidebar-last-msg-{{ chat.room_id }}" style="margin: 0; font-size: 0.85rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; display: flex; align-items: center; gap: 4px;">
                                 {% if chat.last_message_sender|string == current_user_id|string %}
@@ -73,8 +79,27 @@
     <div class="chat-main-window" style="flex: 1; display: flex; flex-direction: column; background: #ffffff; position: relative;">
         {% if active_chat_partner %}
             <div style="padding: 16px 25px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.01);">
+                {% if is_admin and room_user and room_agent %}
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="/static/htmlfotos/{{ room_user.avatar }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 0.95rem; color: #1e293b; font-weight: 700;">{{ room_user.name }}</h4>
+                            <span style="font-size: 0.7rem; color: var(--active-color); font-weight: 700; text-transform: uppercase;">User</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-right-left" style="color: #cbd5e1; font-size: 0.9rem;"></i>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="/static/htmlfotos/{{ room_agent.avatar }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 0.95rem; color: #1e293b; font-weight: 700;">{{ room_agent.name }}</h4>
+                            <span style="font-size: 0.7rem; color: var(--agent-color); font-weight: 700; text-transform: uppercase;">Agent</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <img src="/static/htmlfotos/{{ active_chat_partner.profile_image if active_chat_partner.profile_image else 'default_user.png' }}" 
+                    <img src="/static/htmlfotos/{{ active_chat_partner.profile_image if active_chat_partner.profile_image else 'default_user.png' }}"
                          style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0;">
                     <div>
                         <h4 style="margin: 0; font-size: 1.05rem; color: #1e293b; font-weight: 700;">
@@ -85,14 +110,18 @@
                         </span>
                     </div>
                 </div>
-                
+                {% endif %}
+
                 {% if active_property %}
-                <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-soft); padding: 8px 15px; border-radius: 12px; max-width: 280px;">
+                <div onclick="openPropPanel()" title="View property details"
+                     style="display: flex; align-items: center; gap: 10px; background: var(--bg-soft); padding: 8px 15px; border-radius: 12px; max-width: 300px; cursor: pointer; transition: filter 0.2s;"
+                     onmouseover="this.style.filter='brightness(0.96)'" onmouseout="this.style.filter='none'">
                     <i class="fa-solid fa-building" style="color: var(--active-color);"></i>
                     <div style="min-width: 0;">
                         <p style="margin: 0; font-size: 0.8rem; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ active_property.name }}</p>
                         <span style="font-size: 0.75rem; color: #64748b;">{{ active_property.price }}</span>
                     </div>
+                    <i class="fa-solid fa-chevron-right" style="color: var(--active-color); font-size: 12px;"></i>
                 </div>
                 {% endif %}
             </div>
@@ -100,7 +129,32 @@
             <div id="chatMessageHistory" style="flex: 1; overflow-y: auto; padding: 25px; background: #f8fafc; display: flex; flex-direction: column; gap: 15px;">
                 {% if messages %}
                     {% for msg in messages %}
-                        {% if msg.sender_id|string == current_user_id|string %}
+                        {% if is_admin %}
+                            {# Observer view: user on the left, agent on the right, each labelled by sender. #}
+                            {% if msg.sender_role == 'agent' %}
+                            <div style="display: flex; justify-content: flex-end; align-items: flex-end; gap: 8px; margin-left: 15%;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <span style="font-size: 11px; color: var(--agent-color); font-weight: 700; margin-bottom: 3px;">{{ msg.sender_name }} · Agent</span>
+                                    <div style="background: var(--active-color); color: white; padding: 12px 18px; border-radius: 18px 18px 4px 18px; font-size: 0.95rem; line-height: 1.4; box-shadow: 0 2px 4px rgba(0,0,0,0.06); word-break: break-word;">
+                                        {{ msg.message_text }}
+                                    </div>
+                                    <span class="message-timestamp-bubble" data-utc="{{ msg.created_at }}" style="font-size: 10px; color: #94a3b8; margin-top: 4px;"><span class="time-text-placeholder">{{ msg.created_at }}</span></span>
+                                </div>
+                                <img src="/static/htmlfotos/{{ msg.sender_avatar }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-bottom: 22px; border: 1px solid #e2e8f0;">
+                            </div>
+                            {% else %}
+                            <div style="display: flex; justify-content: flex-start; align-items: flex-end; gap: 10px; margin-right: 15%;">
+                                <img src="/static/htmlfotos/{{ msg.sender_avatar }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-bottom: 22px; border: 1px solid #e2e8f0;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                                    <span style="font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 3px;">{{ msg.sender_name }} · User</span>
+                                    <div style="background: #ffffff; color: #1e293b; padding: 12px 18px; border-radius: 18px 18px 18px 4px; font-size: 0.95rem; line-height: 1.4; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); word-break: break-word;">
+                                        {{ msg.message_text }}
+                                    </div>
+                                    <span class="message-timestamp-bubble" data-utc="{{ msg.created_at }}" style="font-size: 10px; color: #94a3b8; margin-top: 4px;"><span class="time-text-placeholder">{{ msg.created_at }}</span></span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% elif msg.sender_id|string == current_user_id|string %}
                             <div style="display: flex; justify-content: flex-end; align-items: flex-end; gap: 8px; margin-left: 20%;">
                                 <div style="display: flex; flex-direction: column; align-items: flex-end;">
                                     <div style="background: var(--active-color); color: white; padding: 12px 18px; border-radius: 18px 18px 4px 18px; font-size: 0.95rem; line-height: 1.4; box-shadow: 0 2px 4px var(--theme-shadow); word-break: break-word;">
@@ -140,23 +194,29 @@
                 {% endif %}
             </div>
 
+            {% if is_admin %}
+            <div style="padding: 18px 25px; border-top: 1px solid #e2e8f0; background: #f8fafc; text-align: center; color: #94a3b8; font-size: 0.85rem; font-weight: 600;">
+                <i class="fa-solid fa-eye"></i> Admin observer view — read only
+            </div>
+            {% else %}
             <div style="padding: 20px; border-top: 1px solid #e2e8f0; background: #ffffff;">
                 <form id="chatForm" style="display: flex; gap: 12px; align-items: center;">
                     <input type="hidden" id="chat_id" name="chat_id" value="{{ active_conversation_id }}">
                     <input type="hidden" id="receiver_id" name="receiver_id" value="{{ active_chat_partner.id }}">
-                    
+
                     <div style="flex: 1; position: relative; display: flex; align-items: center;">
                         <input type="text" id="message_text" name="message_text" required placeholder="Type a message..." autocomplete="off"
                                style="width: 100%; padding: 14px 20px; border: 1px solid #e2e8f0; border-radius: 100px; font-size: 0.95rem; outline: none; transition: border-color 0.2s;"
                                onfocus="this.style.borderColor='var(--active-color)'" onblur="this.style.borderColor='#e2e8f0'">
                     </div>
-                    
+
                     <button type="submit" style="background: var(--active-color); color: white; border: none; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px var(--theme-shadow);"
                             onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                         <i class="fa-solid fa-paper-plane" style="font-size: 16px;"></i>
                     </button>
                 </form>
             </div>
+            {% endif %}
         {% else %}
             <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; text-align: center; padding: 30px;">
                 <div style="background: #ffffff; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.04); margin-bottom: 20px;">
@@ -166,8 +226,71 @@
                 <p style="margin: 0; color: #64748b; font-size: 0.95rem; max-width: 320px;">Select an existing conversation from the left menu or contact an agent from property details to start chatting.</p>
             </div>
         {% endif %}
+
+        {% if active_property %}
+        <!-- Slide-in property detail panel (photos + info only — no reviews/booking/contact) -->
+        <div id="propPanelOverlay" onclick="closePropPanel()" style="position: absolute; inset: 0; background: rgba(15,23,42,0.35); opacity: 0; pointer-events: none; transition: opacity 0.25s; z-index: 30;"></div>
+        <aside id="propPanel" style="position: absolute; top: 0; right: 0; height: 100%; width: 370px; max-width: 88%; background: #ffffff; box-shadow: -12px 0 30px rgba(0,0,0,0.12); transform: translateX(105%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); z-index: 31; display: flex; flex-direction: column;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                <h4 style="margin: 0; font-size: 1.05rem; color: #1e293b; font-weight: 700;">Property details</h4>
+                <button onclick="closePropPanel()" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="flex: 1; overflow-y: auto; padding: 18px 20px;">
+                {% if active_property.images %}
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+                    {% for img in active_property.images %}
+                    <img src="{% if img.startswith('http') %}{{ img }}{% else %}/static/{{ img }}{% endif %}" onerror="this.src='/static/htmlfotos/placeholder.jpg'" style="width: 100%; height: 200px; object-fit: cover; border-radius: 14px;">
+                    {% endfor %}
+                </div>
+                {% else %}
+                <img src="/static/htmlfotos/placeholder.jpg" style="width: 100%; height: 200px; object-fit: cover; border-radius: 14px; margin-bottom: 18px;">
+                {% endif %}
+
+                <h3 style="margin: 0 0 4px 0; font-size: 1.2rem; color: #1e293b; font-weight: 800;">{{ active_property.name }}</h3>
+                <div style="font-size: 1.1rem; color: var(--active-color); font-weight: 800; margin-bottom: 14px;">{{ active_property.price }}</div>
+
+                {% if active_property.city or active_property.district or active_property.location %}
+                <p style="margin: 0 0 14px 0; color: #64748b; font-size: 0.9rem;"><i class="fa-solid fa-location-dot" style="color: var(--active-color);"></i>
+                    {{ active_property.district }}{% if active_property.district and active_property.city %}, {% endif %}{{ active_property.city }}{% if not active_property.district and not active_property.city %}{{ active_property.location }}{% endif %}
+                </p>
+                {% endif %}
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                    {% if active_property.property_type %}<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;"><span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Type</span><span style="font-size: 0.92rem; color: #1e293b; font-weight: 600;">{{ active_property.property_type }}</span></div>{% endif %}
+                    {% if active_property.listing_type %}<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;"><span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Listing</span><span style="font-size: 0.92rem; color: #1e293b; font-weight: 600; text-transform: capitalize;">{{ active_property.listing_type }}</span></div>{% endif %}
+                    {% if active_property.room_count %}<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;"><span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Rooms</span><span style="font-size: 0.92rem; color: #1e293b; font-weight: 600;">{{ active_property.room_count }}</span></div>{% endif %}
+                    {% if active_property.baths %}<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;"><span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Bathrooms</span><span style="font-size: 0.92rem; color: #1e293b; font-weight: 600;">{{ active_property.baths }}</span></div>{% endif %}
+                    {% if active_property.net_m2 %}<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;"><span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Net m2</span><span style="font-size: 0.92rem; color: #1e293b; font-weight: 600;">{{ active_property.net_m2 }} m²</span></div>{% endif %}
+                    {% if active_property.gross_m2 %}<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;"><span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Gross m2</span><span style="font-size: 0.92rem; color: #1e293b; font-weight: 600;">{{ active_property.gross_m2 }} m²</span></div>{% endif %}
+                    {% if active_property.heating %}<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;"><span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Heating</span><span style="font-size: 0.92rem; color: #1e293b; font-weight: 600;">{{ active_property.heating }}</span></div>{% endif %}
+                </div>
+
+                {% if active_property.description %}
+                <div>
+                    <span style="display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">Description</span>
+                    <p style="margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.6;">{{ active_property.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </aside>
+        {% endif %}
     </div>
 </div>
+
+<script>
+    function openPropPanel() {
+        var p = document.getElementById('propPanel');
+        var o = document.getElementById('propPanelOverlay');
+        if (p) { p.style.transform = 'translateX(0)'; }
+        if (o) { o.style.opacity = '1'; o.style.pointerEvents = 'auto'; }
+    }
+    function closePropPanel() {
+        var p = document.getElementById('propPanel');
+        var o = document.getElementById('propPanelOverlay');
+        if (p) { p.style.transform = 'translateX(105%)'; }
+        if (o) { o.style.opacity = '0'; o.style.pointerEvents = 'none'; }
+    }
+</script>
 
 <style>
     .chat-user-item:hover {
@@ -191,6 +314,7 @@
         const currentUserId = "{{ current_user_id }}";
         const roomId = "{{ active_conversation_id }}";
         const partnerImg = "{{ active_chat_partner.profile_image if active_chat_partner and active_chat_partner.profile_image else 'default_user.png' }}";
+        const isAdminView = {{ 'true' if is_admin else 'false' }};  // admin observes read-only; no live socket
 
         const chatHistory = document.getElementById("chatMessageHistory");
         const chatForm = document.getElementById("chatForm");
@@ -269,7 +393,7 @@
         scrollToBottom();
 
         // --- REAL-TIME WEBSOCKET ENTEGRASYONU ---
-        if (roomId && roomId !== "" && roomId !== "None") {
+        if (roomId && roomId !== "" && roomId !== "None" && !isAdminView) {
             const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
             const wsUrl = wsProtocol + window.location.host + "/ws/chat/" + roomId;
             

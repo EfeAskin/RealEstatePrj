@@ -318,9 +318,12 @@ def semantic_search(query: str, top_k: int = None, user_id=None,
                 ordered_ids = reranked
                 mode = "semantic"
 
-        # Relevance gate: a filter-less query our catalog can't answer ("castle",
-        # "spaceship") returns empty instead of nearest-neighbor junk.
-        if mode == "semantic" and is_off_topic(query, has_hard_filters(filters)):
+        # Relevance gate: an off-topic query our catalog can't answer ("castle",
+        # "fortress near EMU") returns empty instead of nearest-neighbor junk. Pass
+        # has_filters=False so a place/type the extractor parsed out of the query can't
+        # smuggle it past the gate (parsing "in Kyrenia" must not flip the gate off);
+        # this pure-NL path has no explicit user-set filters anyway.
+        if mode == "semantic" and is_off_topic(query, False):
             ordered_ids = []
 
         results = _fetch_rows_in_order(ordered_ids, cur)
