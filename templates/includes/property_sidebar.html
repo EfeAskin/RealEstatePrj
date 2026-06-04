@@ -16,7 +16,7 @@
     {% endif %}
 
     {% if property.listing_type == "rent" %}
-    <form action="/calculate-booking" method="POST" id="mainBookingForm">
+    <form action="/profile/calculate-booking" method="POST" id="mainBookingForm">
         <input type="hidden" name="property_id" value="{{ property.id }}">
         <input type="hidden" name="check_in" id="final_check_in">
         <input type="hidden" name="check_out" id="final_check_out">
@@ -41,7 +41,23 @@
         </div>
         <button type="submit" class="request-button" style="margin-bottom: 10px;">Request to Book</button>
     </form>
-    
+
+    <script>
+    (function () {
+        var bookingForm = document.getElementById('mainBookingForm');
+        if (!bookingForm) return;
+        bookingForm.addEventListener('submit', function (e) {
+            var ci = document.getElementById('final_check_in');
+            var co = document.getElementById('final_check_out');
+            if (!ci || !co || !ci.value || !co.value) {
+                e.preventDefault();
+                alert('Please select your check-in and check-out dates before booking.');
+                if (typeof openModal === 'function') openModal('calendar');
+            }
+        });
+    })();
+    </script>
+
     {# Kiralık ilanlar için güncellenen entegre chat butonu #}
     {% if agent %}
         <button class="request-button message-agent-trigger msg-btn" 

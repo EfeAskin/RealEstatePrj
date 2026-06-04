@@ -4,13 +4,13 @@
 <div class="info-container" style="padding: 10px; color: #1e293b; position: relative;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 3px solid var(--active-color); padding-bottom: 5px;">
         <h2 style="margin: 0;">
-            <i class="fa-solid fa-user-gear" style="margin-right: 10px; color: var(--active-color);"></i>Kişisel Bilgiler
+            <i class="fa-solid fa-user-gear" style="margin-right: 10px; color: var(--active-color);"></i>Personal Information
         </h2>
-        <button type="button" onclick="enableEdit()" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s;">
+        <button type="button" id="editProfileBtn" onclick="enableEdit()" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s;">
             <i class="fa-solid fa-user-pen"></i> Edit Profile Information
         </button>
     </div>
-    
+
     {% if role != 'admin' %}
     <div style="background: white; padding: 20px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 15px;">
@@ -18,11 +18,11 @@
                 <i class="fa-solid fa-people-arrows" style="font-size: 1.2rem; color: var(--active-color);"></i>
             </div>
             <div>
-                <span style="display: block; font-weight: 700;">Hesap Türünü Değiştir</span>
-                <small style="color: #64748b;">İlan vermek için Agent moduna geçebilirsiniz.</small>
+                <span style="display: block; font-weight: 700;">Change Account Type</span>
+                <small style="color: #64748b;">Switch to Agent mode to post listings.</small>
             </div>
         </div>
-        
+
         <div class="role-switch-container">
             <span class="role-label {{ 'active' if role == 'user' }}" style="color: #1BA7FF; font-weight: 700; margin-right: 10px;">USER</span>
             <label class="role-switch">
@@ -36,31 +36,31 @@
 
     <div class="info-card" style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
         <form action="/profile/update-info" method="POST" id="profileForm" enctype="multipart/form-data">
-            
+
             <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px dashed #e2e8f0;">
                 <div class="profile-upload-wrapper" style="position: relative; width: 100px; height: 100px;">
-                    
+
                     <label for="profileImageInput" id="cameraBtnLabel" class="profile-label-hover" style="
-                        position: absolute; 
-                        width: 100%; 
-                        height: 100%; 
-                        border-radius: 50%; 
-                        cursor: not-allowed; 
+                        position: absolute;
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 50%;
+                        cursor: not-allowed;
                         z-index: 10;
                         transition: all 0.3s ease;
                     ">
                         <div id="innerCameraIcon" style="
-                            position: absolute; 
-                            bottom: 0; 
-                            right: 0; 
-                            background: var(--active-color); 
-                            width: 34px; 
-                            height: 34px; 
-                            border-radius: 50%; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center; 
-                            color: white; 
+                            position: absolute;
+                            bottom: 0;
+                            right: 0;
+                            background: var(--active-color);
+                            width: 34px;
+                            height: 34px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
                             border: 3px solid white;
                             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
                             transition: 0.3s;
@@ -70,87 +70,87 @@
                         </div>
                     </label>
 
-                    <img src="{{ url_for('static', path='htmlfotos/' + (profile_image if profile_image else 'default_user.png')) }}" 
-                         id="mainProfilePreview" 
+                    <img src="{{ url_for('static', path='htmlfotos/' + (profile_image if profile_image else 'default_user.png')) }}"
+                         id="mainProfilePreview"
                          style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--active-color); padding: 3px; background: white; transition: all 0.3s ease;">
-                    
-                    <input type="file" name="profile_image" id="profileImageInput" accept="image/*" disabled onchange="syncPreview(this)" 
+
+                    <input type="file" name="profile_image" id="profileImageInput" accept="image/*" disabled onchange="syncPreview(this)"
                            style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">
                 </div>
-                
+
                 <div>
-                    <h4 style="margin: 0 0 5px 0; color: #1e293b; font-weight: 700;">Profil Fotoğrafı</h4>
-                    <p style="margin: 0; color: #64748b; font-size: 0.85rem;">Değiştirmek için resmin üzerine tıklayın.<br>JPG veya PNG. Maksimum 2MB.</p>
+                    <h4 style="margin: 0 0 5px 0; color: #1e293b; font-weight: 700;">Profile Photo</h4>
+                    <p style="margin: 0; color: #64748b; font-size: 0.85rem;">Click the image to change it.<br>JPG or PNG. Max 2MB.</p>
                 </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
                 <div class="input-group">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Adınız</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">First Name</label>
                     <input type="text" value="{{ first_name }}" name="first_name" class="p-input" disabled>
                 </div>
                 <div class="input-group">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Soyadınız</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Last Name</label>
                     <input type="text" value="{{ last_name }}" name="last_name" class="p-input" disabled>
                 </div>
 
                 <div class="input-group" style="grid-column: span 2;">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">E-posta Adresiniz</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Email Address</label>
                     <input type="email" value="{{ email }}" readonly style="width: 100%; padding: 12px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #94a3b8; border-radius: 10px; cursor: not-allowed;">
                 </div>
 
                 <div class="input-group">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Telefon Numarası</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Phone Number</label>
                     <input type="tel" value="{{ phone or '' }}" name="phone" placeholder="+90 5xx" class="p-input" disabled>
                 </div>
                 <div class="input-group">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Cinsiyet</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Gender</label>
                     <select name="gender" class="p-input" disabled style="width: 100%; height: 45px;">
-                        <option value="">Seçiniz</option>
-                        <option value="male" {% if gender == 'male' %}selected{% endif %}>Erkek</option>
-                        <option value="female" {% if gender == 'female' %}selected{% endif %}>Kadın</option>
-                        <option value="other" {% if gender == 'other' %}selected{% endif %}>Diğer</option>
+                        <option value="">Select</option>
+                        <option value="male" {% if gender == 'male' %}selected{% endif %}>Male</option>
+                        <option value="female" {% if gender == 'female' %}selected{% endif %}>Female</option>
+                        <option value="other" {% if gender == 'other' %}selected{% endif %}>Other</option>
                     </select>
                 </div>
 
                 {% if role == 'agent' %}
                 <div style="grid-column: span 2; margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
-                    <h4 style="color: #FF7226; margin-bottom: 15px;"><i class="fa-solid fa-briefcase"></i> Agent Bilgileri</h4>
+                    <h4 style="color: #FF7226; margin-bottom: 15px;"><i class="fa-solid fa-briefcase"></i> Agent Information</h4>
                 </div>
                 <div class="input-group">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Kimlik (ID) No</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">ID Number</label>
                     <input type="text" value="{{ id_no }}" name="id_no" class="p-input" disabled>
                 </div>
                 <div class="input-group">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Şirket Adı</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Company Name</label>
                     <input type="text" value="{{ company_name }}" name="company_name" class="p-input" disabled>
                 </div>
                 <div class="input-group" style="grid-column: span 2;">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">IBAN Adresi</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">IBAN</label>
                     <input type="text" value="{{ iban }}" name="iban" placeholder="TR..." class="p-input" disabled>
                 </div>
                 {% endif %}
 
                 <div class="input-group" style="grid-column: span 2;">
-                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">Yeni Şifre (Değiştirmek istemiyorsanız boş bırakın)</label>
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">New Password (leave blank to keep current)</label>
                     <input type="password" name="new_password" placeholder="••••••••" class="p-input" disabled>
                 </div>
             </div>
 
             <div style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--bg-soft); border-radius: 12px;">
                 <div>
-                    <span style="display: block; font-weight: 700; color: #1e293b;">İki Adımlı Doğrulama</span>
-                    <small style="color: #64748b;">Hesap güvenliğini artırmak için aktifleştirin.</small>
+                    <span style="display: block; font-weight: 700; color: #1e293b;">Two-Step Verification</span>
+                    <small style="color: #64748b;">Enable it to increase account security.</small>
                 </div>
                 <label class="p-switch">
                     <input type="checkbox" checked disabled id="twoStepToggle">
                     <span class="p-slider"></span>
                 </label>
             </div>
-            
+
             <div style="margin-top: 35px; display: flex; justify-content: flex-end;">
                 <button type="submit" id="saveBtn" style="background: var(--active-color); color: white; border: none; padding: 14px 40px; border-radius: 12px; cursor: pointer; font-weight: 700; opacity: 0.5; pointer-events: none; transition: 0.3s;">
-                    Değişiklikleri Kaydet
+                    Save Changes
                 </button>
             </div>
         </form>
@@ -159,24 +159,24 @@
 
 <div id="agentModal" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);">
     <div style="background: white; width: 450px; margin: 10% auto; padding: 30px; border-radius: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
-        <h3 style="color: #FF7226; margin-top: 0;"><i class="fa-solid fa-briefcase"></i> Agent Bilgilerini Tamamla</h3>
-        <p style="color: #64748b; font-size: 0.9rem;">Emlak ilanları vermek için aşağıdaki bilgileri doldurmanız gerekmektedir.</p>
+        <h3 style="color: #FF7226; margin-top: 0;"><i class="fa-solid fa-briefcase"></i> Complete Agent Information</h3>
+        <p style="color: #64748b; font-size: 0.9rem;">Please fill in the details below to post property listings.</p>
         <form action="/profile/upgrade-to-agent" method="POST">
             <div style="margin-bottom: 15px;">
                 <label style="display: block; font-weight: 600; margin-bottom: 5px;">IBAN</label>
                 <input type="text" name="iban" required placeholder="TR00..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
             </div>
             <div style="margin-bottom: 15px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">Kimlik (ID) No</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">ID Number</label>
                 <input type="text" name="id_no" required style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 5px;">Şirket Adı (Opsiyonel)</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 5px;">Company Name (Optional)</label>
                 <input type="text" name="company_name" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
             </div>
             <div style="display: flex; gap: 10px;">
-                <button type="button" onclick="closeAgentModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">İptal</button>
-                <button type="submit" style="flex: 2; padding: 12px; background: #FF7226; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">Kaydet ve Geçiş Yap</button>
+                <button type="button" onclick="closeAgentModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button type="submit" style="flex: 2; padding: 12px; background: #FF7226; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">Save and Switch</button>
             </div>
         </form>
     </div>
@@ -186,6 +186,32 @@
     .p-input { width: 100%; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; transition: 0.3s; }
     .p-input:focus { border-color: var(--active-color); outline: none; background: white; }
     .p-input:disabled { background: #f1f5f9; cursor: not-allowed; }
+
+    /* Visual cue that fields are editable while in edit mode */
+    .p-input.editing-active:not(:disabled) {
+        background: white;
+        border-color: var(--active-color);
+        box-shadow: 0 0 0 3px rgba(27, 167, 255, 0.12);
+    }
+
+    /* Brief attention pulse on the save button */
+    @keyframes savePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+    .save-pulse { animation: savePulse 0.6s ease 2; }
+
+    /* "Edit mode on" toast notification at the top */
+    #editToast {
+        position: fixed; top: 24px; left: 50%;
+        transform: translateX(-50%) translateY(-24px);
+        background: #1e293b; color: white;
+        padding: 14px 22px; border-radius: 12px;
+        font-weight: 600; font-size: 0.9rem; max-width: 90vw;
+        box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+        z-index: 99999; opacity: 0; pointer-events: none;
+        transition: opacity 0.35s ease, transform 0.35s ease;
+        display: flex; align-items: center; gap: 10px;
+    }
+    #editToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #editToast i { color: #4ade80; font-size: 1.05rem; }
 
     .p-switch { position: relative; display: inline-block; width: 46px; height: 24px; }
     .p-switch input { opacity: 0; width: 0; height: 0; }
@@ -201,38 +227,80 @@
     input:checked + .role-slider { background-color: #FF7226; }
     input:checked + .role-slider:before { transform: translateX(30px); }
 
-    /* GELİŞMİŞ HOVER EFEKTLERİ */
+    /* Enhanced hover effects */
     .profile-label-hover.active-edit:hover {
-        transform: scale(1.05); /* Alanın tamamını kabartır */
+        transform: scale(1.05); /* enlarges the whole area */
     }
 
     .profile-label-hover.active-edit:hover ~ #mainProfilePreview {
-        transform: scale(1.05); /* Resmi de kabartır */
-        filter: brightness(0.9); /* Resmi hafif karartarak butonu öne çıkarır */
+        transform: scale(1.05); /* enlarges the image too */
+        filter: brightness(0.9); /* slightly darkens to make the button stand out */
     }
 
     .profile-label-hover.active-edit:hover #innerCameraIcon {
-        background: #5a4fcf !important; /* İkon rengini değiştirir */
+        background: #5a4fcf !important; /* changes the icon color */
         transform: scale(1.1);
     }
 </style>
 
 <script>
     function enableEdit() {
+        const editBtn = document.getElementById('editProfileBtn');
+        if (editBtn && editBtn.dataset.editing === '1') return; // already in edit mode
+
         const inputs = document.querySelectorAll('.p-input, #twoStepToggle, #profileImageInput');
         const saveBtn = document.getElementById('saveBtn');
         const cameraLabel = document.getElementById('cameraBtnLabel');
         const innerIcon = document.getElementById('innerCameraIcon');
-        
-        inputs.forEach(input => { input.disabled = false; });
+
+        inputs.forEach(input => {
+            input.disabled = false;
+            input.classList.add('editing-active'); // visible "editable" highlight
+        });
         saveBtn.style.opacity = "1";
         saveBtn.style.pointerEvents = "auto";
-        
+        saveBtn.classList.add('save-pulse'); // draw attention to the save button
+
         if(cameraLabel) {
             cameraLabel.style.cursor = "pointer";
-            cameraLabel.classList.add('active-edit'); // Hover efektini tetikleyen class
-            innerIcon.style.opacity = "1"; // Kamerayı görünür yap
+            cameraLabel.classList.add('active-edit'); // class that triggers the hover effect
+            innerIcon.style.opacity = "1"; // reveal the camera icon
         }
+
+        // 1) Flip the button into an "Editing" state for instant feedback
+        if (editBtn) {
+            editBtn.dataset.editing = '1';
+            editBtn.style.background = '#dcfce7';
+            editBtn.style.color = '#16a34a';
+            editBtn.style.borderColor = '#86efac';
+            editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editing — make your changes';
+        }
+
+        // 2) Show a short toast notification at the top
+        showEditToast();
+
+        // 3) Focus the first editable field
+        const firstInput = document.querySelector('.p-input:not([type="password"])');
+        if (firstInput) {
+            firstInput.focus();
+            if (typeof firstInput.select === 'function') firstInput.select();
+        }
+    }
+
+    function showEditToast() {
+        let t = document.getElementById('editToast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'editToast';
+            document.body.appendChild(t);
+        }
+        t.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Edit mode on — fields are now editable. Make your changes, then click “Save Changes”.</span>';
+        // reflow trick so the transition replays on repeat triggers
+        t.classList.remove('show');
+        void t.offsetWidth;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(function () { t.classList.remove('show'); }, 4000);
     }
 
     function syncPreview(input) {
@@ -250,18 +318,18 @@
 
     function handleRoleSwitch(checkbox) {
         const currentRole = "{{ role }}";
-        const hasIban = "{{ iban }}"; 
+        const hasIban = "{{ iban }}";
         if (checkbox.checked) {
             if (currentRole === 'user') {
                 if (hasIban && hasIban !== "None" && hasIban !== "") {
                     window.location.href = "/profile/switch-to-agent";
                 } else {
                     document.getElementById('agentModal').style.display = 'block';
-                    checkbox.checked = false; 
+                    checkbox.checked = false;
                 }
             }
         } else {
-            if (confirm("Kullanıcı moduna geri dönmek istediğinize emin misiniz?")) {
+            if (confirm("Are you sure you want to switch back to User mode?")) {
                 window.location.href = "/profile/switch-to-user";
             } else {
                 checkbox.checked = true;

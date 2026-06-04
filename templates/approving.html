@@ -45,7 +45,7 @@
                 <div class="approval-card" id="property-card-{{ item.id }}">
                     <div class="card-image-section">
                         {% if item.image %}
-                            <img src="{{ url_for('static', path='/' + item.image) }}" alt="{{ item.title }}" class="property-cover-img">
+                            <img src="{% if item.image.startswith('http') %}{{ item.image }}{% else %}{{ url_for('static', path='/' + item.image) }}{% endif %}" alt="{{ item.title }}" class="property-cover-img" onerror="this.src='/static/htmlfotos/placeholder.jpg'">
                         {% else %}
                             <img src="/static/htmlfotos/placeholder.jpg" alt="Default Image" class="property-cover-img">
                         {% endif %}
@@ -737,7 +737,7 @@
     async function editProperty(propertyId) {
         try {
             const response = await fetch(`/api/property/${propertyId}`);
-            if (!response.ok) throw new Error("İlan verileri alınamadı.");
+            if (!response.ok) throw new Error("Could not load listing data.");
             const data = await response.json();
             
             openEmbeddedForm(); // Önce dahili sarmalayıcıyı aç
@@ -769,7 +769,7 @@
             }
         } catch (error) {
             console.error("Hata:", error);
-            alert("İlan bilgileri yüklenirken bir hata oluştu.");
+            alert("An error occurred while loading the listing details.");
         }
     }
 

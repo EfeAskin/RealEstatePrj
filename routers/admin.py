@@ -2,7 +2,6 @@ from fastapi import APIRouter, Request, status, HTTPException, Form, File, Uploa
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import database as db
-import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 import time
@@ -12,22 +11,33 @@ from decimal import Decimal
 import math
 from typing import List, Optional
 
+# PERFORMANS: Her admin isteğinde taze bir psycopg2.connect() açmak yerine (Neon'a
+# karşı her seferinde ~0.6s'lik TLS/handshake) paylaşımlı bağlantı havuzunu kullan.
+from db.connection import get_db_connection
+
 router = APIRouter(prefix="/admin")
 templates = Jinja2Templates(directory="templates")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Neon DB connection URL (Safely retrieved from environment variables)
-DATABASE_URL = os.getenv("DATABASE_URL")
 
-def get_db_connection():
-    """Helper function providing connection to the Neon DB database"""
-    conn = psycopg2.connect(DATABASE_URL)
-    return conn
+# SECURITY BARRIER + PERFORMANS: istek-bazlı kullanıcıyı tek seferde çözer.
+# Middleware kullanıcıyı zaten çözüp request.state.user'a koyduğu için burada
+# tekrar DB sorgusu yapmadan onu kullanırız; admin değilse None döner.
+def get_admin_user(request):
+    """Returns the request's user dict if they are an admin, else None.
 
-# SECURITY BARRIER: Helper function to prevent non-admin access
-def verify_admin():
-    return getattr(db, "current_user_role", "user") == "admin"
+    Reuses the middleware-resolved (cached) user from request.state to avoid an
+    extra per-page DB round trip; falls back to a direct lookup if absent."""
+    user = getattr(getattr(request, "state", None), "user", None)
+    if user is None:
+        user = db.get_user_from_request(request)
+    return user if db.is_admin_user(user) else None
+
+
+def verify_admin(request):
+    """Backwards-compatible boolean guard (kept for the mutation endpoints)."""
+    return get_admin_user(request) is not None
 
 
 # =========================================================
@@ -36,14 +46,10 @@ def verify_admin():
 @router.get("/all-properties", response_class=HTMLResponse)
 async def admin_all_properties(request: Request):
     """Page where the admin can view all listings in the system"""
-    if not verify_admin():
+    user_data = get_admin_user(request)
+    if not user_data:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-    email = getattr(db, "current_user_email", None)
-    user_data = db.get_user_from_db(email) if email else {}
-    if not user_data:
-        user_data = getattr(db, "current_user_data", {})
-    
     # Fetch all listings (JOIN injection for the development phase will be resolved in the db layer)
     
     # Checked and assigned new db function to handle agent name and currency formatting in UI
@@ -57,11 +63,11 @@ async def admin_all_properties(request: Request):
         all_props_raw = []
     
     # NEW LOGIC UPDATE: 
-    # Newly added listings awaiting approval (status = 'approving') are not listed on this page.
-    # The buttons here are only intended to switch passive listings to active (or vice versa).
+    # Newly added listings awaiting approval (status = 'pending') are not listed on this page.
+    # The buttons here are only intended to switch inactive listings to active (or vice versa).
     all_props = []
     for p in all_props_raw:
-        if p.get('status') != 'approving':
+        if str(p.get('status') or '').lower() not in ('pending', 'approving'):
             # Secure mapping to fill the 'agent_name' structure on the HTML side from relational agent data
             # incoming from the Neon DB schema, ensuring it does not display 'Not Specified' in the interface.
             if 'agent_first_name' in p and p['agent_first_name']:
@@ -91,10 +97,10 @@ async def admin_all_properties(request: Request):
     
     # Fully synchronized with the {% for property in all_properties %} loop inside all_properties.html
     return templates.TemplateResponse(request, "all_properties.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
+        "role": user_data.get("role", "admin"),
+        "is_admin": True,
         "p_page": "all-properties",
-        "first_name": user_data.get("first_name", ""), 
+        "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
         "all_properties": all_props
@@ -106,13 +112,9 @@ async def admin_all_properties(request: Request):
 # =========================================================
 @router.get("/users", response_class=HTMLResponse)
 async def admin_users(request: Request):
-    if not verify_admin():
-        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-
-    email = getattr(db, "current_user_email", None)
-    user_data = db.get_user_from_db(email) if email else {}
+    user_data = get_admin_user(request)
     if not user_data:
-        user_data = getattr(db, "current_user_data", {})
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
     # Fetch users from DB to list them in the view
     users_list = []
@@ -130,10 +132,10 @@ async def admin_users(request: Request):
         if conn: conn.close()
 
     return templates.TemplateResponse(request, "users.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
+        "role": user_data.get("role", "admin"),
+        "is_admin": True,
         "p_page": "users",
-        "first_name": user_data.get("first_name", ""), 
+        "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
         "users": users_list
@@ -147,14 +149,10 @@ async def admin_users(request: Request):
 @router.get("/approving", response_class=HTMLResponse)
 async def admin_approving(request: Request):
     """Page listing properties awaiting approval (fully compatible with Neon DB formatting logic and profile data)"""
-    if not verify_admin():
+    user_data = get_admin_user(request)
+    if not user_data:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-    email = getattr(db, "current_user_email", None)
-    user_data = db.get_user_from_db(email) if email else {}
-    if not user_data:
-        user_data = getattr(db, "current_user_data", {})
-    
     # Handle pagination parameter from query string
     params = request.query_params
     try:
@@ -192,7 +190,7 @@ async def admin_approving(request: Request):
                 COALESCE(u.first_name, '') || ' ' || COALESCE(u.last_name, '') as agent_name
             FROM properties p
             LEFT JOIN users u ON p.agent_id = u.id
-            WHERE LOWER(TRIM(p.status)) = 'approving'
+            WHERE LOWER(TRIM(p.status)) IN ('pending', 'approving')
             ORDER BY p.id DESC
         """
         cur.execute(query)
@@ -200,7 +198,6 @@ async def admin_approving(request: Request):
 
         # rows tüm elemanları çektiği için len(rows) bize veritabanındaki GERÇEK TOPLAM onay bekleyen sayısını verir (Örn: 7)
         total_count = len(rows)
-        print("PENDING APPROVALS TOTAL COUNT:", total_count)
 
         # Calculate pagination limits
         total_pages = math.ceil(total_count / cards_per_page) if total_count > 0 else 1
@@ -289,10 +286,10 @@ async def admin_approving(request: Request):
         if conn: conn.close()
 
     return templates.TemplateResponse(request, "approving.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
+        "role": user_data.get("role", "admin"),
+        "is_admin": True,
         "p_page": "approving",
-        "first_name": user_data.get("first_name", ""), 
+        "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
         "properties": properties,
@@ -310,27 +307,30 @@ async def admin_approving(request: Request):
 # =========================================================
 @router.get("/dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
-    if not verify_admin():
+    user_data = get_admin_user(request)
+    if not user_data:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-    email = getattr(db, "current_user_email", None)
-    user_data = db.get_user_from_db(email) if email else {}
-    if not user_data:
-        user_data = getattr(db, "current_user_data", {})
-        
-    # Fetch real counts from DB for dashboard summary
+    # Fetch real counts in ONE round trip (3 separate COUNT queries = 3x Neon latency).
     stats = {"total_properties": 0, "pending_approvals": 0, "total_users": 0}
     conn = None
     cur = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM properties")
-        stats["total_properties"] = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM properties WHERE LOWER(TRIM(status)) = 'approving'")
-        stats["pending_approvals"] = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM users")
-        stats["total_users"] = cur.fetchone()[0]
+        cur.execute(
+            """
+            SELECT
+                (SELECT COUNT(*) FROM properties) AS total_properties,
+                (SELECT COUNT(*) FROM properties WHERE LOWER(TRIM(status)) IN ('pending', 'approving')) AS pending_approvals,
+                (SELECT COUNT(*) FROM users) AS total_users
+            """
+        )
+        row = cur.fetchone()
+        if row:
+            stats["total_properties"] = row[0]
+            stats["pending_approvals"] = row[1]
+            stats["total_users"] = row[2]
     except Exception as e:
         print(f"Dashboard statistics gather error: {e}")
     finally:
@@ -338,10 +338,10 @@ async def admin_dashboard(request: Request):
         if conn: conn.close()
 
     return templates.TemplateResponse(request, "dashboard.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
+        "role": user_data.get("role", "admin"),
+        "is_admin": True,
         "p_page": "dashboard",
-        "first_name": user_data.get("first_name", ""), 
+        "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
         "stats": stats
@@ -353,21 +353,17 @@ async def admin_dashboard(request: Request):
 # =========================================================
 @router.get("/system-logs", response_class=HTMLResponse)
 async def admin_system_logs(request: Request):
-    if not verify_admin():
+    user_data = get_admin_user(request)
+    if not user_data:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-    email = getattr(db, "current_user_email", None)
-    user_data = db.get_user_from_db(email) if email else {}
-    if not user_data:
-        user_data = getattr(db, "current_user_data", {})
-        
     logs = get_system_logs_from_db()
 
     return templates.TemplateResponse(request, "system_logs.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
+        "role": user_data.get("role", "admin"),
+        "is_admin": True,
         "p_page": "system-logs",
-        "first_name": user_data.get("first_name", ""), 
+        "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
         "logs": logs
@@ -379,21 +375,17 @@ async def admin_system_logs(request: Request):
 # =========================================================
 @router.get("/sales-logs", response_class=HTMLResponse)
 async def admin_sales_logs(request: Request):
-    if not verify_admin():
+    user_data = get_admin_user(request)
+    if not user_data:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
-    email = getattr(db, "current_user_email", None)
-    user_data = db.get_user_from_db(email) if email else {}
-    if not user_data:
-        user_data = getattr(db, "current_user_data", {})
-        
     sales = get_sales_logs_from_db()
 
     return templates.TemplateResponse(request, "sales_logs.html", {
-        "role": db.current_user_role, 
-        "is_admin": True, 
+        "role": user_data.get("role", "admin"),
+        "is_admin": True,
         "p_page": "sales-logs",
-        "first_name": user_data.get("first_name", ""), 
+        "first_name": user_data.get("first_name", ""),
         "last_name": user_data.get("last_name", ""),
         "profile_image": user_data.get("profile_image", "default_user.png"),
         "sales": sales
@@ -404,12 +396,12 @@ async def admin_sales_logs(request: Request):
 # 7. DELETE / DEACTIVATE PROPERTY ENDPOINT (POST)
 # =========================================================
 @router.post("/delete-property/{property_id}")
-async def admin_delete_property_endpoint(property_id: str):
+async def admin_delete_property_endpoint(property_id: str, request: Request):
     """
     Yönetici panelinden (all-properties veya approving) gelen silme/pasife alma isteği.
-    İlanın durumunu doğrudan 'passive' moduna çeker.
+    İlanın durumunu doğrudan 'inactive' moduna çeker.
     """
-    if not verify_admin():
+    if not verify_admin(request):
         return JSONResponse(status_code=403, content={"success": False, "error": "Unauthorized Access"})
     
     conn = None
@@ -424,19 +416,19 @@ async def admin_delete_property_endpoint(property_id: str):
         elif hasattr(db, 'soft_delete_property_in_db'):
             success = db.soft_delete_property_in_db(clean_id)
         elif hasattr(db, 'update_property_status'):
-            success = db.update_property_status(clean_id, "passive")
+            success = db.update_property_status(clean_id, "inactive")
         elif hasattr(db, 'update_property_in_db'):
-            success = db.update_property_in_db(clean_id, {"status": "passive"})
+            success = db.update_property_in_db(clean_id, {"status": "inactive"})
         else:
             # 2. Öncelik (Yedek): Fonksiyonlar yoksa doğrudan SQL ile veritabanını güncelle
             conn = get_db_connection()
             cur = conn.cursor()
-            cur.execute("UPDATE properties SET status = 'passive' WHERE id = %s", (clean_id,))
+            cur.execute("UPDATE properties SET status = 'inactive' WHERE id = %s", (clean_id,))
             conn.commit()
             success = cur.rowcount > 0
-            
+
         if success:
-            return {"success": True, "message": "Property successfully changed to passive mode."}
+            return {"success": True, "message": "Property successfully changed to inactive mode."}
         else:
             return JSONResponse(status_code=400, content={"success": False, "error": "Property status could not be updated."})
             
@@ -458,7 +450,7 @@ async def admin_update_property_status_endpoint(property_id: str, request: Reque
     Genel yönetim arayüzünden gelen durum güncelleme isteği.
     Form verisinden (veya URLSearchParams) gelen 'status' değerine göre ilanı günceller.
     """
-    if not verify_admin():
+    if not verify_admin(request):
         return JSONResponse(status_code=403, content={"success": False, "error": "Unauthorized Access"})
         
     conn = None
@@ -500,9 +492,9 @@ async def admin_update_property_status_endpoint(property_id: str, request: Reque
 # 9. QUICK APPROVE PROPERTY (POST) - İlanı Doğrudan Aktif Yapar
 # =========================================================
 @router.post("/approve-property/{property_id}")
-async def admin_quick_approve_property(property_id: int):
+async def admin_quick_approve_property(property_id: int, request: Request):
     """Approving sayfasındaki butonlar için hızlı onaylama (status -> 'active') endpoint'i"""
-    if not verify_admin():
+    if not verify_admin(request):
         return JSONResponse(status_code=403, content={"success": False, "message": "Yetkisiz erişim: Admin değilsiniz."})
     
     conn = None
@@ -534,9 +526,9 @@ async def admin_quick_approve_property(property_id: int):
 # 10. QUICK REJECT PROPERTY (POST) - İlanı Doğrudan Pasif Yapar
 # =========================================================
 @router.post("/reject-property/{property_id}")
-async def admin_quick_reject_property(property_id: int):
-    """Approving sayfasındaki butonlar için hızlı reddetme (status -> 'passive') endpoint'i"""
-    if not verify_admin():
+async def admin_quick_reject_property(property_id: int, request: Request):
+    """Approving sayfasındaki butonlar için hızlı reddetme (status -> 'inactive') endpoint'i"""
+    if not verify_admin(request):
         return JSONResponse(status_code=403, content={"success": False, "message": "Yetkisiz erişim: Admin değilsiniz."})
     
     conn = None
@@ -545,7 +537,7 @@ async def admin_quick_reject_property(property_id: int):
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(
-            "UPDATE properties SET status = 'passive' WHERE id = %s",
+            "UPDATE properties SET status = 'inactive' WHERE id = %s",
             (property_id,)
         )
         conn.commit()
@@ -675,7 +667,7 @@ async def add_property(request: Request):
         "building_age": building_age, "heating": heating, "is_site": clean_is_site,
         "site_name": clean_site_name, "is_credit": clean_is_credit, "is_trade": clean_is_trade,
         "currency_code": currency_code, "currency": currency_code, "deed_status": deed_status,
-        "description": description, "image": image_urls_list[0], "status": "approving"
+        "description": description, "image": image_urls_list[0], "status": "pending"
     }
 
     agent_id = user_data.get('id')
@@ -748,6 +740,14 @@ async def get_single_property_api(property_id: str):
 @router.post("/api/property/update/{property_id}")
 async def update_property_endpoint(property_id: str, request: Request):
     try:
+        # --- YETKİ KONTROLÜ: Sadece admin veya ilanın sahibi agent güncelleyebilir ---
+        current_user = db.get_user_from_request(request)
+        if not current_user:
+            return JSONResponse(status_code=401, content={"error": "Bu işlem için giriş yapmalısınız."})
+        if not db.can_user_modify_property(current_user, property_id):
+            return JSONResponse(status_code=403, content={"error": "Bu ilanı düzenleme yetkiniz yok."})
+        user_role = current_user.get("role", "guest")
+
         form_data = await request.form()
         update_data = {}
 
@@ -841,9 +841,6 @@ async def update_property_endpoint(property_id: str, request: Request):
             if "image" not in update_data: update_data["image"] = new_image_urls[0]
 
         clean_id = int(property_id) if str(property_id).isdigit() else property_id
-        user_id_cookie = request.cookies.get("user_id")
-        user_data = db.get_user_from_cookie(user_id_cookie) if user_id_cookie else None
-        user_role = user_data.get("role") if user_data else "guest"
 
         success = False
         if hasattr(db, 'update_property_in_db'): success = db.update_property_in_db(clean_id, update_data)
@@ -871,7 +868,7 @@ def get_pending_approvals_from_db():
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT * FROM properties WHERE LOWER(TRIM(status)) = 'approving' ORDER BY id DESC")
+        cur.execute("SELECT * FROM properties WHERE LOWER(TRIM(status)) IN ('pending', 'approving') ORDER BY id DESC")
         return cur.fetchall() or []
     except Exception as e:
         print(f"Pending lists internal fetch error: {e}")

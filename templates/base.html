@@ -30,12 +30,63 @@
             font-family: 'Inter', 'Segoe UI', sans-serif; 
         }
         
-        /* Navbar */
+        /* --- TÜM SAYFALARDA GEÇERLİ KOYU-ŞEFFAF (GLASSMORPHISM) NAVBAR YAPISI --- */
         .navbar {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 40px; background: white; border-radius: 50px;
-            margin: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-            position: sticky; top: 10px; z-index: 2000;
+            padding: 15px 40px; border-radius: 50px;
+            z-index: 2000;
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            right: 20px;
+            margin: 0;
+            /* Arka planı hafif matlaştırılmış koyu-şeffaf bir katman yapıyoruz */
+            background: rgba(15, 23, 42, 0.45);
+            /* brightness(0.65) ile arkadaki beyaz resimleri karartarak butonları görünür kılıyoruz */
+            backdrop-filter: blur(15px) brightness(0.65);
+            -webkit-backdrop-filter: blur(15px) brightness(0.65);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Tüm sayfalarda menü yazı renklerinin her koşulda mükemmel okunabilmesi için optimize edildi */
+        .nav-links a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            transition: 0.2s;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        .nav-links a:hover {
+            color: var(--theme-color) !important;
+        }
+        .nav-links a.active {
+            color: #ffffff !important;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .navbar span:not([style*="color"]) {
+            color: #ffffff !important;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+        .nav-links {
+            display: flex;
+            gap: 25px;
+            padding: 10px 30px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* Resimlerin en üstten (sıfırdan) başlaması için main padding kaldırıldı.
+           Eğer bir alt sayfada (örneğin profile veya search) kahraman resmi yoksa ve içerik navbar'ın 
+           altına giriyorsa, o sayfaların üst div'ine padding-top: 100px; vermeniz yeterli olacaktır.
+        */
+        main {
+            padding-top: 0px;
         }
 
         .btn-main {
@@ -71,10 +122,6 @@
         .drop-item:hover { background: var(--theme-light); color: var(--theme-color); }
         .drop-item i { width: 20px; text-align: center; color: #94a3b8; }
         .drop-item:hover i { color: var(--theme-color); }
-
-        .nav-links a { text-decoration: none; color: #64748b; font-weight: 500; transition: 0.2s; }
-        .nav-links a:hover { color: var(--theme-color); }
-        .nav-links a.active { color: #1e293b; font-weight: 700; }
 
         /* --- PREMIUM ANIMASYONLU ELIT BİLDİRİM SİSTEMİ (NAVBAR & DROPDOWN) --- */
         .nav-unread-dot {
@@ -156,7 +203,7 @@
         </div>
     </div>
 
-    <div class="nav-links" style="display: flex; gap: 25px; background: #f8fafc; padding: 10px 30px; border-radius: 30px; border: 1px solid #f1f5f9;">
+    <div class="nav-links">
         <a href="/home" class="{{ 'active' if page_id == 'home' }}">Home</a>
         <a href="/search" class="{{ 'active' if page_id == 'search' }}">Search</a>
         <a href="/aichat" class="{{ 'active' if page_id == 'aichat' }}">AI Chat</a>
@@ -209,11 +256,9 @@
 </div>
 {% endblock %}
 
-
 <main>
     {% block content %}{% endblock %}
 </main>
-
 
 <footer class="patriotic-footer">
     {% if not is_admin %}
@@ -229,7 +274,7 @@
             </div>
             <div class="footer-col">
                 <h4>Contact Us</h4>
-                <p><i class="fas fa-map-marker-alt"></i> Girne, North Cyprus</p>
+                <p><i class="fas fa-map-marker-alt"></i> Kyrenia, North Cyprus</p>
                 <p><i class="fas fa-phone"></i> +90 (5xx) xxx xx xx</p>
             </div>
             <div class="footer-col">
@@ -268,7 +313,6 @@
         </div>
     </div>
 </footer>
-
 
 <script>
     function toggleDropdown(event) {

@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}AI Chat | CypInvEst{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-wrap {
+        max-width: 1160px;
+        margin: 10px auto 40px auto;
+        padding: 0 16px;
+    }
+
+    /* two-column layout: conversation sidebar + chat */
+    .ai-layout { display: flex; gap: 18px; align-items: stretch; }
+
+    .ai-sidebar {
+        width: 272px; flex-shrink: 0;
+        background: white; border: 1px solid #eef2f7; border-radius: 20px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+        display: flex; flex-direction: column;
+        height: 68vh; min-height: 460px; overflow: hidden;
+    }
+    .sb-head { padding: 14px; border-bottom: 1px solid #eef2f7; }
+    .sb-newchat {
+        width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+        background: var(--theme-color); color: white; border: none;
+        padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700;
+        cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px var(--theme-shadow);
+    }
+    .sb-newchat:hover { background: var(--theme-hover); transform: translateY(-1px); }
+    .sb-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+    .sb-empty { color: #94a3b8; font-size: 13px; text-align: center; padding: 24px 12px; line-height: 1.5; }
+    .sb-item {
+        display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+        border-radius: 11px; cursor: pointer; color: #475569; font-size: 13.5px;
+        transition: 0.15s; border: 1px solid transparent; position: relative;
+    }
+    .sb-item:hover { background: #f8fafc; }
+    .sb-item.active { background: var(--theme-light); color: var(--theme-color); border-color: var(--theme-color); font-weight: 600; }
+    .sb-item i.sb-ico { font-size: 13px; flex-shrink: 0; color: #94a3b8; }
+    .sb-item.active i.sb-ico { color: var(--theme-color); }
+    .sb-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-del {
+        border: none; background: none; color: #cbd5e1; cursor: pointer; font-size: 13px;
+        padding: 4px; border-radius: 6px; opacity: 0; transition: 0.15s; flex-shrink: 0;
+    }
+    .sb-item:hover .sb-del { opacity: 1; }
+    .sb-del:hover { color: #ef4444; background: #fee2e2; }
+
+    .ai-header {
+        text-align: center;
+        margin-bottom: 18px;
+    }
+    .ai-header h1 {
+        font-size: 30px;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0 0 6px;
+    }
+    .ai-header h1 span { color: var(--theme-color); }
+    .ai-header p { color: #64748b; margin: 0; font-size: 15px; }
+
+    .ai-badge {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--theme-color);
+        background: var(--theme-light);
+        padding: 5px 14px;
+        border-radius: 50px;
+        margin-bottom: 12px;
+    }
+
+    .chat-box {
+        flex: 1; min-width: 0;
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 24px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        height: 68vh;
+        min-height: 460px;
+        overflow: hidden;
+    }
+
+    .chat-stream {
+        flex: 1;
+        overflow-y: auto;
+        padding: 26px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        scroll-behavior: smooth;
+    }
+
+    .msg-row { display: flex; gap: 12px; align-items: flex-start; }
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+        width: 38px; height: 38px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; font-size: 16px; color: white;
+    }
+    .msg-avatar.bot { background: linear-gradient(135deg, var(--theme-color), var(--theme-hover)); }
+    .msg-avatar.me  { background: #1e293b; }
+
+    .msg-bubble {
+        max-width: 78%;
+        padding: 13px 17px;
+        border-radius: 18px;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #1e293b;
+    }
+    .msg-row.bot  .msg-bubble { background: #f1f5f9; border-top-left-radius: 4px; }
+    .msg-row.user .msg-bubble {
+        background: var(--theme-color); color: white; border-top-right-radius: 4px;
+    }
+
+    /* result cards inside a bot message */
+    .ai-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 14px;
+        margin-top: 14px;
+        width: 100%;
+    }
+    .ai-card {
+        background: white;
+        border: 1px solid #eef2f7;
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: 0.25s;
+        text-decoration: none;
+        display: block;
+    }
+    .ai-card:hover { transform: translateY(-5px); box-shadow: 0 14px 22px rgba(0,0,0,0.08); }
+    .ai-card img { width: 100%; height: 130px; object-fit: cover; display: block; background:#f1f5f9; }
+    .ai-card-body { padding: 12px 13px 14px; }
+    .ai-card-title {
+        font-size: 14.5px; font-weight: 700; color: #1e293b; margin: 0 0 6px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ai-card-price { color: var(--theme-color); font-weight: 800; font-size: 15px; margin: 0; }
+    .ai-card-meta {
+        display: flex; gap: 11px; flex-wrap: wrap; align-items: center;
+        color: #94a3b8; font-size: 12px; margin-top: 9px;
+        padding-top: 9px; border-top: 1px solid #f1f5f9;
+    }
+    .ai-card-badge {
+        position: absolute; top: 10px; right: 10px;
+        font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 6px;
+    }
+    .badge-sale { background: #fee2e2; color: #ef4444; }
+    .badge-rent { background: #dcfce7; color: #10b981; }
+
+    /* typing indicator */
+    .typing span {
+        display: inline-block; width: 7px; height: 7px; margin-right: 3px;
+        background: #94a3b8; border-radius: 50%; animation: bounce 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-6px); opacity: 1; } }
+
+    /* suggestion chips */
+    .ai-suggestions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+    .ai-chip {
+        background: white; border: 1px solid #e2e8f0; color: #475569;
+        padding: 8px 15px; border-radius: 50px; font-size: 13.5px; cursor: pointer; transition: 0.2s;
+    }
+    .ai-chip:hover { border-color: var(--theme-color); color: var(--theme-color); background: var(--theme-light); }
+
+    .chat-input-bar {
+        display: flex; gap: 10px; align-items: center;
+        padding: 14px; border-top: 1px solid #eef2f7; background: #fbfcfe;
+    }
+    .chat-input-bar input {
+        flex: 1; border: 1px solid #e2e8f0; border-radius: 50px;
+        padding: 14px 22px; font-size: 15px; outline: none; color: #334155;
+        background: white; transition: border-color 0.2s;
+    }
+    .chat-input-bar input:focus { border-color: var(--theme-color); }
+    .chat-send {
+        width: 50px; height: 50px; border-radius: 50%; border: none;
+        background: var(--theme-color); color: white; font-size: 17px; cursor: pointer;
+        flex-shrink: 0; transition: 0.2s; box-shadow: 0 4px 12px var(--theme-shadow);
+    }
+    .chat-send:hover { background: var(--theme-hover); transform: scale(1.05); }
+    .chat-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    @media (max-width: 860px) {
+        .ai-layout { flex-direction: column; }
+        .ai-sidebar { width: 100%; height: auto; min-height: 0; max-height: 230px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-wrap">
+    <div class="ai-header">
+        <div class="ai-badge">✨ AI Property Assistant</div>
+        <h1>Chat to find your <span>perfect home</span></h1>
+        <p>Tell me what you're looking for — location, budget, type — and I'll pull the best matches.</p>
+    </div>
+
+    <div class="ai-layout">
+        <aside class="ai-sidebar">
+            <div class="sb-head">
+                <button class="sb-newchat" onclick="newChat()"><i class="fas fa-plus"></i> New chat</button>
+            </div>
+            <div class="sb-list" id="convList">
+                <!-- conversation items injected by JS -->
+            </div>
+        </aside>
+
+        <div class="chat-box">
+            <div class="chat-stream" id="chatStream">
+                <!-- history + greeting injected by JS -->
+            </div>
+
+            <div class="chat-input-bar">
+                <input type="text" id="chatInput" autocomplete="off"
+                       placeholder="e.g. apartment in Famagusta, max 700 USD..."
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();sendChat();}">
+                <button class="chat-send" id="chatSendBtn" onclick="sendChat()" title="Send">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const stream = document.getElementById('chatStream');
+    const input = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('chatSendBtn');
+    const AI_ENABLED = ("{{ 'true' if ai_enabled else 'false' }}" === "true");
+    const IS_LOGGED_IN = ("{{ 'true' if is_logged_in else 'false' }}" === "true");
+    const HISTORY = {{ history|tojson }};
+    let CONVERSATIONS = {{ conversations|tojson }};
+    let currentConversationId = {{ active_id|tojson }};
+    const convList = document.getElementById('convList');
+
+    const SUGGESTIONS = [
+        "Apartment in Famagusta, max 700 USD",
+        "2 bedroom villa for sale in Kyrenia with sea view",
+        "Cheap studio to rent in Nicosia",
+        "Family house in Antalya under 5M TRY"
+    ];
+
+    function escapeHtml(s) {
+        return (s || '').replace(/[&<>"']/g, c => (
+            {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+        ));
+    }
+
+    function scrollDown() { stream.scrollTop = stream.scrollHeight; }
+
+    function botRow(innerHtml) {
+        const row = document.createElement('div');
+        row.className = 'msg-row bot';
+        row.innerHTML =
+            '<div class="msg-avatar bot"><i class="fas fa-robot"></i></div>' +
+            '<div class="msg-bubble">' + innerHtml + '</div>';
+        stream.appendChild(row);
+        scrollDown();
+        return row;
+    }
+
+    function userRow(text) {
+        const row = document.createElement('div');
+        row.className = 'msg-row user';
+        row.innerHTML =
+            '<div class="msg-avatar me"><i class="fas fa-user"></i></div>' +
+            '<div class="msg-bubble">' + escapeHtml(text) + '</div>';
+        stream.appendChild(row);
+        scrollDown();
+    }
+
+    function cardHtml(p) {
+        const imgSrc = (p.image && p.image.indexOf('http') === 0) ? p.image : '/' + p.image;
+        const badgeClass = p.is_sale ? 'badge-sale' : 'badge-rent';
+        const priceTxt = p.formatted_price
+            ? (escapeHtml(p.currency_symbol || '') + ' ' + escapeHtml(p.formatted_price) + (p.is_sale ? '' : ' <span style="color:#94a3b8;font-weight:500;font-size:12px;">/ mo</span>'))
+            : 'Price on request';
+        const beds = p.room_count ? '<span><i class="fas fa-bed"></i> ' + escapeHtml(p.room_count) + '</span>' : '';
+        const baths = p.bath_count ? '<span><i class="fas fa-bath"></i> ' + escapeHtml(String(p.bath_count)) + '</span>' : '';
+        return '' +
+          '<a class="ai-card" href="/property/' + p.id + '">' +
+            '<div style="position:relative;">' +
+              '<img src="' + imgSrc + '" alt="' + escapeHtml(p.name) + '" onerror="this.src=\'/static/htmlfotos/default.jpg\'">' +
+              '<span class="ai-card-badge ' + badgeClass + '">' + escapeHtml(p.display_type || '') + '</span>' +
+            '</div>' +
+            '<div class="ai-card-body">' +
+              '<p class="ai-card-title">' + escapeHtml(p.name) + '</p>' +
+              '<p class="ai-card-price">' + priceTxt + '</p>' +
+              '<div class="ai-card-meta">' + beds + baths +
+                '<span style="margin-left:auto;"><i class="fas fa-map-marker-alt" style="color:var(--theme-color);"></i> ' + escapeHtml(p.location || '') + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</a>';
+    }
+
+    // Renders one assistant turn (reply text + optional result cards) and returns the row.
+    function renderBotMessage(reply, properties) {
+        let html = escapeHtml(reply || '');
+        if (properties && properties.length) {
+            html += '<div class="ai-results">' + properties.map(cardHtml).join('') + '</div>';
+        }
+        return botRow(html);
+    }
+
+    function greeting() {
+        const chips = SUGGESTIONS.map(s =>
+            '<div class="ai-chip" onclick="askSuggestion(this)">' + escapeHtml(s) + '</div>'
+        ).join('');
+        const note = AI_ENABLED ? '' :
+            '<div style="margin-top:10px;font-size:12.5px;color:#94a3b8;">' +
+            '<i class="fas fa-info-circle"></i> Smart AI is offline right now — I\'ll still match on keywords & filters.</div>';
+        botRow(
+            "Hi! 👋 I'm your property assistant. Describe what you're after and I'll find listings for you." +
+            '<div class="ai-suggestions">' + chips + '</div>' + note
+        );
+    }
+
+    function askSuggestion(el) {
+        input.value = el.innerText;
+        sendChat();
+    }
+
+    // ----------------------------------------------------- conversation sidebar
+    function renderConvList() {
+        if (!convList) return;
+        if (!IS_LOGGED_IN) {
+            convList.innerHTML = '<div class="sb-empty"><i class="fas fa-circle-info"></i><br>Log in to save and revisit your conversations.</div>';
+            return;
+        }
+        if (!CONVERSATIONS.length) {
+            convList.innerHTML = '<div class="sb-empty">No conversations yet.<br>Start chatting to create one.</div>';
+            return;
+        }
+        convList.innerHTML = CONVERSATIONS.map(function (c) {
+            const active = c.id === currentConversationId ? ' active' : '';
+            return '<div class="sb-item' + active + '" data-id="' + c.id + '" onclick="openConversation(\'' + c.id + '\')">' +
+                     '<i class="fas fa-message sb-ico"></i>' +
+                     '<span class="sb-title">' + escapeHtml(c.title || 'New chat') + '</span>' +
+                     '<button class="sb-del" title="Delete conversation" onclick="deleteConversation(event, \'' + c.id + '\')"><i class="fas fa-trash"></i></button>' +
+                   '</div>';
+        }).join('');
+    }
+
+    function newChat() {
+        currentConversationId = null;
+        stream.innerHTML = '';
+        greeting();
+        renderConvList();
+        input.focus();
+    }
+
+    async function openConversation(id) {
+        if (id === currentConversationId) return;
+        try {
+            const res = await fetch('/api/ai-chat/conversation/' + encodeURIComponent(id));
+            if (!res.ok) { alert('Could not open that conversation.'); return; }
+            const data = await res.json();
+            currentConversationId = id;
+            stream.innerHTML = '';
+            (data.messages || []).forEach(function (m) {
+                if (m.role === 'user') userRow(m.message);
+                else renderBotMessage(m.message, m.properties);
+            });
+            if (!data.messages || !data.messages.length) greeting();
+            renderConvList();
+            scrollDown();
+        } catch (e) {
+            alert('Network error — please try again.');
+        }
+    }
+
+    async function deleteConversation(event, id) {
+        event.stopPropagation();
+        if (!confirm('Delete this conversation? This cannot be undone.')) return;
+        try {
+            const res = await fetch('/api/ai-chat/conversation/' + encodeURIComponent(id), { method: 'DELETE' });
+            if (!res.ok) { alert('Could not delete that conversation.'); return; }
+            CONVERSATIONS = CONVERSATIONS.filter(function (c) { return c.id !== id; });
+            if (id === currentConversationId) {
+                newChat();
+            } else {
+                renderConvList();
+            }
+        } catch (e) {
+            alert('Network error — please try again.');
+        }
+    }
+
+    // Move/insert a thread at the top of the sidebar after a new turn.
+    function bumpConversation(id, title) {
+        if (!id) return;
+        CONVERSATIONS = CONVERSATIONS.filter(function (c) { return c.id !== id; });
+        CONVERSATIONS.unshift({ id: id, title: title || 'New chat' });
+        renderConvList();
+    }
+
+    let busy = false;
+    async function sendChat() {
+        const text = input.value.trim();
+        if (!text || busy) return;
+        busy = true;
+        sendBtn.disabled = true;
+        input.value = '';
+
+        userRow(text);
+
+        // typing indicator
+        const typingRow = botRow('<div class="typing"><span></span><span></span><span></span></div>');
+
+        try {
+            const res = await fetch('/api/ai-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, conversation_id: currentConversationId })
+            });
+            const data = await res.json();
+            typingRow.remove();
+
+            if (!res.ok) {
+                botRow(escapeHtml(data.error || 'Something went wrong. Please try again.'));
+            } else {
+                renderBotMessage(data.reply, data.properties);
+                if (data.conversation_id) {
+                    currentConversationId = data.conversation_id;
+                    // new threads get a title from the server; existing ones just bump to top
+                    const existing = CONVERSATIONS.find(function (c) { return c.id === data.conversation_id; });
+                    bumpConversation(data.conversation_id, data.title || (existing && existing.title) || text);
+                }
+            }
+        } catch (e) {
+            typingRow.remove();
+            botRow('Network error — please check your connection and try again.');
+        } finally {
+            busy = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+    }
+
+    // On load: render the sidebar and replay the most-recent thread (if any).
+    renderConvList();
+    if (HISTORY && HISTORY.length) {
+        HISTORY.forEach(function (m) {
+            if (m.role === 'user') userRow(m.message);
+            else renderBotMessage(m.message, m.properties);
+        });
+        scrollDown();
+    } else {
+        greeting();
+    }
+    input.focus();
+</script>
+{% endblock %}

@@ -16,9 +16,9 @@ from routers.listings import process_property_data, format_currency
 # --- API ENDPOINTS (JAVASCRIPT BAĞLANTILARI İÇİN) ---
 
 @router.get("/api/favorites/my-list", response_model=List[int])
-async def get_my_favorite_ids(): 
+async def get_my_favorite_ids(request: Request):
     """Giriş yapmış kullanıcının favoriye eklediği ilanların sadece ID'lerini dizi olarak döner."""
-    user_obj = getattr(db, 'current_user_data', None)
+    user_obj = db.get_user_from_request(request)
     if not user_obj:
         return [] # Giriş yapılmadıysa boş liste dön
 
@@ -42,9 +42,9 @@ async def get_my_favorite_ids():
 
 
 @router.post("/api/favorites/add/{property_id}")
-async def add_to_favorites(property_id: int):
+async def add_to_favorites(property_id: int, request: Request):
     """İlanı kullanıcının Neon DB'deki favori tablosuna kaydeder (Many-to-Many)."""
-    user_obj = getattr(db, 'current_user_data', None)
+    user_obj = db.get_user_from_request(request)
     if not user_obj:
         return JSONResponse(status_code=401, content={"success": False, "message": "Lütfen önce giriş yapın."})
 
@@ -71,9 +71,9 @@ async def add_to_favorites(property_id: int):
 
 
 @router.post("/api/favorites/remove/{property_id}")
-async def remove_from_favorites(property_id: int):
+async def remove_from_favorites(property_id: int, request: Request):
     """İlanı kullanıcının favori tablosundan siler."""
-    user_obj = getattr(db, 'current_user_data', None)
+    user_obj = db.get_user_from_request(request)
     if not user_obj:
         return JSONResponse(status_code=401, content={"success": False, "message": "Lütfen önce giriş yapın."})
 
@@ -103,7 +103,7 @@ async def remove_from_favorites(property_id: int):
 
 @router.get("/profile/favorites", response_class=HTMLResponse)
 async def my_favorites_page(request: Request):
-    user_obj = getattr(db, 'current_user_data', None)
+    user_obj = db.get_user_from_request(request)
     if not user_obj:
         return RedirectResponse(url="/home")
 
@@ -119,7 +119,7 @@ async def my_favorites_page(request: Request):
             query = """
                 SELECT p.* FROM properties p
                 JOIN user_favorites f ON p.id = f.property_id
-                WHERE f.user_id = %s AND p.status != 'passive'
+                WHERE f.user_id = %s AND LOWER(TRIM(p.status)) NOT IN ('inactive', 'passive')
             """
             cur.execute(query, (current_user_id,))
             rows = cur.fetchall()

@@ -423,24 +423,24 @@
     // Agent / Admin Karar Mekanizması JS Kontrolleri
     function manageRequest(id, action) {
         if (action === 'approve_rental') {
-            if(confirm("Bu kiralama talebini onaylamak ve ödeme sürecini başlatmak istiyor musunuz?")) {
-                alert("Kiralama talebi onaylandı. Kullanıcıya ödeme bildirimi gönderildi.");
+            if(confirm("Do you want to approve this rental request and start the payment process?")) {
+                alert("Rental request approved. A payment notification has been sent to the user.");
             }
         } else if (action === 'approve_sale') {
-            if(confirm("Müşterinin satın alma teklifini kabul etmek istiyor musunuz?")) {
-                alert("Satış teklifi kabul edildi. Tapu ve ödeme hazırlıkları başlatıldı.");
+            if(confirm("Do you want to accept the customer's purchase offer?")) {
+                alert("Sale offer accepted. Title deed and payment preparations have started.");
             }
         } else if (action === 'reject') {
-            if(confirm("Bu başvuruyu reddetmek ve iptal etmek istediğinize emin misiniz?")) {
-                alert("Talep başarıyla reddedildi.");
+            if(confirm("Are you sure you want to reject and cancel this application?")) {
+                alert("Request successfully rejected.");
             }
         } else if (action === 'terminate') {
-            if(confirm("DİKKAT! Aktif olan bu kiralama sözleşmesini tek taraflı olarak feshetmek ve ilan mülkünü boşa çıkarmak istediğinize emin misiniz?")) {
-                alert("Sözleşme feshedildi. Portföy durumu güncellendi.");
+            if(confirm("WARNING! Are you sure you want to unilaterally terminate this active rental contract and vacate the listed property?")) {
+                alert("Contract terminated. Portfolio status updated.");
             }
         } else if (action === 'cancel_approval') {
-            if(confirm("Vermiş olduğunuz onayı iptal edip süreci başa sarmak istiyor musunuz?")) {
-                alert("Onay geri çekildi, ilan tekrar başvuru aşamasına alındı.");
+            if(confirm("Do you want to cancel the approval you gave and restart the process?")) {
+                alert("Approval withdrawn; the listing has been returned to the application stage.");
             }
         }
     }

@@ -5,9 +5,15 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from psycopg2.extras import RealDictCursor
 import database as db
+from services import ai_config, openai_client, query_pipeline, constraint_extractor
+from services import currency as currency_svc  # aliased: 'currency' is a query param below
+from services.place_aliases import normalize_places
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+# Özellik (features) listesi için süreç-içi önbellek (nadiren değişir)
+_features_cache = {"at": 0.0, "data": None}
 
 # --- GÖRSEL VE PARA FORMATLAMA YARDIMCILARI ---
 
@@ -99,7 +105,7 @@ if "currency" not in templates.env.filters:
 # --- %100 UYUMLU GELİŞMİŞ FİLTRELEME MOTORU ---
 
 @router.get("/search", response_class=HTMLResponse)
-async def dynamic_search_filter_engine(
+def dynamic_search_filter_engine(
     request: Request,
     page: int = Query(1, alias="page", ge=1),
     q: Optional[str] = Query(None),
@@ -148,17 +154,79 @@ async def dynamic_search_filter_engine(
     all_filtered_rows = []
     try:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, name FROM features ORDER BY name ASC")
-        all_features_list = cur.fetchall()
+        # Özellik listesi nadiren değişir -> kısa süreli önbellek (her aramada sorgu yok)
+        import time as _t
+        if _features_cache["data"] and _t.time() - _features_cache["at"] < 300:
+            all_features_list = _features_cache["data"]
+        else:
+            cur.execute("SELECT id, name FROM features ORDER BY name ASC")
+            all_features_list = cur.fetchall()
+            _features_cache.update(at=_t.time(), data=all_features_list)
 
         query = "SELECT * FROM properties WHERE status = 'active'"
         params = []
 
-        # 1. Metin Arama
+        # 1. Doğal Dil / Metin Arama — AI GPT HARD-FILTERS + semantic ranking.
+        # When AI is on, parse the free-text query into structured constraints
+        # (listing_type / property_type / city / district / beds / price) and apply
+        # them as real WHERE filters — but only for fields the user did NOT already set
+        # via the dropdowns (UI takes precedence). Price is currency-aware: mixed-currency
+        # rows are normalized to USD with live cached rates. Ordering happens later in the
+        # vector rerank. Without AI, falls back to keyword ILIKE.
+        gpt_filters = None
         if q and q.strip():
-            query += " AND (name ILIKE %s OR location ILIKE %s OR description ILIKE %s)"
-            search_param = f"%{q.strip()}%"
-            params.extend([search_param, search_param, search_param])
+            if ai_config.ai_enabled():
+                try:
+                    gpt_filters = constraint_extractor.extract(normalize_places(q.strip()))
+                except Exception as ex:
+                    print(f"GPT extract skipped: {ex}")
+                    gpt_filters = None
+
+            if gpt_filters is not None:
+                _ui_unset = lambda v: (not v) or str(v).strip().lower() in ("", "all", "mix")
+
+                if _ui_unset(listing_type) and gpt_filters.get("listing_type"):
+                    query += " AND LOWER(listing_type) = %s"
+                    params.append(gpt_filters["listing_type"])
+                if _ui_unset(property_type) and gpt_filters.get("property_type"):
+                    query += " AND property_type = %s"
+                    params.append(gpt_filters["property_type"])
+                if _ui_unset(city) and gpt_filters.get("city"):
+                    query += " AND city = %s"
+                    params.append(gpt_filters["city"])
+                if _ui_unset(district) and gpt_filters.get("district"):
+                    query += " AND district = %s"
+                    params.append(gpt_filters["district"])
+                if gpt_filters.get("min_beds") is not None:
+                    query += " AND beds >= %s"
+                    params.append(gpt_filters["min_beds"])
+                if gpt_filters.get("max_beds") is not None:
+                    query += " AND beds <= %s"
+                    params.append(gpt_filters["max_beds"])
+
+                # currency-aware price (only if the UI price fields are empty)
+                if (min_price is None and max_price is None) and (
+                    gpt_filters.get("min_price") is not None or gpt_filters.get("max_price") is not None
+                ):
+                    rates = currency_svc.get_usd_rates()
+                    qcur = gpt_filters.get("currency") or "USD"
+                    # converts each listing's price_normalized to USD inside one CASE expr
+                    case_expr = ("price_normalized * CASE UPPER(COALESCE(currency_code, currency, 'USD')) "
+                                 "WHEN 'USD' THEN %s WHEN 'GBP' THEN %s WHEN 'EUR' THEN %s "
+                                 "WHEN 'TRY' THEN %s ELSE %s END")
+                    rate_args = [rates.get("USD", 1.0), rates.get("GBP", 1.27),
+                                 rates.get("EUR", 1.08), rates.get("TRY", 0.031), 1.0]
+                    if gpt_filters.get("min_price") is not None:
+                        query += f" AND ({case_expr}) >= %s"
+                        params.extend(rate_args + [currency_svc.to_usd(gpt_filters["min_price"], qcur)])
+                    if gpt_filters.get("max_price") is not None:
+                        query += f" AND ({case_expr}) <= %s"
+                        params.extend(rate_args + [currency_svc.to_usd(gpt_filters["max_price"], qcur)])
+            else:
+                # no AI (or extraction failed) -> keyword fallback
+                query += " AND (name ILIKE %s OR location ILIKE %s OR description ILIKE %s)"
+                search_param = f"%{q.strip()}%"
+                params.extend([search_param, search_param, search_param])
 
         # 2. Listing Type (sale / rent Kayıt Kontrolü)
 # --- 2. KISIM (DÜZELTİLMİŞ): SADECE LISTING_TYPE KULLANAN SQL FİLTRESİ ---
@@ -264,22 +332,28 @@ async def dynamic_search_filter_engine(
             except Exception as fe:
                 print(f"Feature filter error: {fe}")
 
-        # 13. SORT BY SORTING MOTORU (Neon DB Güvenli Yapı)
-# --- GÜNCELLENMİŞ SIRALAMA (SORT BY) SORGUSU ---   #ilerde price normalize ve when ... kısmını güncelleyi döviz kurlarına bağlı olarak sıralama yapıclak
-        if sort:
-            sort_str = str(sort).strip().lower()
-            
-            if "high to low" in sort_str or "yüksek" in sort_str:
-                query += " ORDER BY COALESCE(price_normalized, 0) DESC, id DESC"
-            elif "low to high" in sort_str or "düşük" in sort_str:
-                query += " ORDER BY COALESCE(price_normalized, 0) ASC, id DESC"
-            elif "oldest" in sort_str or "eski" in sort_str or "old" in sort_str:
-                query += " ORDER BY id ASC"  # id ASC olduğu için ilk eklenen (en eski) ilanlar en başta gelir
-            else:
-                query += " ORDER BY id DESC"
+        # 13. SIRALAMA — AI semantic ordering tek sorguya gömülü (Stage 4).
+        # Serbest metin sorgusu varsa, AI açıksa ve kullanıcı açık bir sıralama
+        # (fiyat/eski) seçmediyse, ana sorgu doğrudan vektör benzerliğine göre
+        # sıralar (ayrı bir rerank round-trip'i YOK). Aksi halde normal sıralama.
+        _sort_str = str(sort or "").strip().lower()
+        _explicit_sort = any(k in _sort_str for k in
+                             ["high", "low", "yüksek", "düşük", "old", "eski"])
+        _qvec = openai_client.embed_query(q.strip()) \
+            if (q and q.strip() and ai_config.ai_enabled() and not _explicit_sort) else None
+
+        if _qvec is not None:
+            # NULL embedding'ler NULLS LAST ile en sona düşer
+            query += " ORDER BY embedding <=> %s::vector"
+            params.append(openai_client.to_vector_literal(_qvec))
+        elif "high to low" in _sort_str or "yüksek" in _sort_str:
+            query += " ORDER BY COALESCE(price_normalized, 0) DESC, id DESC"
+        elif "low to high" in _sort_str or "düşük" in _sort_str:
+            query += " ORDER BY COALESCE(price_normalized, 0) ASC, id DESC"
+        elif "oldest" in _sort_str or "eski" in _sort_str or "old" in _sort_str:
+            query += " ORDER BY id ASC"
         else:
             query += " ORDER BY id DESC"
-        # -----------------------------------------------------
 
         cur.execute(query, tuple(params))
         all_filtered_rows = cur.fetchall()
@@ -312,6 +386,15 @@ async def dynamic_search_filter_engine(
         "credit": credit or "", "swap": swap or "", "property_status": property_status or "",
         "title_type": title_type or "", "furniture": furniture or "", "otopark": otopark or "", "features": features or ""
     }
+
+    # --- SEARCH LOGGING (feeds failed-search Pareto / fishbone analysis) ---
+    try:
+        query_pipeline.log_search(
+            q or "", active_filters, total_items,
+            user_obj.get("id") if user_obj else None,
+        )
+    except Exception as _log_err:
+        print(f"search log skipped: {_log_err}")
 
     return templates.TemplateResponse(request, "search.html", {
         "properties": display_properties, "properties_from_db": display_properties, "all_features": all_features_list,

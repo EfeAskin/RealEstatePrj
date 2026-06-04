@@ -4,9 +4,9 @@
 <div class="favorites-container">
     <div class="favorites-header-block">
         <div class="header-title-area">
-            <h2 class="main-title">Favori İlanlarım</h2>
+            <h2 class="main-title">My Favorite Listings</h2>
             <p class="subtitle">
-                Hızlıca erişmek ve takip etmek için kaydettiğiniz tüm ilanlar aşağıda listelenmiştir.
+                All the listings you saved for quick access and tracking are shown below.
             </p>
         </div>
 
@@ -32,12 +32,12 @@
                 
                 <div class="card-image-wrap" style="position: relative; overflow: hidden; border-radius: 16px 16px 0 0;">
                     {% if property.image %}
-                        <img src="{{ url_for('static', path='/' + property.image) }}" alt="Property" style="width: 100%; height: 220px; object-fit: cover;">
+                        <img src="{% if property.image.startswith('http') %}{{ property.image }}{% else %}{{ url_for('static', path='/' + property.image) }}{% endif %}" alt="Property" style="width: 100%; height: 220px; object-fit: cover;" onerror="this.src='/static/htmlfotos/placeholder.jpg'">
                     {% else %}
                         <img src="/static/htmlfotos/placeholder.jpg" alt="Property" style="width: 100%; height: 220px; object-fit: cover;">
                     {% endif %}
 
-                    <button type="button" class="remove-fav-overlay-btn" onclick="event.stopPropagation(); removePropertyFromFavoritesPage('{{ property.id }}', this)" title="Favorilerden Kaldır">
+                    <button type="button" class="remove-fav-overlay-btn" onclick="event.stopPropagation(); removePropertyFromFavoritesPage('{{ property.id }}', this)" title="Remove from Favorites">
                         <i class="fa-solid fa-heart"></i>
                     </button>
                     
@@ -87,8 +87,8 @@
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                 </div>
-                <h3 style="color: #1e293b; font-size: 1.4rem; margin-bottom: 8px; font-weight: 700;">Henüz Favori İlanınız Yok</h3>
-                <p style="color: #64748b; font-size: 0.95rem; max-width: 400px; margin: 0 auto;">Beğendiğiniz ilanların yanındaki kalp simgesine tıklayarak bu listeye ekleme yapabilirsiniz.</p>
+                <h3 style="color: #1e293b; font-size: 1.4rem; margin-bottom: 8px; font-weight: 700;">You Have No Favorite Listings Yet</h3>
+                <p style="color: #64748b; font-size: 0.95rem; max-width: 400px; margin: 0 auto;">Click the heart icon next to listings you like to add them to this list.</p>
             </div>
         {% endif %}
     </div>
@@ -200,7 +200,7 @@
 
 <script>
     async function removePropertyFromFavoritesPage(propertyId, buttonElement) {
-        if(!confirm("Bu ilanı favorilerinizden kaldırmak istediğinize emin misiniz?")) return;
+        if(!confirm("Are you sure you want to remove this listing from your favorites?")) return;
         
         try {
             const response = await fetch(`/api/favorites/remove/${propertyId}`, { method: "POST" });
@@ -233,11 +233,11 @@
                     }, 350);
                 }
             } else {
-                alert(data.message || "İşlem başarısız oldu.");
+                alert(data.message || "The operation failed.");
             }
         } catch (error) {
             console.error("Favori kaldırma hatası:", error);
-            alert("Sunucu bağlantısı kurulamadı.");
+            alert("Could not connect to the server.");
         }
     }
 </script>
