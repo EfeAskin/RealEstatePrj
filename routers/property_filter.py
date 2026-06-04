@@ -191,12 +191,17 @@ def dynamic_search_filter_engine(
                 if _ui_unset(property_type) and gpt_filters.get("property_type"):
                     query += " AND property_type = %s"
                     params.append(gpt_filters["property_type"])
+                # Match the SAME place across columns (flat free-text geography):
+                # a place may sit in city/district/location on otherwise-matching
+                # rows. Case-insensitive, still strict (exact value, no wildcards
+                # except the longer free-text `location`). Mirrors build_candidate_sql.
                 if _ui_unset(city) and gpt_filters.get("city"):
-                    query += " AND city = %s"
-                    params.append(gpt_filters["city"])
+                    query += " AND (city ILIKE %s OR district ILIKE %s)"
+                    params.extend([gpt_filters["city"], gpt_filters["city"]])
                 if _ui_unset(district) and gpt_filters.get("district"):
-                    query += " AND district = %s"
-                    params.append(gpt_filters["district"])
+                    query += " AND (district ILIKE %s OR city ILIKE %s OR location ILIKE %s)"
+                    params.extend([gpt_filters["district"], gpt_filters["district"],
+                                   f"%{gpt_filters['district']}%"])
                 if gpt_filters.get("min_beds") is not None:
                     query += " AND beds >= %s"
                     params.append(gpt_filters["min_beds"])
@@ -293,11 +298,11 @@ def dynamic_search_filter_engine(
             query += " AND country = %s"
             params.append(country.strip())
         if city and city.strip() and city != "all":
-            query += " AND city = %s"
-            params.append(city.strip())
+            query += " AND (city = %s OR district = %s)"
+            params.extend([city.strip(), city.strip()])
         if district and district.strip() and district != "all":
-            query += " AND (district = %s OR location ILIKE %s)"
-            params.extend([district.strip(), f"%{district.strip()}%"])
+            query += " AND (district = %s OR city = %s OR location ILIKE %s)"
+            params.extend([district.strip(), district.strip(), f"%{district.strip()}%"])
 
         # 10. Boolean / Yan Alan Seçenekleri
         if is_site and is_site.strip().lower() == "yes": query += " AND (is_site = TRUE OR is_site = 'Evet' OR is_site = 'yes')"
@@ -343,9 +348,12 @@ def dynamic_search_filter_engine(
             if (q and q.strip() and ai_config.ai_enabled() and not _explicit_sort) else None
 
         if _qvec is not None:
-            # NULL embedding'ler NULLS LAST ile en sona düşer
-            query += " ORDER BY embedding <=> %s::vector"
-            params.append(openai_client.to_vector_literal(_qvec))
+            # Hibrit sıralama: vektör benzerliği BASKIN + lexical/rating/recency
+            # nüansları (ağırlıklar ai_config'te). NULL embedding'ler NULLS LAST.
+            order_sql, order_params = query_pipeline.build_hybrid_order_sql(
+                openai_client.to_vector_literal(_qvec), q.strip())
+            query += order_sql
+            params.extend(order_params)
         elif "high to low" in _sort_str or "yüksek" in _sort_str:
             query += " ORDER BY COALESCE(price_normalized, 0) DESC, id DESC"
         elif "low to high" in _sort_str or "düşük" in _sort_str:
@@ -357,6 +365,36 @@ def dynamic_search_filter_engine(
 
         cur.execute(query, tuple(params))
         all_filtered_rows = cur.fetchall()
+
+        # Relevance gate: for a free-text semantic search, ask the LLM whether our
+        # catalog can plausibly answer the query and drop everything when it can't — so
+        # off-topic queries ("castle or fortress near EMU") return empty instead of
+        # nearest-neighbor junk. A place/type the GPT extractor parsed out of the query
+        # must NOT bypass this — otherwise "fortress in Famagusta" smuggles an off-topic
+        # query past the gate via a city filter. Only an explicit UI-dropdown filter
+        # (a deliberate browse) skips the gate.
+        _ui_filters_present = any([
+            listing_type and str(listing_type).strip().lower() not in ("", "all", "mix"),
+            property_type and property_type != "all",
+            min_price is not None, max_price is not None,
+            currency and currency != "all",
+            room_count and room_count != "all", bath_count and bath_count != "all",
+            min_net_m2 is not None, max_net_m2 is not None,
+            min_gross_m2 is not None, max_gross_m2 is not None,
+            min_open_m2 is not None, max_open_m2 is not None,
+            building_age and building_age != "all", heating and heating != "all",
+            country and country != "all", city and city != "all", district and district != "all",
+            is_site, credit, swap, property_status, title_type, furniture, otopark, features,
+        ])
+        if (_qvec is not None and all_filtered_rows
+                and not _ui_filters_present
+                and query_pipeline.is_off_topic(q.strip(), False)):
+            all_filtered_rows = []
+
+        # Stage 5: LLM precision rerank of the top hits, only when semantic ordering
+        # was used (free-text query + AI on + no explicit sort). Self-gates on config.
+        if _qvec is not None:
+            all_filtered_rows = query_pipeline.llm_rerank_rows(q.strip(), all_filtered_rows)
         cur.close()
     except Exception as e:
         print(f"Neon DB SQL Error: {e}")

@@ -127,7 +127,9 @@ def chat_reply(user_message: str, filters: dict, count: int,
         "the closest matches.' Never claim a constraint was satisfied when it is listed in "
         "relaxed_constraints. If result_count is 0, gently say nothing matched and suggest "
         "widening the budget or location. Never invent specific listings, prices, or counts "
-        "beyond result_count. Reply in the user's language. Output only the sentence."
+        "beyond result_count. Reply in the SAME language as the user's message: the user writes in "
+        "either English or Turkish, so use English for an English message and Turkish for a Turkish "
+        "one, and NEVER use any other language. Output only the sentence."
     )
     try:
         resp = client.chat.completions.create(
@@ -143,6 +145,111 @@ def chat_reply(user_message: str, filters: dict, count: int,
         return (resp.choices[0].message.content or "").strip() or None
     except Exception as e:
         print(f"[openai_client] chat_reply failed: {e}")
+        return None
+
+
+# ----------------------------------------------------- relevance / intent gate
+
+_answerable_cache: dict = {}
+
+
+def is_answerable(query: str) -> Optional[bool]:
+    """Decide whether our residential catalog could plausibly answer this query.
+
+    Robust where a cosine floor fails: short legit queries ('pool', 'sea view') score
+    as low as nonsense, but the model still knows they're real property features while
+    'castle with a private beach' / 'spaceship' are not. Returns True/False, or None
+    on any failure. Fail-OPEN by design (callers treat None as answerable) so the gate
+    never wrongly hides results when the model is unavailable. Cached per query.
+    """
+    if not query:
+        return None
+    if query in _answerable_cache:
+        return _answerable_cache[query]
+    client = _get_client()
+    if client is None:
+        return None
+    system = (
+        "You are a gatekeeper for a North Cyprus / Turkey RESIDENTIAL real-estate search. "
+        "We list ordinary homes and plots: apartments, flats, villas, penthouses, houses, "
+        "bungalows, studios, duplexes and land — for rent or sale, described by their features "
+        "(sea view, pool, garden, furnished, parking...), location, room count and price. "
+        "Decide whether our listings could plausibly satisfy the query. "
+        "answerable=true when the query describes such an ordinary property, INCLUDING very short "
+        "feature/location/price/room queries (e.g. 'pool', 'sea view', '2+1 in Kyrenia', "
+        "'cheap rental near EMU', 'furnished flat', 'land in Iskele'). Default to true when in doubt. "
+        "answerable=false ONLY when the user asks for something we could never list: a non-residential "
+        "structure (castle, fortress, palace, dungeon, hotel, office, shop, factory, private island, "
+        "spaceship) or a fictional/impossible property (underwater, floating, haunted, on mars, a unicorn). "
+        "A real location or feature does NOT rescue these — 'castle or fortress with sea view near EMU' "
+        "and 'private island near Kyrenia' are both false. "
+        'Return ONLY JSON: {"answerable": true|false}.'
+    )
+    try:
+        resp = client.chat.completions.create(
+            model=ai_config.CHAT_MODEL,
+            messages=[{"role": "system", "content": system},
+                      {"role": "user", "content": query}],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        ans = bool((json.loads(resp.choices[0].message.content) or {}).get("answerable", True))
+        _answerable_cache[query] = ans
+        return ans
+    except Exception as e:
+        print(f"[openai_client] is_answerable failed: {e}")
+        return None
+
+
+# ----------------------------------------------------- LLM rerank (precision pass)
+
+def rerank_results(query: str, items: List[dict]) -> Optional[List[int]]:
+    """Cross-encoder-style rerank: reorder candidate listings by relevance to the query.
+
+    `items` is [{"id": int, "text": str}] — one compact summary per candidate (title +
+    key specs). Returns the ids ordered best->worst (a subset/permutation of the input
+    ids), or None on any failure so the caller keeps the hybrid order. Grounded: GPT only
+    reorders the candidates we give it — it cannot invent listings or facts.
+    """
+    client = _get_client()
+    if client is None or not query or not items:
+        return None
+    valid_ids = {it["id"] for it in items}
+    listing = "\n".join(f'{it["id"]}: {it["text"]}' for it in items)
+    system = (
+        "You are a real-estate search reranker. Given a user query and a numbered list of "
+        "candidate listings, order the listing ids from MOST to LEAST relevant to the query "
+        "(consider type, location, size, budget and described features). Return ONLY JSON: "
+        '{"order": [ids...]}. Use only ids from the candidates, no duplicates, no new ids.'
+    )
+    try:
+        resp = client.chat.completions.create(
+            model=ai_config.CHAT_MODEL,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": f"Query: {query}\n\nCandidates:\n{listing}"},
+            ],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+        raw = json.loads(resp.choices[0].message.content) or {}
+        order = raw.get("order")
+        if not isinstance(order, list):
+            return None
+        # Keep only known ids, drop dupes, then append any the model omitted (stable).
+        seen, ranked = set(), []
+        for x in order:
+            try:
+                i = int(x)
+            except (TypeError, ValueError):
+                continue
+            if i in valid_ids and i not in seen:
+                seen.add(i)
+                ranked.append(i)
+        ranked.extend(it["id"] for it in items if it["id"] not in seen)
+        return ranked or None
+    except Exception as e:
+        print(f"[openai_client] rerank_results failed: {e}")
         return None
 
 
