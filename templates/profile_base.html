@@ -35,7 +35,9 @@
 
     .profile-wrapper { display: flex; min-height: 100vh; background-color: #f8fafc; }
     
-    /* Sol taraftaki menüyü (Sidebar) navbar yüksekliği kadar aşağı indirdik ve taşmayı engelledik */
+    /* ==========================================================================
+       💻 MASAÜSTÜ (PC) GÖRÜNÜMÜ - ORİJİNAL KUSURSUZ DÜZEN
+       ========================================================================== */
     .p-sidebar { 
         width: 280px; 
         background: white; 
@@ -47,23 +49,45 @@
         top: 80px; 
         height: calc(100vh - 80px); 
         z-index: 10; 
+        box-sizing: border-box;
+    }
+
+    /* PC'de Kullanıcı Kartı - Resim üstte, isim ve rol tam altında ortalı */
+    .profile-user-card {
+        text-align: center;
+        margin-bottom: 35px;
+        display: block; /* Flex sızıntısını engellemek için block yapıldı */
     }
     
-    .p-nav-item { display: flex; align-items: center; padding: 14px 18px; margin-bottom: 8px; border-radius: 12px; color: #64748b; text-decoration: none; font-weight: 500; transition: var(--transition); border: 1px solid transparent; }
+    .p-nav-item { display: flex; align-items: center; padding: 14px 18px; margin-bottom: 8px; border-radius: 12px; color: #64748b; text-decoration: none; font-weight: 500; transition: var(--transition); border: 1px solid transparent; white-space: nowrap; }
     .p-nav-item i { width: 25px; margin-right: 12px; font-size: 1.1rem; text-align: center; }
     .p-nav-item:hover { color: var(--active-color); background: var(--bg-soft); transform: translateX(5px); }
     .p-nav-item.active { background: white; color: var(--active-color); border-color: var(--active-color); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 0 15px var(--active-color); font-weight: 700; transform: translateX(8px); }
     
-    /* Sağ taraftaki form ve içerik alanını navbar yüksekliği kadar aşağı çektik */
+    /* Sağ içerik ve kart yapısı - Mesajlaşma ve tabloların taşmasını önleyen esnek yapı */
     .p-content { 
         flex: 1; 
         padding: 40px; 
         padding-top: 110px; 
         background: linear-gradient(135deg, var(--bg-soft) 0%, #ffffff 100%); 
-        overflow-y: auto; 
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
     }
     
-    .p-glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 25px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid white; min-height: 80vh; }
+    .p-glass-card { 
+        background: rgba(255, 255, 255, 0.95); 
+        backdrop-filter: blur(10px); 
+        border-radius: 25px; 
+        padding: 40px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03); 
+        border: 1px solid white; 
+        min-height: 80vh; 
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Kart dışına kontrolsüz taşmaları engeller */
+    }
     
     /* Buton stilleri */
     .btn-bottom { margin-top: auto; padding: 15px; color: white; text-align: center; border-radius: 12px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition); }
@@ -125,16 +149,9 @@
         animation: envelope-shake 1.5s infinite ease-in-out;
     }
 
-    /* Göz Alıcı Lüks Efekt Animasyonları */
     @keyframes pulse-glow {
-        0% {
-            transform: scale(1);
-            box-shadow: 0 0 8px rgba(255, 56, 92, 0.4);
-        }
-        100% {
-            transform: scale(1.06);
-            box-shadow: 0 0 16px rgba(255, 56, 92, 0.8), 0 0 4px #ff385c;
-        }
+        0% { transform: scale(1); box-shadow: 0 0 8px rgba(255, 56, 92, 0.4); }
+        100% { transform: scale(1.06); box-shadow: 0 0 16px rgba(255, 56, 92, 0.8), 0 0 4px #ff385c; }
     }
 
     @keyframes envelope-shake {
@@ -145,6 +162,106 @@
         60% { transform: rotate(8deg); }
         75% { transform: rotate(0deg); }
     }
+
+    /* ==========================================================================
+       📱 MOBİL RESPONSIVE AYARLARI (SADECE MOBİLDE AKTİF OLUR)
+       ========================================================================== */
+    @media (max-width: 991px) {
+        .profile-wrapper {
+            flex-direction: column !important;
+        }
+
+        .p-sidebar {
+            width: 100% !important;
+            height: auto !important;
+            position: relative !important;
+            top: 0 !important;
+            padding: 15px 10px !important;
+            border-right: none !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        /* Mobil görünümde yan yana hizalama (Sadece bu breakpoint'te geçerli) */
+        .profile-user-card {
+            display: flex !important;
+            align-items: center !important;
+            text-align: left !important;
+            margin-bottom: 15px !important;
+            gap: 15px !important;
+            padding: 0 10px !important;
+        }
+        
+        .image-container {
+            margin: 0 !important;
+            width: 60px !important;
+            height: 60px !important;
+        }
+        
+        .profile-user-card h3 {
+            font-size: 1rem !important;
+        }
+
+        #profileSidebarNav {
+            display: flex !important;
+            overflow-x: auto !important;
+            gap: 8px !important;
+            padding: 5px 10px 10px 10px !important;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        #profileSidebarNav::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        .p-nav-item {
+            margin-bottom: 0 !important;
+            padding: 10px 16px !important;
+            font-size: 13px !important;
+            border-radius: 50px !important;
+            background: #f8fafc;
+        }
+        
+        .p-nav-item i {
+            margin-right: 6px !important;
+            font-size: 1rem !important;
+        }
+        
+        .p-nav-item:hover {
+            transform: none !important;
+        }
+        
+        .p-nav-item.active {
+            transform: none !important;
+            background: var(--active-color) !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+        }
+
+        .btn-bottom {
+            margin-top: 10px !important;
+            padding: 12px !important;
+            font-size: 13px !important;
+            border-radius: 50px !important;
+        }
+
+        .p-content {
+            padding: 16px !important;
+            padding-top: 20px !important;
+        }
+
+        .p-glass-card {
+            padding: 20px 16px !important;
+            border-radius: 20px !important;
+            min-height: auto !important;
+            overflow-x: auto !important; /* Mesajlaşma veya alt sayfa tablolarının taşmasını önler */
+        }
+        
+        .menu-messages-badge {
+            margin-left: 6px !important;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -153,7 +270,7 @@
 <div class="profile-container" data-role="{{ user_role }}">
     <div class="profile-wrapper">
         <aside class="p-sidebar">
-            <div class="profile-user-card" style="text-align: center; margin-bottom: 35px;">
+            <div class="profile-user-card">
                 <div class="image-container">
                     <img src="{{ url_for('static', path='htmlfotos/' + (profile_image if profile_image else 'default_user.png')) }}" 
                          id="profilePreview" class="profile-pic" alt="Profile">
@@ -163,9 +280,10 @@
                     </label>
                     <input type="file" id="fileInput" style="display: none;" accept="image/*" onchange="previewImage(event)">
                 </div>
-
-                <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b;">{{ first_name }} {{ last_name }}</h3>
-                <span style="font-size: 0.8rem; color: var(--active-color); font-weight: 700; text-transform: uppercase;">{{ user_role }}</span>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 700;">{{ first_name }} {{ last_name }}</h3>
+                    <span style="font-size: 0.8rem; color: var(--active-color); font-weight: 700; text-transform: uppercase; display: block; margin-top: 2px;">{{ user_role }}</span>
+                </div>
             </div>
             
             <nav id="profileSidebarNav">
@@ -180,7 +298,7 @@
                     <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
                         <i class="fa-solid fa-heart"></i> Favourites
                     </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center; width: 100%;" id="sidebarMsgAnchor">
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
                         <i class="fa-solid fa-envelope"></i> <span>Messages</span>
                         <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
                     </a>
@@ -195,7 +313,7 @@
                     <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
                         <i class="fa-solid fa-heart"></i> Favourites
                     </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center; width: 100%;" id="sidebarMsgAnchor">
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
                         <i class="fa-solid fa-envelope"></i> <span>Messages</span>
                         <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
                     </a>
@@ -216,7 +334,7 @@
                     <a href="/admin/approving" class="p-nav-item {% if p_page == 'approving' %}active{% endif %}">
                         <i class="fa-solid fa-circle-check"></i> Approving
                     </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center; width: 100%;" id="sidebarMsgAnchor">
+                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
                         <i class="fa-solid fa-inbox"></i> <span>Messages</span>
                         <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
                     </a>
@@ -282,16 +400,13 @@ function closeModal() {
     }
 }
 
-// Global Bildirim ve Rozet Yönetim Sistemi (Anlık Senkronizasyon Motoru)
 function updateGlobalBadges() {
     const unreadCountFromServer = parseInt("{{ unread_messages_count | default(0) }}") || 0;
     const activeChatId = "{{ active_conversation_id if active_conversation_id else 'None' }}";
     
-    // Mesajlaşma sayfasındaysak ve oda aktifse, okunmamış sayısını anında sıfırla
     if (activeChatId !== "None" && activeChatId !== "undefined" && window.location.pathname.includes("/messages")) {
         localStorage.setItem("unread_count", "0");
     } else {
-        // Eğer yerelde veri yoksa sunucudan geleni yaz
         if (localStorage.getItem("unread_count") === null) {
             localStorage.setItem("unread_count", unreadCountFromServer);
         }
@@ -299,7 +414,6 @@ function updateGlobalBadges() {
 
     const finalCount = parseInt(localStorage.getItem("unread_count") || 0);
     
-    // 1. Sol Sidebar Badge Güncelleme
     const sidebarBadge = document.querySelector(".field-sidebar-badge");
     if (sidebarBadge) {
         const countText = sidebarBadge.querySelector(".badge-count") || sidebarBadge;
@@ -311,7 +425,6 @@ function updateGlobalBadges() {
         }
     }
 
-    // 2. Üst Navbar (base.html içindeki güncel seçicilerle senkron) Güncelleme
     const navbarSelectors = ["#globalNavBadge", ".backend-msg-count"];
     navbarSelectors.forEach(selector => {
         const navbarBadge = document.querySelector(selector);
@@ -329,11 +442,9 @@ function updateGlobalBadges() {
     });
 }
 
-// Mesajların okunduğunu anında yakalayan global EventListener dinleyicisi
 document.addEventListener("DOMContentLoaded", function() {
     updateGlobalBadges();
 
-    // Aktif odadayken DOM güncellemelerini yakala ve bildirimleri anında uçur
     const chatHistory = document.getElementById("chatMessageHistory") || document.querySelector(".chat-messages");
     if (chatHistory) {
         const observer = new MutationObserver(function() {
@@ -346,4 +457,4 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
-{% endblock %}  
+{% endblock %}

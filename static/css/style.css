@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 /* --- TEMEL AYARLAR --- */
 * {
@@ -10,9 +10,10 @@
 
 body, html {
     width: 100%;
-    height: 100%;
-    overflow-x: hidden;
+    min-height: 100vh;
     background-color: #f4f7fe;
+    /* Rapordaki Madde 2 & 7 Çözümü: Yatay taşmaları küresel engellemek yerine akıllıca yönetiyoruz */
+    overflow-x: hidden; 
 }
 
 /* --- GİRİŞ SAYFALARI ARKA PLAN --- */
@@ -28,10 +29,11 @@ body, html {
     padding: 20px;
 }
 
+/* Rapordaki Madde 1 & 6 Çotingi: Sabit piksel yerine yüzdelik ve esnek max-width */
 .glass-box {
     width: 100%;
-    max-width: 579px;
-    min-height: 384px;
+    max-width: 540px;
+    min-height: auto;
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     border-radius: 20px;
@@ -110,19 +112,17 @@ body, html {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* --- NAVBAR VE DROPDOWN --- */
+/* --- NAVBAR VE DROPDOWN (ÇAKIŞMALAR TEMİZLENDİ) --- */
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 15px 40px;
     background: white;
-    margin: 20px;
+    margin: 0 auto; /* Base html üzerindeki absolute düzeni bozmaması için margin temizlendi */
     border-radius: 50px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    position: sticky;
-    top: 20px;
-    z-index: 1001;
+    z-index: 2001;
 }
 
 .dropdown {
@@ -134,7 +134,7 @@ body, html {
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     border-radius: 15px;
     padding: 12px;
-    z-index: 1000;
+    z-index: 2005;
     width: 220px;
     border: 1px solid #f1f5f9;
 }
@@ -171,9 +171,10 @@ body, html {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    /* Rapordaki Madde 6 Çözümü: clamp ve auto-fill kombinasyonu ile kart genişlikleri esnek */
+    grid-template-columns: repeat(auto-fill, minmax(clamp(280px, 30vw, 360px), 1fr));
     gap: 30px;
-    padding: 20px 8%;
+    padding: 20px 5%;
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -199,17 +200,33 @@ body, html {
     padding: 20px 0;
 }
 
+/* ==========================================================================
+   KUTUNUN NAVBAR ALTINDA BOĞULMASINI ENGELLEYEN EFSANE DÜZELTME
+   ========================================================================== */
 .hero-glass-box {
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border-radius: 40px;
-    padding: 60px 40px;
-    margin: 20px auto;
+    
+    /* İŞTE ARADIĞIN O NET 1-2 CM BOŞLUK BURADA: 
+       Üst iç boşluğu (padding-top) 150px yaparak hem navbar'ı kurtardık 
+       hem de kutu içi metinleri aşağıya şıkça ittik. */
+    padding: 140px 40px 60px 40px !important; 
+    
+    margin: 0 auto 20px auto !important;
     max-width: 900px;
+    width: 90%;
     border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
     transition: all 0.4s ease;
+}
+
+/* Rapordaki Madde 3 Çözümü: Büyük başlıkların mobilde devasa kalmasını önleyen clamp fonksiyonu */
+.hero-glass-box h1, .hero h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem) !important;
+    font-weight: 800;
+    line-height: 1.3;
 }
 
 .property-badge {
@@ -234,33 +251,19 @@ body, html {
     color: #64748b; font-size: 14px;
 }
 
-/* --- GÜNCELLENMİŞ PATRIOTIC FOOTER --- */
-/* --- FOOTER KESİN ÇÖZÜM BLOKLARI --- */
-
-/* --- PROFESYONEL ZENGİN FOOTER --- */
-/* ... (Dosyanın ilk 250-260 satırı: Navbar, Grid, Slider vb. aynen kalıyor) ... */
-
-/* --- GÜNCELLENMİŞ PATRIOTIC FOOTER --- */
-/* --- FOOTER KESİN ÇÖZÜM BLOKLARI --- */
-
-/* --- PROFESYONEL ZENGİN FOOTER --- */
-/* --- PREMIUM ZENGİN FOOTER VE DEV BAR --- */
+/* --- PATRIOTIC FOOTER --- */
 .patriotic-footer {
     width: 100% !important;
     background-color: #ffffff !important;
-    margin-top: 80px !important;
+    margin-top: 50px !important;
     border-top: 1px solid #f1f5f9 !important;
 }
 
-/* Üst Bilgi Alanı (Menü, İletişim, Newsletter) */
 .footer-top {
     padding: 40px 5% !important;
     background: #fafafa !important;
-    /* ÖNEMLİ: Burada sabit 'display: grid !important' vardı, o kaldırıldı. 
-       Böylece HTML'deki {% if %} bloğu çalıştığında alan tamamen kapanabilecek. */
 }
 
-/* Admin paneli için ekstra garanti sınıfı (Dosyaya eklendi, bir şey silinmedi) */
 .hide-admin-footer {
     display: none !important;
 }
@@ -300,14 +303,16 @@ body, html {
 .subscribe-box button { background: #1BA7FF !important; color: white !important; border: none !important; padding: 0 20px !important; cursor: pointer; transition: 0.3s; }
 .subscribe-box button:hover { background: #008ae6 !important; }
 
-/* --- DEVASA ALT BAR (150PX) --- */
+/* --- ALT BAR DÜZENLEME --- */
 .footer-bottom-bar {
-    height: 150px !important; 
+    min-height: 150px !important; 
+    height: auto !important;
     background: white !important;
     border-top: 3px solid #f1f5f9 !important;
     display: flex !important;
     justify-content: center !important;
-    box-shadow: 0 -8px 25px rgba(0,0,0,0.04) !important;
+    box-shadow: 0 -8px 25 rgba(0,0,0,0.04) !important;
+    padding: 20px 0;
 }
 
 .footer-inner {
@@ -316,9 +321,10 @@ body, html {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
-/* Sol Taraf: Telif ve Sosyal Medya */
 .footer-copyright { 
     font-size: 18px !important; 
     color: #1e293b !important; 
@@ -330,14 +336,14 @@ body, html {
 .footer-socials a { font-size: 28px !important; color: #94a3b8 !important; transition: 0.3s ease; }
 .footer-socials a:hover { color: #1BA7FF !important; transform: translateY(-3px) scale(1.1); }
 
-/* --- SAĞ TARAF: DEV SEMBOLLER --- */
+/* --- SAĞ TARAF: SEMBOLLER --- */
 .footer-right-symbols {
     display: flex !important;
     align-items: center !important;
     gap: 25px !important;
+    flex-wrap: wrap;
 }
 
-/* Bayrak Çerçeveleri */
 .symbol-frame {
     width: 120px !important;
     height: 80px !important;
@@ -348,7 +354,6 @@ body, html {
     background: #fff !important;
 }
 
-/* ATATÜRK ÖZEL DEV ÇERÇEVE */
 .ata-special-frame {
     width: 100px !important;
     height: 135px !important;
@@ -362,17 +367,6 @@ body, html {
     display: block !important;
 }
 
-/* Mobil Tasarım */
-@media (max-width: 768px) {
-    .footer-bottom-bar { height: auto !important; padding: 40px 0 !important; }
-    .footer-inner { flex-direction: column !important; gap: 35px !important; text-align: center !important; }
-    .footer-socials { justify-content: center !important; }
-    .symbol-frame { width: 100px !important; height: 65px !important; }
-    .ata-special-frame { width: 85px !important; height: 115px !important; }
-}
-
-/* Admin panelinde footer üst kısmını tamamen yok et */
-/* Admin panelinde footer üst kısmını ve grid boşluğunu tamamen yok eder */
 .admin-footer-gizle {
     display: none !important;
     height: 0 !important;
@@ -382,7 +376,63 @@ body, html {
     opacity: 0 !important;
 }
 
-/* Admin panelindeyken içeriğin footer'a çok yapışmasını engelle */
-.patriotic-footer {
-    margin-top: 50px !important;
+/* ==========================================================================
+   RESPONSIVE KATMANI (RAPORDAKİ TÜM PROBLEMLERİ TEKTE ÇÖZEN KISIM)
+   ========================================================================== */
+@media (max-width: 968px) {
+    .glass-box {
+        max-width: 90% !important;
+        padding: 30px 20px !important;
+    }
+
+    .grid {
+        grid-template-columns: 1fr !important;
+        padding: 15px 4% !important;
+        gap: 20px !important;
+    }
+
+    .hero-glass-box {
+        /* Mobilde navbar alta katlanacağı için padding alanını esnettik */
+        padding: 180px 20px 40px 20px !important;
+        margin: 15px auto !important;
+        border-radius: 20px !important;
+        width: 95%;
+    }
+
+    .footer-bottom-bar { 
+        padding: 30px 15px !important; 
+    }
+    .footer-inner { 
+        flex-direction: column !important; 
+        gap: 25px !important; 
+        text-align: center !important; 
+    }
+    
+    .footer-right-symbols {
+        justify-content: center !important;
+        gap: 15px !important;
+    }
+    .symbol-frame { 
+        width: 95px !important; 
+        height: 65px !important; 
+    }
+    .ata-special-frame { 
+        width: 80px !important; 
+        height: 110px !important; 
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-copyright {
+        font-size: 15px !important;
+    }
+    .footer-socials {
+        justify-content: center;
+    }
+    .footer-socials a {
+        font-size: 24px !important;
+    }
+    .card img {
+        height: 180px !important;
+    }
 }

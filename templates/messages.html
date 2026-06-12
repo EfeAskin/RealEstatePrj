@@ -78,6 +78,19 @@
 
     <div class="chat-main-window" style="flex: 1; display: flex; flex-direction: column; background: #ffffff; position: relative;">
         {% if active_chat_partner %}
+        <button
+    onclick="window.location.href='/profile/messages'"
+    class="mobile-back-btn"
+    style="
+        display:none;
+        border:none;
+        background:none;
+        font-size:20px;
+        cursor:pointer;
+        color:#1e293b;
+        margin-right:10px;">
+    <i class="fa-solid fa-arrow-left"></i>
+</button>
             <div style="padding: 16px 25px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.01);">
                 {% if is_admin and room_user and room_agent %}
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -307,6 +320,138 @@
         background-color: #cbd5e1;
         border-radius: 10px;
     }
+
+    /* =====================================================
+   MOBILE CHAT LAYOUT
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+    .chat-container-system {
+        margin: 0 !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* SOL LİSTE */
+    .chat-sidebar-list {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        background: #fff;
+        transition: transform .25s ease;
+    }
+
+    /* CHAT AÇIKKEN LİSTEYİ GİZLE */
+    .mobile-chat-open .chat-sidebar-list {
+        transform: translateX(-100%);
+    }
+
+    /* ANA CHAT */
+    .chat-main-window {
+        width: 100% !important;
+        min-width: 100% !important;
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        z-index: 10;
+        transform: translateX(100%);
+        transition: transform .25s ease;
+    }
+
+    .mobile-chat-open .chat-main-window {
+        transform: translateX(0);
+    }
+
+    /* CHAT YOKSA NORMAL GÖSTER */
+    .chat-main-window.no-chat-selected {
+        transform: translateX(100%);
+    }
+
+    /* ÜST BAR */
+    .chat-main-window > div:first-child {
+        padding: 12px 15px !important;
+    }
+
+    /* MESAJ ALANI */
+    #chatMessageHistory {
+        padding: 12px !important;
+        gap: 10px !important;
+    }
+
+    /* GÖNDEREN BALONU */
+    #chatMessageHistory > div[style*="justify-content: flex-end"] {
+        margin-left: 8% !important;
+    }
+
+    /* ALAN BALONU */
+    #chatMessageHistory > div[style*="justify-content: flex-start"] {
+        margin-right: 8% !important;
+    }
+
+    /* MESAJ KUTULARI */
+    #chatMessageHistory div[style*="border-radius: 18px"] {
+        max-width: 80vw !important;
+        font-size: .92rem !important;
+        padding: 10px 14px !important;
+    }
+
+    /* ALT YAZMA ALANI */
+    #chatForm {
+        gap: 8px !important;
+    }
+
+    #message_text {
+        font-size: 16px !important;
+        padding: 12px 16px !important;
+    }
+
+    #chatForm button {
+        width: 46px !important;
+        height: 46px !important;
+        flex-shrink: 0;
+    }
+
+    /* PROPERTY PANEL */
+    #propPanel {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* AVATARLAR */
+    .chat-user-item img {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    /* SIDEBAR SATIRLARI */
+    .chat-user-item {
+        padding: 14px 16px !important;
+    }
+
+    /* İSİMLER */
+    .chat-user-item h5 {
+        font-size: .9rem !important;
+    }
+
+    /* SON MESAJ */
+    .last-msg-text-span {
+        font-size: .8rem !important;
+    }
+} 
+
+@media (max-width:768px){
+
+    .mobile-back-btn{
+        display:block !important;
+    }
+
+}
 </style>
 
 <script>
@@ -531,5 +676,24 @@
             }
         }
     });
+
+    // MOBILE CHAT MODE
+function updateMobileChatState() {
+
+    if (window.innerWidth > 768) {
+        document.body.classList.remove("mobile-chat-open");
+        return;
+    }
+
+    const roomId = "{{ active_conversation_id }}";
+
+    if (roomId && roomId !== "" && roomId !== "None") {
+        document.body.classList.add("mobile-chat-open");
+    }
+}
+
+updateMobileChatState();
+
+window.addEventListener("resize", updateMobileChatState);
 </script>
 {% endblock %}

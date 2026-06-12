@@ -3,31 +3,39 @@
 <head>
     <title>Admin Login - CypInvEst</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;800&display=swap');
         
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         
-        body, html { width: 100%; height: 100%; overflow: hidden; }
+        body, html { width: 100%; min-height: 100%; }
+
+        body { overflow-x: hidden; }
 
         .glass-container {
-            height: 100vh; width: 100%; display: flex; justify-content: center; align-items: center;
+            min-height: 100dvh; 
+            width: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            padding: 20px;
             background: linear-gradient(rgba(164, 22, 26, 0.25), rgba(164, 22, 26, 0.25)), 
-                        url("/static/htmlfotos/loginspage.png") no-repeat center center fixed;
-            background-size: cover;
+                        url("/static/htmlfotos/loginspage.png") no-repeat center center / cover;
         }
 
         .glass-box {
-            width: 450px; 
+            width: min(450px, 92vw); 
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 30px; 
             position: relative; 
             padding: 50px 40px;
-            /* Admin Kırmızısı Keskin Gölge */
             box-shadow: 0 0 50px rgba(164, 22, 26, 0.2), 0 20px 40px rgba(0,0,0,0.25);
-            display: flex; flex-direction: column; align-items: center;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
             border: 1px solid rgba(164, 22, 26, 0.1);
             transition: 0.3s;
         }
@@ -39,15 +47,23 @@
             display: flex; align-items: center; justify-content: center; 
             background: #f1f5f9; color: #64748b; border-radius: 50%; 
             transition: 0.3s ease; font-size: 1rem;
+            z-index: 5;
         }
         .exit-btn:hover { background: #fee2e2; color: #a4161a; transform: scale(1.1); }
 
         /* Başlık ve Logo */
         .brand-logo {
             font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 5px;
-            display: flex; align-items: center;
+            display: flex; align-items: center; justify-content: center;
+            white-space: nowrap;
         }
-        h2 { font-size: 1.1rem; color: #1e293b; margin-bottom: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .brand-logo .dot {
+            display: inline-block; width: 8px; height: 8px; background: #D4A373; 
+            border-radius: 50%; margin-left: 5px; margin-top: 12px;
+        }
+        
+        h2 { font-size: 1.1rem; color: #1e293b; margin-bottom: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
 
         /* Form Elemanları */
         .input-group { width: 100%; margin-bottom: 20px; text-align: left; }
@@ -87,6 +103,13 @@
             text-align: center; line-height: 1.4;
         }
 
+        /* Mobil Optimizasyonları */
+        @media (max-width: 480px) {
+            .glass-box { padding: 40px 20px; border-radius: 24px; }
+            .brand-logo { font-size: 1.75rem; }
+            h2 { font-size: 1rem; margin-bottom: 20px; }
+            .exit-btn { top: 15px; right: 15px; width: 35px; height: 35px; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>
@@ -98,7 +121,7 @@
 
             <div class="brand-logo">
                 <span style="color: #D4A373;">Cyp</span><span style="color: #1E88E5;">Inv</span><span style="color: #2E7D32;">Est</span>
-                <span style="width: 8px; height: 8px; background: #D4A373; border-radius: 50%; margin-left: 5px; margin-top: 12px;"></span>
+                <span class="dot"></span>
             </div>
             <h2>Admin Terminal</h2>
 

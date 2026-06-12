@@ -8,15 +8,22 @@
     .hero {
         position: relative;
         text-align: center; 
-        padding: 100px 20px !important; /* Kutunun nefes alması için padding biraz artırıldı */
+        width: 100%;
+        min-height: 65vh; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Navbar ile kutu arasındaki mesafeyi eski ideal haline (140px) geri getirdik */
+        padding: 140px 24px 70px 24px !important; 
         background-image: url('https://emlakkulisi.com/resim/tamboyut/ODk4MjQzMT-kuzey-kibris-emlak-sektorunde-buyuk-panik.jpg');
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
+        box-sizing: border-box;
         overflow: hidden;
     }
 
-    /* Arkaplan resminin üzerine hafif karanlık/soft bir katman atarak yazıların okunmasını garantiliyoruz */
+    /* Görselin üzerindeki soft koyu katman */
     .hero::before {
         content: '';
         position: absolute;
@@ -24,69 +31,159 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(15, 23, 42, 0.4); /* Koyu yarı saydam katman */
+        background: rgba(15, 23, 42, 0.45); 
         z-index: 1;
     }
 
-    /* --- HERO GLASS BOX TASARIMI --- */
+    /* --- HERO GLASS BOX (Responsive Tasarım) --- */
 .hero-glass-box {
     position: relative;
-    z-index: 2; /* Resmin ve koyu katmanın üstünde durması için */
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 50px;
-    border-radius: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.15);
-    max-width: 850px;
-    /* Üstten 40px boşluk bırakır, sağ ve solu otomatik ortalar, alttan 0 kalır */
-    margin: 40px auto 0 auto; 
-    transition: transform 0.3s ease;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    
+    /* Üst ve alt padding değerleri dengeli şekilde artırılarak kutuya o aradığın yarım cm'lik alan kazandırıldı */
+    padding: 35px clamp(30px, 5vw, 50px) 35px clamp(30px, 5vw, 50px) !important; 
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.04);
+    width: 100%;
+    max-width: 900px; 
+    margin: 0 auto; 
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* İçindeki tüm elemanların genel olarak ortalanmasını garanti altına alıyoruz */
 }
 
-    .hero-glow {
-        color: var(--theme-color);
-        font-size: 13px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        display: inline-block;
-        margin-bottom: 15px;
-        padding: 5px 15px;
-        background: var(--theme-light);
-        border-radius: 20px;
-    }
+    /* Akıllı Yazı Boyutları (clamp yardımıyla mobilde otomatik küçülür, PC'de büyür) */
+.hero-glass-box h1 {
+    font-size: 32px !important; 
+    font-weight: 800; 
+    margin: 0 0 10px 0 !important; /* Altındaki açıklama ile mesafesi açıldı */
+    line-height: 1.25 !important; 
+    color: #1e293b; 
+    letter-spacing: -0.5px;
+    text-align: center !important; /* Başlık ortalandı */
+}
 
-    /* --- SEARCH CONTAINER --- */
-    .search-wrapper {
-        display: flex;
-        align-items: center;
-        background: white;
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 6px 8px 6px 22px;
-        border-radius: 100px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-        border: 1px solid #edf2f7;
+    /* Alt açıklama yazısı alanı */
+.hero-glass-box p {
+    text-align: center !important; /* Sola kayma problemi bu satırla tamamen çözüldü */
+    margin: 0 auto 24px auto !important; /* Sağı ve solu otomatik yaparak merkeze kilitledik, alta 24px boşluk verdik */
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: #475569;
+    max-width: 580px; /* Yazının sağa sola aşırı dağılıp estetiği bozmasını engeller */
+}
+
+    /* ✨ KESİNTİSİZ PARILDAYAN AI PROMPT INPUT CONTAINER ✨ */
+    .ai-search-container {
+        max-width: 620px; 
+        margin: 0 auto; 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        background: white; 
+        padding: 4px 5px 4px 16px; /* İnceltilmiş input dikey yapısı */
+        border-radius: 99px; 
+        box-sizing: border-box;
+        position: relative;
+        width: 100%;
+        
+        border: 2px solid transparent;
+        background-image: linear-gradient(white, white), linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        
+        animation: aiGlowPulse 3s infinite ease-in-out;
+        transition: all 0.3s ease;
     }
     
-    .search-wrapper input {
-        border: none;
-        outline: none;
-        flex: 1;
-        font-size: 16px;
-        color: #475569;
-        background: transparent;
+    .ai-search-container:focus-within {
+        animation: none; 
+        box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.25), 0 12px 35px rgba(168, 85, 247, 0.35);
     }
 
-    /* --- SLIDER OKLARI VE KARTLAR --- */
+    @keyframes aiGlowPulse {
+        0% { box-shadow: 0 8px 20px rgba(168, 85, 247, 0.15), 0 0 6px rgba(139, 92, 246, 0.1); }
+        50% { box-shadow: 0 10px 30px rgba(168, 85, 247, 0.35), 0 0 16px rgba(139, 92, 246, 0.4); }
+        100% { box-shadow: 0 8px 20px rgba(168, 85, 247, 0.15), 0 0 6px rgba(139, 92, 246, 0.1); }
+    }
+
+    .ai-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+    .ai-input-icon {
+        color: #a855f7; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .ai-search-input {
+        border: none; 
+        outline: none; 
+        width: 100%;
+        font-size: 13.5px; 
+        font-weight: 500;
+        color: #1e293b; 
+        background: transparent; 
+        padding: 6px 0;
+    }
+    .ai-search-input::placeholder {
+        color: #94a3b8;
+    }
+    
+    .btn-ai-search {
+        flex-shrink: 0; 
+        border: none;
+        outline: none;
+        border-radius: 99px; 
+        padding: 7px 20px; 
+        font-weight: 600; 
+        font-size: 13.5px;
+        color: white;
+        background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        display: flex; 
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-ai-search:hover {
+        opacity: 0.95;
+    }
+
+    /* Üst Kısımdaki Kompakt AI Rozeti */
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(168, 85, 247, 0.08);
+    color: #a855f7;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 auto 12px auto !important; /* Başlıkla olan dikey ilişkisi yumuşatıldı */
+}
+
+    /* --- SLIDER OKLARI VE POPÜLER KARTLAR --- */
     .nav-btn {
         position: absolute;
         top: 55%;
         transform: translateY(-50%);
-        width: 50px;
-        height: 50px;
+        width: 45px;
+        height: 45px;
         background: white;
         border: none;
         border-radius: 50%;
@@ -94,68 +191,296 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        z-index: 100;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 10;
+        transition: all 0.2s ease;
         color: #1e293b;
     }
     .nav-btn:hover {
         background: var(--theme-color);
         color: white;
-        transform: translateY(-50%) scale(1.1);
     }
 
-    /* Property Kartı Sabitleme */
+    /* Kart Genişlikleri Düzenlemesi */
     .card {
         min-width: calc((100% / 3) - 16px);
         background: white;
-        border-radius: 25px;
+        border-radius: 24px;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
         cursor: pointer;
-        transition: 0.3s;
+        transition: transform 0.3s ease;
+        box-sizing: border-box;
     }
     .card:hover { transform: translateY(-5px); }
+
+    /* ==========================================================================
+       MOBİL VE TABLET UYUMLULUK AYARLARI (Sorunsuz Mobil Düzen Korundu)
+       ========================================================================== */
+@media (max-width: 768px) {
+    /* --- HERO VE ARAMA ALANI (Orijinal Kod Korundu) --- */
+    .hero {
+        padding: 90px 14px 40px 14px !important;
+    }
+    .hero-glass-box {
+        padding: 12px 14px 20px 14px !important;
+        border-radius: 20px;
+    }
+    .hero-glass-box h1 {
+        font-size: 20px !important;
+        margin-bottom: 6px !important;
+        white-space: nowrap !important;
+        letter-spacing: -0.3px;
+    }
+    .hero-glass-box p {
+        margin-bottom: 16px !important;
+        font-size: 11px !important;
+        line-height: 1.4;
+    }
+    .ai-search-container {
+        flex-direction: row !important; 
+        border-radius: 50px !important;
+        padding: 4px 6px 4px 12px !important;
+        gap: 6px;
+    }
+    .ai-search-input {
+        font-size: 13px !important;
+        padding: 6px 0;
+    }
+    .ai-input-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+    .btn-ai-search {
+        width: auto !important;
+        padding: 8px 16px !important;
+        font-size: 13px !important;
+        border-radius: 50px !important;
+    }
+    .filter-bar {
+        margin: 20px 4% 10px 4%;
+        justify-content: center;
+    }
+    .grid {
+        padding: 20px 4%;
+        gap: 20px;
+    }
+
+    /* --- MOBİL KART CONTAINER DÜZENLEMELERİ (Tüm Sınıflar Korundu ve Güçlendirildi) --- */
+.most-popular-card, 
+    .suggested-card { 
+        width: 175px !important; /* Ezilmeyi önleyen ideal esnek genişliğe çekildi */
+        min-width: 175px !important; 
+        max-width: 190px !important;
+        height: auto !important;
+        min-height: 310px !important; /* İçeriğin dikeyde taşmasını önleyen güvenli taban alan */
+        border-radius: 16px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        background: white;
+        overflow: hidden;
+        padding-bottom: 8px !important;
+    }
+
+    /* Üst Swiper/Slider esnekliğini koruyan ek seçici */
+    .card.most-popular-card,
+    .swiper-slide .card {
+        width: 175px !important;
+        min-width: 175px !important;
+        max-width: 190px !important;
+        height: auto !important;
+        min-height: 310px !important;
+        border-radius: 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        padding-bottom: 8px !important;
+    }
+
+    /* --- GÖRSEL ALANI --- */
+    .most-popular-card img,
+    .suggested-card img,
+    .card.most-popular-card img,
+    .swiper-slide .card img {
+        height: 115px !important; /* Yazı alanlarına dikeyde milimetrik yer açmak için optimize edildi */
+        min-height: 115px !important;
+        object-fit: cover !important;
+        width: 100% !important;
+    }
+
+    /* --- KART İÇERİK ALANI --- */
+    .card-content-mobil { 
+        padding: 10px 12px !important;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        justify-content: space-between;
+    }
+
+    .card-content {
+        padding: 10px 10px 4px 10px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        flex-grow: 1 !important;
+    }
+
+    /* --- İLAN BAŞLIKLARI (2 Satır Kuralı Eksiksiz Birleştirildi) --- */
+.most-popular-card h3,
+.suggested-card h3,
+.card.most-popular-card h3,
+.swiper-slide .card h3,
+.card-content h3,
+.card-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #1e293b;
+    margin: 0 0 4px 0 !important;
+    line-height: 1.3 !important;
+    
+    /* Editör uyarısını söndüren ve standardı sağlayan webkit bloğu */
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important; /* Maksimum 2 satıra izin verir */
+    
+    /* Modern tarayıcılar ve standart linter desteği için tamamlayıcı kural */
+    line-clamp: 2; 
+    
+    overflow: hidden !important;
+    white-space: normal !important; 
+}
+
+    /* --- FİYAT ALANI (Üste Binmeleri Önleyen Blok Düzeni) --- */
+    .price-container-mobil {
+        display: flex;
+        flex-direction: column; 
+        gap: 2px;
+        margin-bottom: 4px;
+        width: 100%;
+    }
+
+    .price-text,
+    .card-content .price,
+    .card-content h4 {
+        font-size: 13.5px !important; /* Büyük rakamların taşmaması için çok hafif (0.5px) küçültüldü */
+        font-weight: 800 !important;
+        color: #2563eb; 
+        display: flex !important;
+        flex-direction: column !important; /* Fiyat satırında inline basılan oda elementlerini alt alta hizaya zorlar */
+        align-items: flex-start !important; /* İçeriği sola yaslar */
+        gap: 2px !important;
+        width: 100% !important;
+        margin: 2px 0 4px 0 !important;
+        line-height: 1.2 !important;
+    }
+
+    /* --- ODA / METREKARE / ÖZELLİK BİLGİLERİ (Bağımsız Satır Haline Getirildi) --- */
+    .card-features-mobil,
+    .card-features, 
+    .card-content span,
+    .card-content div:has(svg) {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        color: #64748b !important;
+        font-size: 11px !important;
+        width: 100% !important;
+        flex-wrap: wrap !important;
+        margin-top: 2px !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Fiyat satırının içine doğrudan gömülmüş olan oda sayılarını ve ikonları da yakalayıp aşağıya indiren ek koruma kuralı */
+    .price-text span,
+    .card-content .price span,
+    .card-content h4 span,
+    .price-text i,
+    .card-content .price svg,
+    .card-content h4 svg {
+        font-weight: 500 !important;
+        font-size: 11px !important;
+        color: #64748b !important;
+    }
+
+    /* --- KONUM BİLGİSİ (Alt Sınıra Kilitleme Ve Seperatör Eklendi) --- */
+    .location-container-mobil {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10.5px !important;
+        color: #64748b;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 6px;
+        margin-top: auto;
+    }
+
+    .card-content p,
+    .card-content .location {
+        font-size: 11px !important;
+        margin-top: auto !important; /* Esnek yapıda kartın en altına itilmesini garantiler */
+        padding-top: 6px !important;
+        color: #64748b !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+        border-top: 1px solid #f1f5f9 !important; /* Kart tabanında premium temiz çizgi */
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <main>
-    <section class="hero">
-        <div class="hero-glass-box">
-            <span class="hero-glow">✨ AI Powered Recommendations</span>
-            
-            <h1 style="font-size: 46px; font-weight: 800; margin: 15px 0; color: #0f172a; line-height: 1.2;">
-                {% if role == 'agent' %}
-                    Give Your Dream Home Ads with AI
-                {% else %}
-                    Find Your Dream Home with AI
-                {% endif %}
-            </h1>
-            
-            <p style="color: #64748b; font-size: 18px; margin-bottom: 35px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                {% if role == 'agent' %}
-                    Manage your listings effectively with our smart property tools.
-                {% else %}
-                    Experience the future of property search with our intelligent matching system.
-                {% endif %}
-            </p>
-            
-            <div class="search-wrapper">
-                <form action="/search" method="GET" style="display: flex; width: 100%; align-items: center;">
-                    <input type="text" name="q" placeholder="Search location, property name or type...">
-                    <button type="submit" class="btn-main">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                </form>
+<div class="hero">
+    <div class="hero-glass-box">
+        <span class="ai-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/></svg>
+            AI Intelligence Tool
+        </span>
+        
+        <h1>
+            {% if role == 'agent' %}
+                Analyze Your Listings with AI
+            {% else %}
+                Find Your Dream Home with AI
+            {% endif %}
+        </h1>
+        
+        <p style="color: #64748b; margin-bottom: 20px; font-size: 14px; font-weight: 500; line-height: 1.5; max-width: 650px; margin-left: auto; margin-right: auto;">
+            {% if role == 'agent' %}
+                Optimize your properties and reach the right audience using our smart matching algorithms.
+            {% else %}
+                Smart property search powered by artificial intelligence. Search now, get personalized recommendations.
+            {% endif %}
+        </p>
+        
+        <form action="/search" method="GET" id="mainSearchForm" class="ai-search-container">
+            <div class="ai-input-wrapper">
+                <div class="ai-input-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </div>
+                <input type="text" id="keywordQueryInput" name="q" value="{{ query if query else '' }}" placeholder="Ask AI: '3+1 luxury villa in Kyrenia'..." class="ai-search-input">
             </div>
-        </div>
+            
+            <input type="hidden" id="hiddenTypeInput" name="type" value="{{ selected_type if selected_type else '' }}">
+            
+            <button type="submit" class="btn-ai-search">
+                <span>Search</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+        </form>
+    </div>
+</div>
     </section>
-<br><br><br>
+
+    <br><br><br>
+
     <section class="most-popular-section" style="padding: 0 6%; position: relative; margin-bottom: 80px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 20px;">
-            <h2 style="color: #1e293b; font-size: 28px; font-weight: 700; margin: 0;">Most Popular</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 10px;">
+            <h2 style="color: #1e293b; font-size: clamp(20px, 3vw, 28px); font-weight: 700; margin: 0;">Most Popular</h2>
             <a href="/search" style="color: var(--theme-color); text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 5px;">
                 View All <i class="fas fa-arrow-right"></i>
             </a>
@@ -169,7 +494,6 @@
                 {% for property in properties %}
                 <div class="card" onclick="window.location.href='/property/{{ property.id }}'">
                     <div style="position: relative;">
-                        {# KRİTİK DÜZELTME: Yolun başına / eklendi. backend.py'deki mount ile tam uyumlu hale getirildi #}
                         <img src="{% if property.image and property.image.startswith('http') %}{{ property.image }}{% else %}/{{ property.image }}{% endif %}" alt="{{ property.name }}" style="width: 100%; height: 250px; object-fit: cover;">
                         
                         <div class="property-badge" style="position: absolute; top: 15px; right: 15px; background: white; padding: 5px 12px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
@@ -211,20 +535,26 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const track = document.getElementById('sliderTrack');
+    if(!track) return;
     const cards = Array.from(track.children);
     if(cards.length === 0) return;
 
-    const visibleCards = 3;
+    const getVisibleCardsCount = () => {
+        if (window.innerWidth <= 576) return 1;
+        if (window.innerWidth <= 992) return 2;
+        return 3;
+    };
+
+    let visibleCards = getVisibleCardsCount();
     const gap = 24;
 
-    // --- SONSUZ DÖNGÜ MANTIĞI ---
-    const firstClones = cards.slice(0, visibleCards).map(node => node.cloneNode(true));
-    const lastClones = cards.slice(-visibleCards).map(node => node.cloneNode(true));
+    const firstClones = cards.slice(0, 3).map(node => node.cloneNode(true));
+    const lastClones = cards.slice(-3).map(node => node.cloneNode(true));
     
     firstClones.forEach(clone => track.appendChild(clone));
     lastClones.reverse().forEach(clone => track.insertBefore(clone, track.firstChild));
 
-    let currentIndex = visibleCards;
+    let currentIndex = 3;
     
     const updatePosition = () => {
         const firstCard = track.querySelector('.card');
@@ -244,9 +574,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePosition();
 
         track.addEventListener('transitionend', () => {
-            if (currentIndex >= cards.length + visibleCards) {
+            if (currentIndex >= cards.length + 3) {
                 track.style.transition = 'none';
-                currentIndex = visibleCards;
+                currentIndex = 3;
                 updatePosition();
             }
             if (currentIndex <= 0) {
@@ -257,7 +587,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }, { once: true });
     };
 
-    window.addEventListener('resize', updatePosition);
+    window.addEventListener('resize', function() {
+        visibleCards = getVisibleCardsCount();
+        updatePosition();
+    });
 });
 </script>
 {% endblock %}

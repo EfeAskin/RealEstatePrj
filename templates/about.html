@@ -4,6 +4,11 @@
 
 {% block extra_css %}
 <style>
+    @media (min-width: 769px) {
+        main, body, .content-wrapper {
+            padding-top: 60px !important; /* Navbar yüksekliğine göre değiştirebilirsin */
+        }
+    }
     /* Arka Plan Efekti */
     .about-section {
         min-height: 80vh;
@@ -147,6 +152,60 @@
     .btn-msg { background: #1e293b; color: white; }
     .btn-email { background: var(--theme-color); color: white; }
     .btn-modern:hover { opacity: 0.9; transform: translateY(-3px); }
+
+    /* ==========================================================================
+       TELEFONLAR İÇİN DİNAMİK UYUMLULUK KATMANI (MASAÜSTÜ AYARLARINI BOZMAZ)
+       ========================================================================== */
+    @media (max-width: 968px) {
+        .about-section {
+            padding: 20px 15px; /* Mobilde dış boşluğu daralttık */
+        }
+
+        .premium-card {
+            flex-direction: column; /* Logo ve yazıları yan yana yerine alt alta dizer */
+            gap: 40px;
+            padding: 40px 20px;
+            border-radius: 30px;
+            text-align: center;
+        }
+
+        .university-tag {
+            justify-content: center; /* Fakülte yazısını mobilde ortaladık */
+            font-size: 14px;
+        }
+
+        /* Dalgalanan logonun mobilde taşmaması için boyutunu optimize ettik */
+        .ai-glow-circle {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+
+        .ai-glow-circle i {
+            font-size: 100px; /* Logodaki ikon boyutunu daireye göre küçülttük */
+        }
+
+        .team-member {
+            padding: 15px;
+            flex-direction: column; /* İsim ve rolü dar ekranlarda alt alta alarak sıkışmayı önler */
+            gap: 5px;
+            text-align: center;
+        }
+
+        .team-member .role {
+            margin-left: 0; /* Mobilde sağa yaslamak yerine ortaladık */
+        }
+
+        .action-btns {
+            flex-direction: column; /* Butonlar yan yana sığmayacağı için alt alta kusursuzca uzanır */
+            gap: 12px;
+        }
+
+        .btn-modern {
+            width: 100%;
+            justify-content: center; /* Buton metinlerini ortaladık */
+        }
+    }
 </style>
 {% endblock %}
 

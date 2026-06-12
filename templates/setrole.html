@@ -9,155 +9,226 @@
         /* Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;800;900&display=swap');
 
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            font-family: 'Poppins', sans-serif; 
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Poppins',sans-serif;
         }
 
-        body, html { 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-        }
-        
-        /* Arka Plan */
-        .glass-container {
-            height: 100vh; 
-            width: 100%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
-                        url("/static/htmlfotos/loginspage.png") no-repeat center center fixed;
-            background-size: cover;
+        html,
+        body{
+            width:100%;
+            min-height:100%;
         }
 
-        /* Premium Karşılama Kutusu */
-        .glass-box {
-            width: 850px; /* Başlık büyük olduğu için genişliği artırdık */
-            min-height: 500px; 
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 40px; 
-            
-            /* Mavi Işıltılı Dev Gölge */
-            box-shadow: 0 0 60px rgba(59, 130, 246, 0.25), 
-                        0 20px 50px rgba(0,0,0,0.3);
-            
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            text-align: center;
-            padding: 60px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            position: relative;
-            overflow: hidden;
+        body{
+            overflow-x:hidden;
         }
 
-        /* Arka Plandaki Hafif Altın Işıltı */
-        .glass-box::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(212, 163, 115, 0.05) 0%, rgba(255,255,255,0) 70%);
-            z-index: 0;
-            pointer-events: none;
+        .glass-container{
+            min-height:100dvh;
+            width:100%;
+
+            display:flex;
+            justify-content:center;
+            align-items:center;
+
+            padding:20px;
+
+            background:
+            linear-gradient(
+                rgba(0,0,0,0.4),
+                rgba(0,0,0,0.4)
+            ),
+            url("/static/htmlfotos/loginspage.png")
+            center center / cover no-repeat;
         }
 
-        /* Dev Karşılama Başlığı */
-        .welcome-title {
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 4.2rem; 
-            font-weight: 900; 
-            letter-spacing: -2px; 
-            margin: 0; 
-            position: relative;
-            z-index: 1;
-            line-height: 1.1;
+        .glass-box{
+            width:min(850px,95vw);
+            min-height:500px;
+            background:rgba(255,255,255,.85);
+
+            backdrop-filter:blur(20px);
+            -webkit-backdrop-filter:blur(20px);
+
+            border-radius:40px;
+
+            box-shadow:
+            0 0 60px rgba(59,130,246,.25),
+            0 20px 50px rgba(0,0,0,.3);
+
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+
+            text-align:center;
+            padding:60px;
+
+            border:1px solid rgba(255,255,255,.4);
+
+            position:relative;
+            overflow:hidden;
         }
 
-        .welcome-text {
-            color: #1e293b; 
-            margin-right: 20px; 
-            font-weight: 800; 
-            font-size: 3.5rem;
+        .glass-box::before{
+            content:"";
+            position:absolute;
+            top:-50%;
+            left:-50%;
+            width:200%;
+            height:200%;
+
+            background:
+            radial-gradient(
+                circle,
+                rgba(212,163,115,.05) 0%,
+                rgba(255,255,255,0) 70%
+            );
+
+            pointer-events:none;
         }
 
-        /* Logo Renkleri ve DropShadow */
-        .cyp { color: #D4A373; filter: drop-shadow(0 0 2px rgba(212, 163, 115, 0.3)); }
-        .inv { color: #1E88E5; filter: drop-shadow(0 0 2px rgba(30, 136, 229, 0.3)); }
-        .est { color: #2E7D32; filter: drop-shadow(0 0 2px rgba(46, 125, 50, 0.3)); }
-
-        .dot {
-            width: 15px; 
-            height: 15px; 
-            background: #D4A373; 
-            border-radius: 50%; 
-            margin-left: 10px; 
-            margin-top: 30px; 
-            box-shadow: 0 0 10px rgba(212, 163, 115, 0.6);
+        /* --- BAŞLIK ALANI DÜZENLEMESİ (KAYMALARI ENGELLER) --- */
+        .welcome-title{
+            position:relative;
+            z-index:2;
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            align-items:center;
+            gap:12px;
+            line-height:1.2;
+            width:100%;
         }
 
-        .choose-text { 
-            font-weight: 600; 
-            margin: 40px 0 30px 0; 
-            color: #64748b; 
-            font-size: 20px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            position: relative;
-            z-index: 1;
+        .brand-group {
+            display:inline-flex;
+            align-items:center;
+            white-space:nowrap; /* Marka adının PC'de kırılmasını kesin olarak önler */
         }
 
-        /* Buton Grubu */
-        .btn-group { 
-            display: flex; 
-            gap: 20px; 
-            position: relative;
-            z-index: 1;
+        .welcome-text{
+            color:#1e293b;
+            font-weight:800;
+            font-size:clamp(2rem,4.5vw,3.5rem);
         }
 
-        .btn { 
-            padding: 16px 45px; 
-            border-radius: 15px; 
-            border: none; 
-            color: white; 
-            font-weight: 700; 
-            text-decoration: none; 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            font-size: 16px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        .cyp,
+        .inv,
+        .est{
+            font-size:clamp(2.3rem,5.5vw,4.2rem);
+            font-weight:900;
         }
 
-        .btn-user { background: #3b82f6; }   
-        .btn-agent { background: #FB8500; }  
-        .btn-admin { background: #A4161A; }  
+        .cyp{ color:#D4A373; }
+        .inv{ color:#1E88E5; }
+        .est{ color:#2E7D32; }
 
-        .btn:hover { 
-            transform: translateY(-8px) scale(1.05); 
-            filter: brightness(1.1);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        .dot{
+            display:inline-block;
+            width:12px;
+            height:12px;
+            background:#D4A373;
+            border-radius:50%;
+            margin-left:6px;
+            box-shadow:0 0 10px rgba(212,163,115,.6);
+            vertical-align:middle;
         }
 
-        /* Alt Slogan */
-        .slogan {
-            margin-top: 40px;
-            color: #94a3b8;
-            font-size: 14px;
-            font-weight: 500;
-            position: relative;
-            z-index: 1;
+        .choose-text{
+            margin:35px 0 30px;
+            color:#64748b;
+            font-size:clamp(14px,2vw,20px);
+            font-weight:600;
+            letter-spacing:2px;
+            text-transform:uppercase;
+            position:relative;
+            z-index:2;
         }
 
+        .btn-group{
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            gap:18px;
+            position:relative;
+            z-index:2;
+            width:100%;
+        }
+
+        .btn{
+            min-width:180px;
+            padding:16px 32px;
+            border-radius:15px;
+            color:white;
+            text-decoration:none;
+            font-weight:700;
+            font-size:16px;
+            transition:.3s;
+            box-shadow:0 10px 20px rgba(0,0,0,.1);
+        }
+
+        .btn-user{ background:#3b82f6; }
+        .btn-agent{ background:#FB8500; }
+        .btn-admin{ background:#A4161A; }
+
+        .btn:hover{
+            transform:translateY(-5px);
+            filter:brightness(1.05);
+        }
+
+        .slogan{
+            margin-top:40px;
+            color:#94a3b8;
+            font-size:14px;
+            font-weight:500;
+            position:relative;
+            z-index:2;
+        }
+
+        /* --- MOBİL UYUMLULUK KURALLARI --- */
+        @media (max-width:768px){
+            .glass-container{
+                padding:16px;
+            }
+
+            .glass-box{
+                width:100%;
+                min-height:auto;
+                padding:45px 20px;
+                border-radius:28px;
+            }
+
+            /* Mobilde 'Welcome to' üstte kalır, marka ismi tek parça halinde şıkça alta iner */
+            .welcome-title{
+                flex-direction:column;
+                gap:8px;
+            }
+
+            .brand-group {
+                flex-wrap:nowrap; /* Mobilde de markanın bölünmesini engeller */
+            }
+
+            .btn-group{
+                width:100%;
+                flex-direction:column;
+                align-items:center;
+            }
+
+            .btn{
+                width:100%;
+                max-width:320px;
+                min-width:auto;
+            }
+
+            .slogan{
+                margin-top:30px;
+                font-size:13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -166,8 +237,9 @@
             
             <h1 class="welcome-title">
                 <span class="welcome-text">Welcome to</span>
-                <span class="cyp">Cyp</span><span class="inv">Inv</span><span class="est">Est</span>
-                <span class="dot"></span>
+                <span class="brand-group">
+                    <span class="cyp">Cyp</span><span class="inv">Inv</span><span class="est">Est</span><span class="dot"></span>
+                </span>
             </h1>
             
             <p class="choose-text">Choose Your Role</p>
