@@ -15,6 +15,7 @@ from routers import property_filter
 from routers import favorites  # Dosyanın klasör yoluna göre import et # Yeni ayrılan modüller
 from routers import ai_search  # AI semantic search + recommendations (JSON endpoints)
 from routers import aichat  # Conversational property-search assistant (AI Chat page)
+from routers import tickets
 
 app = FastAPI()
 
@@ -176,6 +177,7 @@ app.include_router(property_filter.router)
 app.include_router(favorites.router)  # Yeni favoriler router'ını ekle
 app.include_router(ai_search.router)  # AI semantic search + recommendation endpoints
 app.include_router(aichat.router)  # Conversational AI Chat assistant (/aichat + /api/ai-chat)
+app.include_router(tickets.router)  # Destek bileti sistemi için router
 
 if __name__ == "__main__":
     import uvicorn

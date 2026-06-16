@@ -154,15 +154,157 @@
     .btn-modern:hover { opacity: 0.9; transform: translateY(-3px); }
 
     /* ==========================================================================
-       TELEFONLAR İÇİN DİNAMİK UYUMLULUK KATMANI (MASAÜSTÜ AYARLARINI BOZMAZ)
+       ELİT & MODERN TICKET SLIDE-UP MODAL (GÜVENLİ & 3 ALANLI SÜRÜM)
+       ========================================================================== */
+    .ticket-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.3);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .ticket-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .ticket-premium-box {
+        position: fixed;
+        bottom: -100%;
+        right: 40px;
+        width: 480px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        padding: 35px;
+        z-index: 10000;
+        transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ticket-premium-box.active {
+        bottom: 40px;
+    }
+
+    .ticket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .ticket-header h3 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ticket-close-btn {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    .ticket-close-btn:hover {
+        background: #ef4444;
+        color: white;
+        transform: rotate(90deg);
+    }
+
+    .ticket-form-group {
+        margin-bottom: 20px;
+    }
+
+    .ticket-form-group label {
+        display: block;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .ticket-input, .ticket-select, .ticket-textarea {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 14px;
+        padding: 14px;
+        font-size: 15px;
+        color: #1e293b;
+        outline: none;
+        transition: 0.3s;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+
+    .ticket-input:focus, .ticket-select:focus, .ticket-textarea:focus {
+        border-color: var(--theme-color);
+        background: white;
+        box-shadow: 0 0 12px var(--theme-light);
+    }
+
+    .ticket-textarea {
+        resize: none;
+        height: 120px;
+    }
+
+    .ticket-submit-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #0284c7 0%, var(--theme-color) 100%);
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px var(--theme-light);
+        transition: 0.3s;
+    }
+
+    .ticket-submit-btn:hover {
+        opacity: 0.95;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(2, 132, 199, 0.3);
+    }
+
+    /* ==========================================================================
+       TELEFONLAR İÇİN DİNAMİK UYUMLULUK KATMANI
        ========================================================================== */
     @media (max-width: 968px) {
         .about-section {
-            padding: 20px 15px; /* Mobilde dış boşluğu daralttık */
+            padding: 20px 15px;
         }
 
         .premium-card {
-            flex-direction: column; /* Logo ve yazıları yan yana yerine alt alta dizer */
+            flex-direction: column;
             gap: 40px;
             padding: 40px 20px;
             border-radius: 30px;
@@ -170,11 +312,10 @@
         }
 
         .university-tag {
-            justify-content: center; /* Fakülte yazısını mobilde ortaladık */
+            justify-content: center;
             font-size: 14px;
         }
 
-        /* Dalgalanan logonun mobilde taşmaması için boyutunu optimize ettik */
         .ai-glow-circle {
             width: 200px;
             height: 200px;
@@ -182,28 +323,39 @@
         }
 
         .ai-glow-circle i {
-            font-size: 100px; /* Logodaki ikon boyutunu daireye göre küçülttük */
+            font-size: 100px;
         }
 
         .team-member {
             padding: 15px;
-            flex-direction: column; /* İsim ve rolü dar ekranlarda alt alta alarak sıkışmayı önler */
+            flex-direction: column;
             gap: 5px;
             text-align: center;
         }
 
         .team-member .role {
-            margin-left: 0; /* Mobilde sağa yaslamak yerine ortaladık */
+            margin-left: 0;
         }
 
         .action-btns {
-            flex-direction: column; /* Butonlar yan yana sığmayacağı için alt alta kusursuzca uzanır */
+            flex-direction: column;
             gap: 12px;
         }
 
         .btn-modern {
             width: 100%;
-            justify-content: center; /* Buton metinlerini ortaladık */
+            justify-content: center;
+        }
+
+        .ticket-premium-box {
+            width: calc(100% - 30px);
+            right: 15px;
+            left: 15px;
+            bottom: -100%;
+            padding: 25px;
+        }
+        .ticket-premium-box.active {
+            bottom: 15px;
         }
     }
 </style>
@@ -249,10 +401,150 @@
             </ul>
 
             <div class="action-btns">
-                <button class="btn-modern btn-msg"><i class="fas fa-comment-dots"></i> Get in Touch</button>
+                <button id="openTicketModal" class="btn-modern btn-msg"><i class="fas fa-comment-dots"></i> Get Support</button>
                 <button class="btn-modern btn-email"><i class="fas fa-envelope"></i> Send Email</button>
             </div>
         </div>
     </div>
 </div>
+
+<div id="ticketOverlay" class="ticket-modal-overlay"></div>
+
+<div id="ticketBox" class="ticket-premium-box">
+    <div class="ticket-header">
+        <h3><i class="fas fa-headset" style="color: var(--theme-color);"></i> Send Ticket</h3>
+        <button id="closeTicketModal" class="ticket-close-btn"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <form id="secureTicketForm" action="/tickets/create" method="POST">
+        <div class="ticket-form-group">
+            <label for="ticket_type">Type</label>
+            <select name="ticket_type" id="ticket_type" class="ticket-select" required>
+                <option value="Support">Support</option>
+                <option value="Bugs">Bugs</option>
+                <option value="Complaints">Complaints</option>
+                <option value="Desire">Desire</option>
+                <option value="Others">Others</option>
+            </select>
+        </div>
+
+        <div class="ticket-form-group">
+            <label for="subject">Subject</label>
+            <input type="text" name="subject" id="subject" class="ticket-input" placeholder="E.g., Login Issue, Payment Error" maxlength="80" autocomplete="off" required>
+        </div>
+        
+        <div class="ticket-form-group">
+            <label for="message">Message</label>
+            <textarea name="message" id="message" class="ticket-textarea" placeholder="Describe your issue or feedback in detail..." maxlength="2000" required></textarea>
+        </div>
+        
+        <button type="submit" class="ticket-submit-btn">
+            <i class="fas fa-paper-plane"></i> Send Ticket
+        </button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const openBtn = document.getElementById("openTicketModal");
+        const closeBtn = document.getElementById("closeTicketModal");
+        const overlay = document.getElementById("ticketOverlay");
+        const box = document.getElementById("ticketBox");
+        const ticketForm = document.getElementById("secureTicketForm");
+        const subjectInput = document.getElementById("subject");
+        const messageInput = document.getElementById("message");
+
+        // Paneli Açma Fonksiyonu
+        function openModal() {
+            overlay.classList.add("active");
+            box.classList.add("active");
+        }
+
+        // Paneli Kapatma Fonksiyonu
+        function closeModal() {
+            overlay.classList.remove("active");
+            box.classList.remove("active");
+            if(ticketForm) ticketForm.reset();
+        }
+
+        // Tetikleyiciler
+        if (openBtn) openBtn.addEventListener("click", openModal);
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+        if (overlay) overlay.addEventListener("click", closeModal);
+
+        // ==========================================================================
+        // %100 SİBER GÜVENLİK VE INJECTION ENGELLEME KATMANI (ANTI-HACKER)
+        // ==========================================================================
+        
+        // HTML Karakterlerini Safe HTML Entity kodlarına dönüştüren Sanitizer fonksiyonu (XSS Engeller)
+        function sanitizeInput(text) {
+            if (!text) return "";
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#x27;")
+                .replace(/\//g, "&#x2F;")
+                .replace(/\\/g, "&#x5C;")
+                .replace(/`/g, "&#96;");
+        }
+
+        // Şüpheli script ve tag kombinasyonlarını gerçek zamanlı temizleme
+        function realTimeXSSFilter(e) {
+            const forbiddenPatterns = [
+                /<script\b[^>]*>([\s\S]*?)<\/script>/gi,
+                /javascript:/gi,
+                /onerror/gi,
+                /onload/gi,
+                /onclick/gi,
+                /eval\(/gi,
+                /alert\(/gi,
+                /document\.cookie/gi
+            ];
+            
+            let val = e.target.value;
+            let valCleaned = val;
+            
+            forbiddenPatterns.forEach(pattern => {
+                if(pattern.test(valCleaned)) {
+                    valCleaned = valCleaned.replace(pattern, "");
+                }
+            });
+
+            if (val !== valCleaned) {
+                e.target.value = valCleaned;
+            }
+        }
+
+        // Klavye ile yazarken veya yapıştırırken koruma kalkanı aktif
+        if (subjectInput) {
+            subjectInput.addEventListener("input", realTimeXSSFilter);
+            subjectInput.addEventListener("paste", realTimeXSSFilter);
+        }
+        if (messageInput) {
+            messageInput.addEventListener("input", realTimeXSSFilter);
+            messageInput.addEventListener("paste", realTimeXSSFilter);
+        }
+
+        // Form gönderilirken son katman güvenlik kontrolü ve arındırma
+        if (ticketForm) {
+            ticketForm.addEventListener("submit", function (e) {
+                // Boşluk temizliği yap
+                const cleanSubject = subjectInput.value.trim();
+                const cleanMessage = messageInput.value.trim();
+
+                if (!cleanSubject || !cleanMessage) {
+                    e.preventDefault();
+                    alert("Please fill in all fields with valid characters.");
+                    return false;
+                }
+
+                // Değerleri tamamen sanitize edilmiş güvenli varyasyonları ile değiştirip backend'e yolla
+                subjectInput.value = sanitizeInput(cleanSubject);
+                messageInput.value = sanitizeInput(cleanMessage);
+            });
+        }
+    });
+</script>
 {% endblock %}

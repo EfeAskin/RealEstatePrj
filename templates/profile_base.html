@@ -163,6 +163,12 @@
         75% { transform: rotate(0deg); }
     }
 
+    @keyframes sidebarTicketPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
     /* ==========================================================================
        📱 MOBİL RESPONSIVE AYARLARI (SADECE MOBİLDE AKTİF OLUR)
        ========================================================================== */
@@ -262,6 +268,29 @@
             margin-left: 6px !important;
         }
     }
+
+    .admin-ticket-pulse-badge {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 2px 7px !important;
+    border-radius: 20px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    line-height: 1;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    animation: sidebarTicketPulse 2s infinite;
+}
+
+@keyframes sidebarTicketPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
 </style>
 {% endblock %}
 
@@ -287,68 +316,83 @@
             </div>
             
             <nav id="profileSidebarNav">
-                <a href="/profile/personal-info" class="p-nav-item {% if p_page == 'info' %}active{% endif %}">
-                    <i class="fa-solid fa-address-card"></i> Personal Info
-                </a>
-                
-                {% if user_role == 'user' %}
-                    <a href="/profile/transactions" class="p-nav-item {% if p_page == 'transactions' %}active{% endif %}">
-                        <i class="fa-solid fa-receipt"></i> My Transactions
-                    </a>
-                    <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
-                        <i class="fa-solid fa-heart"></i> Favourites
-                    </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
-                        <i class="fa-solid fa-envelope"></i> <span>Messages</span>
-                        <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
-                    </a>
-                
-                {% elif user_role == 'agent' %}
-                    <a href="/profile/properties" class="p-nav-item {% if p_page == 'properties' %}active{% endif %}">
-                        <i class="fa-solid fa-house-chimney"></i> Properties
-                    </a>
-                    <a href="/profile/requests" class="p-nav-item {% if p_page == 'requests' %}active{% endif %}">
-                        <i class="fa-solid fa-bell"></i> Requests
-                    </a>
-                    <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
-                        <i class="fa-solid fa-heart"></i> Favourites
-                    </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
-                        <i class="fa-solid fa-envelope"></i> <span>Messages</span>
-                        <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
-                    </a>
-                    <a href="/profile/dashboard1" class="p-nav-item {% if p_page in ['dashboard', 'dashboard1'] %}active{% endif %}">
-                        <i class="fa-solid fa-chart-line"></i> Dashboard
-                    </a>                     
-                    <a href="/profile/payment" class="p-nav-item {% if p_page == 'payment' %}active{% endif %}">
-                        <i class="fa-solid fa-credit-card"></i> Payment
-                    </a>
+<nav id="profileSidebarNav">
+    <a href="/profile/personal-info" class="p-nav-item {% if p_page == 'info' %}active{% endif %}">
+        <i class="fa-solid fa-address-card"></i> Personal Info
+    </a>
+    
+    {% if user_role == 'user' %}
+        <a href="/profile/transactions" class="p-nav-item {% if p_page == 'transactions' %}active{% endif %}">
+            <i class="fa-solid fa-receipt"></i> My Transactions
+        </a>
+        <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
+            <i class="fa-solid fa-heart"></i> Favourites
+        </a>
+        <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
+            <i class="fa-solid fa-envelope"></i> <span>Messages</span>
+            <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
+        </a>
+        <a href="/tickets/my-tickets" class="p-nav-item {% if p_page == 'my-tickets' or p_page == 'tickets' %}active{% endif %}">
+            <i class="fa-solid fa-ticket"></i> Support & Feedback
+        </a>
 
-                {% elif user_role == 'admin' %}
-                    <a href="/admin/all-properties" class="p-nav-item {% if p_page == 'all-properties' %}active{% endif %}">
-                        <i class="fa-solid fa-building-user"></i> All Properties
-                    </a>
-                    <a href="/admin/users" class="p-nav-item {% if p_page == 'users' %}active{% endif %}">
-                        <i class="fa-solid fa-users-gear"></i> Users
-                    </a>
-                    <a href="/admin/approving" class="p-nav-item {% if p_page == 'approving' %}active{% endif %}">
-                        <i class="fa-solid fa-circle-check"></i> Approving
-                    </a>
-                    <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
-                        <i class="fa-solid fa-inbox"></i> <span>Messages</span>
-                        <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
-                    </a>
-                    <a href="/admin/dashboard" class="p-nav-item {% if p_page == 'dashboard' %}active{% endif %}">
-                        <i class="fa-solid fa-chart-line"></i> Dashboard
-                    </a>
-                    <a href="/admin/system-logs" class="p-nav-item {% if p_page == 'system-logs' %}active{% endif %}">
-                        <i class="fa-solid fa-gears"></i> System Logs
-                    </a>
-                    <a href="/admin/sales-logs" class="p-nav-item {% if p_page == 'sales-logs' %}active{% endif %}">
-                        <i class="fa-solid fa-list-ul"></i> Sales Logs
-                    </a>        
-                {% endif %}
-            </nav>
+    {% elif user_role == 'agent' %}
+        <a href="/profile/properties" class="p-nav-item {% if p_page == 'properties' %}active{% endif %}">
+            <i class="fa-solid fa-house-chimney"></i> Properties
+        </a>
+        <a href="/profile/requests" class="p-nav-item {% if p_page == 'requests' %}active{% endif %}">
+            <i class="fa-solid fa-bell"></i> Requests
+        </a>
+        <a href="/profile/favourites" class="p-nav-item {% if p_page == 'favourites' %}active{% endif %}">
+            <i class="fa-solid fa-heart"></i> Favourites
+        </a>
+        <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
+            <i class="fa-solid fa-envelope"></i> <span>Messages</span>
+            <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
+        <a href="/profile/dashboard1" class="p-nav-item {% if p_page in ['dashboard', 'dashboard1'] %}active{% endif %}">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+        </a>                     
+        <a href="/profile/payment" class="p-nav-item {% if p_page == 'payment' %}active{% endif %}">
+            <i class="fa-solid fa-credit-card"></i> Payment
+        </a>
+        </a>
+        <a href="/tickets/my-tickets" class="p-nav-item {% if p_page == 'my-tickets' or p_page == 'tickets' %}active{% endif %}">
+            <i class="fa-solid fa-ticket"></i> Support & Feedback
+        </a>
+
+{% elif user_role == 'admin' %}
+        <a href="/admin/all-properties" class="p-nav-item {% if p_page == 'all-properties' %}active{% endif %}">
+            <i class="fa-solid fa-building-user"></i> All Properties
+        </a>
+        <a href="/admin/users" class="p-nav-item {% if p_page == 'users' %}active{% endif %}">
+            <i class="fa-solid fa-users-gear"></i> Users
+        </a>
+        <a href="/admin/approving" class="p-nav-item {% if p_page == 'approving' %}active{% endif %}">
+            <i class="fa-solid fa-circle-check"></i> Approving
+        </a>
+        <a href="/profile/messages" class="p-nav-item {% if p_page == 'messages' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarMsgAnchor">
+            <i class="fa-solid fa-inbox"></i> <span>Messages</span>
+            <span class="menu-messages-badge field-sidebar-badge" style="display: none;"><i class="fa-solid fa-envelope-open-text"></i> <b class="badge-count">0</b></span>
+        </a>
+        
+        <a href="/admin/admin_tickets" class="p-nav-item {% if p_page == 'admin_tickets' %}active{% endif %}" style="display: flex; align-items: center;" id="sidebarTicketAnchor">
+            <i class="fa-solid fa-ticket"></i> <span>Tickets</span>
+            <span id="sidebar-ticket-alarm" class="menu-messages-badge field-sidebar-badge" style="display: none; background: #ef4444; margin-left: auto;">
+                <i class="fa-solid fa-bell"></i> <b class="ticket-badge-count">0</b>
+            </span>
+        </a>
+        
+        <a href="/admin/dashboard" class="p-nav-item {% if p_page == 'dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+        </a>
+        <a href="/admin/system-logs" class="p-nav-item {% if p_page == 'system-logs' %}active{% endif %}">
+            <i class="fa-solid fa-gears"></i> System Logs
+        </a>
+        <a href="/admin/sales-logs" class="p-nav-item {% if p_page == 'sales-logs' %}active{% endif %}">
+            <i class="fa-solid fa-list-ul"></i> Sales Logs
+        </a>        
+    {% endif %}
+</nav>
             
             {% if user_role == 'admin' %}
                 <a href="/logout" class="btn-bottom btn-logout">
@@ -455,6 +499,109 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         observer.observe(chatHistory, { childList: true });
     }
+
+    // --- TICKETS CANLI ROZET MOTORU ---
+    const ticketAlarmBadge = document.getElementById("sidebar-ticket-alarm");
+    const ticketCountText = document.querySelector(".ticket-badge-count");
+
+// 1. Biletler sayfasındaysak güncel sayıyı hafızaya yaz
+    if (window.location.pathname.includes("/admin_tickets")) {
+        const waitingStatEl = document.getElementById("stat-waiting-count");
+        if (waitingStatEl) {
+            const currentWaiting = parseInt(waitingStatEl.innerText.trim()) || 0;
+            localStorage.setItem("admin_cached_tickets", currentWaiting.toString());
+        }
+    }
+
+    // 2. Her sayfa yüklendiğinde hafızadan oku ve rozeti göster
+    const cachedTickets = parseInt(localStorage.getItem("admin_cached_tickets") || "0");
+    if (ticketAlarmBadge) {
+        if (cachedTickets > 0) {
+            ticketAlarmBadge.innerText = cachedTickets;
+            ticketAlarmBadge.style.display = "inline-flex";
+        } else {
+            ticketAlarmBadge.style.display = "none";
+        }
+    }
+    
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+        // 1. Sayfa ilk yüklendiğinde hafızadaki (cache) veriyi hemen bas (Gecikme olmasın diye)
+        const cachedCount = localStorage.getItem("admin_cached_tickets");
+        const sidebarBadge = document.getElementById("sidebar-ticket-alarm");
+        
+        if (sidebarBadge && cachedCount && parseInt(cachedCount) > 0) {
+            sidebarBadge.innerText = cachedCount;
+            sidebarBadge.style.display = "inline-flex";
+        }
+
+        // 2. Arka planda gerçek zamanlı güncel bilet durumunu sorgula
+        fetchGlobalTicketCount();
+
+        // 3. İsteğe bağlı: Sayfayı yenilemeden her 60 saniyede bir arka planda otomatik kontrol etsin
+        setInterval(fetchGlobalTicketCount, 60000);
+    });
+
+    function fetchGlobalTicketCount() {
+        const sidebarBadge = document.getElementById("sidebar-ticket-alarm");
+        
+        // Admin bilet listesi endpoint'inizden biletleri JSON veya HTML olarak çekip waiting durumundakileri sayıyoruz
+        fetch('/admin/tickets')
+            .then(res => {
+                if (!res.ok) throw new Error("Network response was not ok");
+                return res.text(); // HTML yapısını metin olarak alıyoruz
+            })
+            .then(htmlText => {
+                // Sanal bir parser oluşturup gelen bilet listesini tarıyoruz
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const ticketItems = doc.querySelectorAll('.hub-ticket-item');
+                
+                let waitingCount = 0;
+                ticketItems.forEach(item => {
+                    const status = (item.getAttribute('data-status') || '').toLowerCase().trim();
+                    if (status === 'waiting') {
+                        waitingCount++;
+                    }
+                });
+
+                // Sayıyı tarayıcı hafızasına yaz (admin_tickets sayfasıyla senkronize çalışması için)
+                localStorage.setItem("admin_cached_tickets", waitingCount.toString());
+
+                // Sol menüdeki bildirim ışığını/badge alanını güncelle
+                if (sidebarBadge) {
+                    if (waitingCount > 0) {
+                        sidebarBadge.innerText = waitingCount;
+                        sidebarBadge.style.display = "inline-flex";
+                    } else {
+                        sidebarBadge.style.display = "none";
+                    }
+                }
+
+                // Eğer o an admin_tickets sayfasındaysak üstteki ufak canlı ping noktasını da senkronize et
+                const internalPingDot = document.getElementById("global-ping-dot");
+                if (internalPingDot) {
+                    internalPingDot.style.display = waitingCount > 0 ? "inline-block" : "none";
+                }
+            })
+            .catch(err => console.log("Global bilet bildirimi alınamadı:", err));
+    }
+
+    // admin_tickets.html sayfasından anlık çağrılabilecek global senkronizasyon fonksiyonu
+    function updateGlobalBadges() {
+        const cachedCount = localStorage.getItem("admin_cached_tickets") || "0";
+        const sidebarBadge = document.getElementById("sidebar-ticket-alarm");
+        const countInt = parseInt(cachedCount);
+
+        if (sidebarBadge) {
+            if (countInt > 0) {
+                sidebarBadge.innerText = countInt;
+                sidebarBadge.style.display = "inline-flex";
+            } else {
+                sidebarBadge.style.display = "none";
+            }
+        }
+    }
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, status, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, Depends, Request, status, HTTPException, Body, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 import database as db
@@ -14,6 +14,7 @@ from typing import List, Optional
 # PERFORMANS: Her admin isteğinde taze bir psycopg2.connect() açmak yerine (Neon'a
 # karşı her seferinde ~0.6s'lik TLS/handshake) paylaşımlı bağlantı havuzunu kullan.
 from db.connection import get_db_connection
+from routers.profile import get_admin_status, get_safe_current_user, get_safe_current_user
 
 router = APIRouter(prefix="/admin")
 templates = Jinja2Templates(directory="templates")
@@ -390,6 +391,323 @@ async def admin_sales_logs(request: Request):
         "profile_image": user_data.get("profile_image", "default_user.png"),
         "sales": sales
     })
+    
+from fastapi import APIRouter, Request, Body, HTTPException, Depends
+from fastapi.responses import HTMLResponse, JSONResponse
+from datetime import datetime
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+# =========================================================================
+# 1. BİLET ANA SAYFA ROTASI
+# =========================================================================
+from fastapi import APIRouter, Request, Body, HTTPException, Depends
+from fastapi.responses import HTMLResponse, JSONResponse
+from datetime import datetime
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+# =========================================================================
+# 1. BİLET ANA SAYFA ROTASI
+# =========================================================================
+@router.get("/admin_tickets", response_class=HTMLResponse)
+@router.get("/tickets", response_class=HTMLResponse)
+@router.get("/tickets/", response_class=HTMLResponse)
+async def my_admin_tickets(request: Request):
+    """Admin Tickets Sayfası - SQL Şemasına ve Kullanıcı Tablosuna Tam Uyumlu"""
+    _, user_data = get_safe_current_user(request)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # --- 1. Bilet Listesini Çekme ---
+        cursor.execute("""
+            SELECT t.*, 
+                   CONCAT(u.first_name, ' ', u.last_name) as ticket_owner, 
+                   u.profile_image,
+                   u.role as user_role
+            FROM tickets t
+            LEFT JOIN users u ON t.sender_id = u.id
+            ORDER BY t.created_at DESC
+        """)
+        raw_tickets = cursor.fetchall()
+        
+        tickets_list = []
+        for t in raw_tickets:
+            c_at = t.get('created_at')
+            formatted_date = c_at.strftime("%Y-%m-%d %H:%M") if isinstance(c_at, datetime) else None
+            
+            db_status = t.get('ticket_status') or 'Waiting'
+            js_status = db_status.lower()
+            
+            owner_name = t.get('ticket_owner')
+            if not owner_name or owner_name.strip() == "":
+                owner_name = f"User #{t.get('sender_id')}"
+            
+            tickets_list.append({
+                "id": t.get('id'),
+                "username": owner_name,
+                "category": t.get('ticket_type'),
+                "subject": t.get('subject') or "Başlıksız Bilet", 
+                "status": js_status,
+                "user_image": t.get('profile_image') or "default_user.png",
+                "role": t.get('user_role') or "user",
+                "created_at": formatted_date
+            })
+
+        # --- 2. Durum Sayıları (İstatistik Kartları) ---
+        # İSTEK: 'Spam' artık kendi kartına/sayısına sahip, 'Success' veya 'Failed'ı etkilemiyor!
+        cursor.execute("""
+            SELECT 
+                COUNT(CASE WHEN ticket_status = 'Waiting' THEN 1 END) as waiting,
+                COUNT(CASE WHEN ticket_status = 'Active' THEN 1 END) as active,
+                COUNT(CASE WHEN ticket_status = 'Success' THEN 1 END) as success,
+                COUNT(CASE WHEN ticket_status = 'Failed' THEN 1 END) as failed,
+                COUNT(CASE WHEN ticket_status = 'Spam' THEN 1 END) as spam
+            FROM tickets
+        """)
+        counts = cursor.fetchone() or {'waiting': 0, 'active': 0, 'success': 0, 'failed': 0, 'spam': 0}
+
+        waiting_count = counts.get('waiting') or 0
+        stats_data = {
+            "waiting": waiting_count,
+            "active": counts.get('active') or 0,
+            "success": counts.get('success') or 0,
+            "failed": counts.get('failed') or 0,
+            "spam": counts.get('spam') or 0,
+            "total_closed": (counts.get('success') or 0) + (counts.get('failed') or 0) + (counts.get('spam') or 0) # Close sayısını arttırır
+        }
+
+        has_waiting_tickets = waiting_count > 0
+        stats_data["waiting_count"] = waiting_count
+
+        # --- 3. Kategori Dağılımı ---
+        cursor.execute("""
+            SELECT 
+                COUNT(CASE WHEN ticket_type = 'Support' THEN 1 END) as support,
+                COUNT(CASE WHEN ticket_type = 'Bugs' THEN 1 END) as bugs,
+                COUNT(CASE WHEN ticket_type = 'Complaints' THEN 1 END) as complaints,
+                COUNT(CASE WHEN ticket_type = 'Desire' THEN 1 END) as desire,
+                COUNT(CASE WHEN ticket_type = 'Others' THEN 1 END) as others
+            FROM tickets
+        """)
+        cats = cursor.fetchone() or {'support': 0, 'bugs': 0, 'complaints': 0, 'desire': 0, 'others': 0}
+        
+        categories_data = {
+            "Support": cats.get('support') or 0,
+            "Bugs": cats.get('bugs') or 0,
+            "Complaints": cats.get('complaints') or 0,
+            "Desire": cats.get('desire') or 0,
+            "Others": cats.get('others') or 0
+        }
+
+        # --- 4. 12 Aylık Çizgi Grafik Verisi ---
+        current_year = datetime.now().year
+        monthly_chart_data = [0] * 12
+        
+        cursor.execute("""
+            SELECT EXTRACT(MONTH FROM created_at) as month, COUNT(id) as count
+            FROM tickets
+            WHERE EXTRACT(YEAR FROM created_at) = %s
+            GROUP BY EXTRACT(MONTH FROM created_at)
+        """, (current_year,))
+        monthly_counts = cursor.fetchall()
+        
+        for row in monthly_counts:
+            m_idx = int(row.get('month')) - 1
+            if 0 <= m_idx < 12:
+                monthly_chart_data[m_idx] = row.get('count')
+
+        monthly_total = sum(monthly_chart_data)
+
+    finally:
+        cursor.close()
+        conn.close()
+
+    return templates.TemplateResponse(request, "admin_tickets.html", {
+        "role": "admin",
+        "is_admin": get_admin_status(),
+        "first_name": user_data.get("first_name", ""),
+        "last_name": user_data.get("last_name", ""),
+        "profile_image": user_data.get("profile_image", "default_user.png"),
+        "p_page": "admin_tickets",
+        
+        "tickets": tickets_list,
+        "stats": stats_data,
+        "categories": categories_data,
+        "monthly_total": monthly_total,
+        "monthly_chart_data": monthly_chart_data,
+        "has_waiting_tickets": has_waiting_tickets,
+        "waiting_count": waiting_count
+    })
+
+
+# =========================================================================
+# 2. API: SOHBET GEÇMİŞİ (404 ENGELLEMEK İÇİN ÇİFT ROTA)
+# =========================================================================
+@router.get("/tickets/{ticket_id}/messages")
+@router.get("/admin/tickets/{ticket_id}/messages")
+async def get_ticket_messages(ticket_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cursor.execute("""
+            SELECT tm.id, tm.message_text, tm.sent_at, tm.sender_id, 
+                   t.sender_id as ticket_owner_id,
+                   u.profile_image, CONCAT(u.first_name, ' ', u.last_name) as sender_name,
+                   u.role as sender_role
+            FROM ticket_messages tm
+            JOIN tickets t ON tm.ticket_id = t.id
+            LEFT JOIN users u ON tm.sender_id = u.id
+            WHERE tm.ticket_id = %s 
+            ORDER BY tm.sent_at ASC
+        """, (ticket_id,))
+        messages = cursor.fetchall()
+        
+        formatted_messages = []
+        for msg in messages:
+            s_at = msg.get('sent_at')
+            is_admin = msg.get('sender_id') != msg.get('ticket_owner_id')
+            
+            formatted_messages.append({
+                "id": msg.get('id'),
+                "message": msg.get('message_text'),
+                "is_admin": is_admin,
+                "sender_name": msg.get('sender_name') or f"User #{msg.get('sender_id')}",
+                "user_image": msg.get('profile_image') or "default_user.png",
+                "sender_role": msg.get('sender_role') or "user",
+                "created_at": s_at.strftime("%Y-%m-%d %H:%M") if isinstance(s_at, datetime) else None
+            })
+            
+        return {"status": "success", "messages": formatted_messages}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# =========================================================================
+# 3. API: DURUM GÜNCELLEME (RESMİ 'Spam' DESTEKLİ)
+# =========================================================================
+@router.put("/tickets/{ticket_id}/status")
+@router.put("/admin/tickets/{ticket_id}/status")
+async def update_ticket_status_api(ticket_id: int, request: Request, payload: dict = Body(...)):
+    new_status = payload.get("status")
+    if not new_status:
+        raise HTTPException(status_code=400, detail="Status boş olamaz.")
+    
+    db_status = new_status.capitalize()
+
+    if db_status not in ['Waiting', 'Active', 'Success', 'Failed', 'Spam']:
+        raise HTTPException(status_code=400, detail=f"Geçersiz durum değeri: {db_status}")
+        
+    _, admin_user_data = get_safe_current_user(request)
+    admin_id = admin_user_data.get("id")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    auto_msg_added = False
+    auto_msg_text = "Talebiniz alınmıştır, yetkili birimlerimiz tarafından detaylı inceleniyor. En kısa sürede buradan dönüş sağlayacağız."
+    
+    try:
+        # Önce bu biletin ŞU ANKİ durumunu kontrol ediyoruz ki mükerrer (üst üste) otomatik mesaj atılmasın
+        cursor.execute("SELECT ticket_status FROM tickets WHERE id = %s", (ticket_id,))
+        current_ticket = cursor.fetchone()
+        
+        # Eğer bilet bulunamadıysa hata dön
+        if not current_ticket:
+            raise HTTPException(status_code=404, detail="Bilet bulunamadı.")
+            
+        old_db_status = current_ticket.get('ticket_status')
+
+        # Bilet durumunu güncelle
+        cursor.execute("""
+            UPDATE tickets 
+            SET ticket_status = %s, receiver_id = COALESCE(receiver_id, %s)
+            WHERE id = %s
+        """, (db_status, admin_id, ticket_id))
+        
+        # ÇÖZÜM: Eğer bilet İLK KEZ Active (Open) durumuna geçiyorsa otomatik mesajı ekle
+        if db_status == 'Active' and old_db_status != 'Active':
+            cursor.execute("""
+                INSERT INTO ticket_messages (ticket_id, sender_id, message_text, sent_at)
+                VALUES (%s, %s, %s, NOW())
+            """, (ticket_id, admin_id, auto_msg_text))
+            auto_msg_added = True
+
+        conn.commit()
+        
+        # Frontend'e otomatik mesaj eklenip eklenmediğini açıkça söylüyoruz
+        return {
+            "status": "success", 
+            "new_status": new_status.lower(),
+            "auto_msg_added": auto_msg_added,
+            "auto_msg": auto_msg_text if auto_msg_added else None,
+            "admin_name": f"{admin_user_data.get('first_name', '')} {admin_user_data.get('last_name', '')}".strip(),
+            "admin_image": admin_user_data.get('profile_image', 'default_user.png')
+        }
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# =========================================================================
+# 4. API: YENİ MESAJ GÖNDERME
+# =========================================================================
+@router.post("/tickets/{ticket_id}/messages")
+@router.post("/admin/tickets/{ticket_id}/messages")
+async def send_admin_message_api(ticket_id: int, request: Request, payload: dict = Body(...)):
+    message_text = payload.get("message")
+    if not message_text or not message_text.strip():
+        raise HTTPException(status_code=400, detail="Mesaj içeriği boş olamaz.")
+        
+    _, admin_user_data = get_safe_current_user(request)
+    admin_id = admin_user_data.get("id")
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cursor.execute("""
+            INSERT INTO ticket_messages (ticket_id, sender_id, message_text, sent_at)
+            VALUES (%s, %s, %s, NOW())
+            RETURNING id
+        """, (ticket_id, admin_id, message_text.strip()))
+        new_id = cursor.fetchone()['id']
+        
+        cursor.execute("""
+            UPDATE tickets 
+            SET receiver_id = COALESCE(receiver_id, %s) 
+            WHERE id = %s
+        """, (admin_id, ticket_id))
+        
+        conn.commit()
+        return {"status": "success", "message_id": new_id}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# =========================================================================
+# 5. API: GLOBAL BİLDİRİM SAYACI
+# =========================================================================
+@router.get("/tickets/waiting-count")
+@router.get("/admin/tickets/waiting-count")
+async def get_waiting_tickets_count():
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cursor.execute("SELECT COUNT(id) as count FROM tickets WHERE ticket_status = 'Waiting'")
+        res = cursor.fetchone()
+        count = res.get('count') or 0
+        return {"status": "success", "waiting_count": count, "has_waiting": count > 0}
+    except:
+        return {"status": "error", "waiting_count": 0, "has_waiting": False}
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # =========================================================

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, Form, status, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from psycopg2.extras import RealDictCursor
 import database as db
 import os
 import shutil
@@ -490,6 +491,100 @@ async def my_dashboard1(request: Request):
         "p_page": "dashboard1"
     })
 
+@router.get("/room/{ticket_id}", response_class=HTMLResponse)
+async def get_ticket_room(ticket_id: int, request: Request):
+    current_user = getattr(request.state, "user", None)
+    if not current_user:
+        user_role = request.cookies.get("user_role", "user")
+        return RedirectResponse(url=f"/login/{user_role}", status_code=303)
+        
+    user_id = current_user.get("id")
+    # Kullanıcı rolünü güvenli ve temiz bir şekilde alıyoruz
+    user_role = (current_user.get("role") or "user").lower()
+    is_staff_user = user_role in ["admin", "agent"]
+    
+    conn = db.get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        if is_staff_user:
+            cursor.execute("""
+                SELECT t.*, u.first_name, u.last_name, u.profile_image 
+                FROM tickets t
+                JOIN users u ON t.sender_id = u.id
+                WHERE t.id = %s
+            """, (ticket_id,))
+        else:
+            cursor.execute("""
+                SELECT t.*, u.first_name, u.last_name, u.profile_image 
+                FROM tickets t
+                JOIN users u ON t.sender_id = u.id
+                WHERE t.id = %s AND t.sender_id = %s
+            """, (ticket_id, user_id))
+            
+        ticket = cursor.fetchone()
+        if not ticket:
+            return RedirectResponse(url="/about", status_code=303)
+            
+        target_sender_id = ticket['sender_id']
+        cursor.execute("""
+            SELECT id, subject, ticket_type, ticket_status, created_at 
+            FROM tickets 
+            WHERE sender_id = %s 
+            ORDER BY created_at DESC
+        """, (target_sender_id,))
+        sidebar_tickets = cursor.fetchall()
+        
+        cursor.execute("""
+            SELECT tm.*, u.first_name, u.last_name, u.profile_image, u.role
+            FROM ticket_messages tm
+            JOIN users u ON tm.sender_id = u.id
+            WHERE tm.ticket_id = %s
+            ORDER BY tm.sent_at ASC
+        """, (ticket_id,))
+        messages_raw = cursor.fetchall()
+        
+        messages = []
+        for msg in messages_raw:
+            msg_role = (msg['role'] or 'user').lower()
+            is_staff_reply = msg_role in ['admin', 'agent'] and msg['sender_id'] != ticket['sender_id']
+            
+            messages.append({
+                "is_staff_reply": is_staff_reply,
+                "sender_image": msg['profile_image'] if msg['profile_image'] else "default_user.png",
+                "message": msg['message_text'],
+                "sender_name": f"{msg['first_name']} {msg['last_name']}",
+                "time": msg['sent_at'].strftime("%H:%M") if msg['sent_at'] else ""
+            })
+            
+        ticket_detail = {
+            "id": ticket['id'],
+            "subject": ticket['subject'],
+            "category": ticket['ticket_type'],
+            "ticket_status": ticket['ticket_status'] if ticket['ticket_status'] else "Waiting",
+            "owner_name": f"{ticket['first_name']} {ticket['last_name']}",
+            "created_at": ticket['created_at'].strftime("%Y-%m-%d %H:%M") if ticket['created_at'] else ""
+        }
+        
+        current_profile_image = current_user.get("profile_image") if current_user.get("profile_image") else "default_user.png"
+        
+    finally:
+        cursor.close()
+        conn.close()
+        
+    # favourites router'ındaki gibi profile_base.html'i besleyen TÜM değişkenleri eksiksiz gönderiyoruz:
+    return templates.TemplateResponse(request, "ticket_room.html", {
+        "role": user_role,
+        "current_user_role": user_role,  # profile_base.html'deki Agent/Admin kontrolünü açan anahtar
+        "is_admin": (user_role == "admin"),
+        "first_name": current_user.get("first_name", ""),
+        "last_name": current_user.get("last_name", ""),
+        "profile_image": current_profile_image,
+        "ticket": ticket_detail,
+        "sidebar_tickets": sidebar_tickets,
+        "messages": messages,
+        "p_page": "my-tickets",
+        "user": current_user
+    })
 
 # --- ROL DEĞİŞTİRME ROTALARI ---
 

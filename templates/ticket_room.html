@@ -1,0 +1,484 @@
+{% extends "profile_base.html" %}
+
+{% block title %}
+Support Center | CypInvEst
+{% endblock %}
+
+{% block profile_subcontent %}
+<style>
+    /* Navbar ile beyaz kart arasında tam ve kararlı 1 cm (38px) boşluk */
+    @media (min-width: 769px) {
+        main, body, .content-wrapper {
+            padding-top: 38px !important;
+        }
+    }
+
+    /* Üst atadaki tüm padding ve border'ları sıfırlayarak premium container'ın dışa taşmasını önlüyoruz */
+    .profile-subcontent-card, 
+    [class*="subcontent-card"],
+    .profile-right-card {
+        height: 100% !important;
+        min-height: auto !important;
+        max-height: none !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* Sıkışmayı Önleyen Ana Gövde */
+    .premium-chat-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        height: 650px;
+        display: flex;
+        gap: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+    }
+
+    /* ==========================================================================
+       LEFT SIDEBAR: TICKET LISTESI
+       ========================================================================== */
+    .chat-sidebar {
+        width: 320px;
+        min-width: 320px;
+        background: #ffffff;
+        border-right: 1px solid #f1f5f9;
+        display: flex;
+        box-shadow: none;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafafa;
+    }
+
+    .sidebar-header h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 800;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ticket-list-flow {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .ticket-list-flow::-webkit-scrollbar,
+    .chat-messages-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    .ticket-list-flow::-webkit-scrollbar-thumb,
+    .chat-messages-body::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
+    }
+
+    .ticket-flow-card {
+        background: #ffffff;
+        padding: 14px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .ticket-flow-card:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .ticket-flow-card.active-room {
+        background: linear-gradient(135deg, #f8fafc 0%, var(--theme-light, rgba(59, 130, 246, 0.05)) 100%);
+        border-left: 4px solid var(--theme-color, #3b82f6) !important;
+        border-color: #e2e8f0;
+    }
+
+    .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-id {
+        font-size: 11px;
+        font-weight: 700;
+        color: #94a3b8;
+    }
+
+    .card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0;
+    }
+
+    /* ==========================================================================
+       RIGHT AREA: MAIN CHAT (YÖNLER DÜZELTİLDİ)
+       ========================================================================== */
+    .chat-main-area {
+        flex: 1;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .chat-room-header {
+        padding: 18px 25px;
+        background: #ffffff;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 5;
+    }
+
+    .room-title-meta h2 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .badge-row {
+        display: flex;
+        gap: 6px;
+    }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 50px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-waiting { background: #fef3c7 !important; color: #d97706 !important; }
+    .badge-active { background: #e0f2fe !important; color: #0284c7 !important; }
+    .badge-success { background: #dcfce7 !important; color: #16a34a !important; }
+    .badge-closed { background: #cbd5e1 !important; color: #475569 !important; }
+    .badge-failed { background: #fee2e2 !important; color: #dc2626 !important; }
+    .badge-category { background: #f1f5f9 !important; color: #475569 !important; }
+
+    .chat-messages-body {
+        flex: 1;
+        padding: 25px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        background: #f8fafc;
+    }
+
+    .msg-row {
+        display: flex;
+        gap: 12px;
+        max-width: 75%;
+        align-items: flex-end;
+    }
+
+    /* KULLANICI (SEN): SAĞDA DURACAK */
+    .msg-row.user-msg { 
+        align-self: flex-end; 
+        flex-direction: row-reverse; 
+    }
+    
+    /* ADMİN / DESTEK EKİBİ: SOLDA DURACAK */
+    .msg-row.staff-msg { 
+        align-self: flex-start; 
+        flex-direction: row; 
+    }
+
+    .msg-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .msg-bubble {
+        padding: 12px 18px;
+        border-radius: 16px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* Kullanıcının kendi mesaj balonu tasarımı (Sağ - Premium Mavi/Lacivert) */
+    .user-msg .msg-bubble {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: #ffffff;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Admin/Staff cevap balonu tasarımı (Sol - Net ve Temiz Beyaz/Gri Kontrastı) */
+    .staff-msg .msg-bubble {
+        background: #ffffff;
+        color: #1e293b;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .msg-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        font-size: 10px;
+        margin-top: 6px;
+        opacity: 0.7;
+        font-weight: 500;
+    }
+    .user-msg .msg-meta { color: #e0f2fe; }
+    .staff-msg .msg-meta { color: #64748b; }
+
+    .chat-input-footer {
+        padding: 20px;
+        background: #ffffff;
+        border-top: 1px solid #f1f5f9;
+        flex-shrink: 0; 
+    }
+
+    .chat-input-form {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        width: 100%;
+    }
+
+    .chat-input-field {
+        flex: 1;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px 20px;
+        font-size: 13.5px;
+        color: #1e293b;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+
+    .chat-input-field:focus {
+        border-color: var(--theme-color, #3b82f6);
+        background: #ffffff;
+        box-shadow: 0 0 0 3px var(--theme-light, rgba(59, 130, 246, 0.1));
+    }
+
+    .chat-send-btn {
+        background: var(--theme-color, #3b82f6);
+        color: #ffffff;
+        border: none;
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .chat-send-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px var(--theme-light, rgba(59, 130, 246, 0.2));
+        opacity: 0.95;
+    }
+
+    .chat-locked-banner {
+        background: #fee2e2;
+        border: 1px dashed #ef4444;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        color: #991b1b;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .chat-waiting-banner {
+        background: #fef3c7;
+        border: 1px dashed #f59e0b;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        color: #92400e;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .premium-chat-container { flex-direction: column; height: auto; }
+        .chat-sidebar { width: 100%; min-width: 100%; height: 220px; }
+        .chat-main-area { height: 450px; }
+    }
+</style>
+
+<div class="premium-chat-container">
+
+<div class="chat-sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fa-solid fa-folder-open" style="color: var(--theme-color, #3b82f6);"></i> Destek Taleplerim</h3>
+        </div>
+        <div class="ticket-list-flow">
+            {% for s_ticket in sidebar_tickets %}
+                <a href="/tickets/room/{{ s_ticket.id }}" class="ticket-flow-card {% if s_ticket.id == ticket.id %}active-room{% endif %}">
+                    <div class="card-top">
+                        <span class="card-id"># {{ ticket.user_ticket_no }}: {{ ticket.subject }}</span>
+                        <span class="badge badge-{{ (s_ticket.ticket_status)|lower }}">{{ s_ticket.ticket_status }}</span>
+                    </div>
+                    <p class="card-title">{{ s_ticket.subject }}</p>
+                </a>
+            {% else %}
+                <div style="text-align: center; color: #94a3b8; font-size: 13px; margin-top: 20px;">
+                    Kayıtlı bilet bulunamadı.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="chat-main-area">
+        <div class="chat-room-header">
+            <div class="room-title-meta">
+                <h2>Bilet # {{ ticket.user_ticket_no }}: {{ ticket.subject }}</h2>
+                <div class="badge-row">
+                    <span class="badge badge-category"><i class="fas fa-tag"></i> {{ ticket.category }}</span>
+                    <span class="badge badge-{{ (ticket.ticket_status)|lower }}">{{ ticket.ticket_status|upper }}</span>
+                </div>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #64748b; line-height: 1.4;">
+                <div><strong>Açan Kullanıcı:</strong> {{ ticket.owner_name }}</div>
+                <div>{{ ticket.created_at }}</div>
+            </div>
+        </div>
+
+        <div class="chat-messages-body" id="chatMessagesBody">
+            {% for msg in messages %}
+                {# msg.is_staff_reply True ise admin yazmıştır (Sol), False ise kullanıcı yazmıştır (Sağ) #}
+                <div class="msg-row {% if msg.is_staff_reply %}staff-msg{% else %}user-msg{% endif %}">
+                    
+                    <img src="/static/htmlfotos/{{ msg.sender_image if msg.sender_image else 'default_user.png' }}" 
+                         onerror="this.onerror=null; this.src='/static/htmlfotos/default_user.png';" 
+                         alt="avatar" 
+                         class="msg-avatar">
+                         
+                    <div class="msg-bubble">
+                        <div class="msg-text">{{ msg.message }}</div>
+                        <div class="msg-meta">
+                            <strong>{{ msg.sender_name }}</strong>
+                            <span>{{ msg.time }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div style="text-align: center; color: #94a3b8; font-size: 13px; margin-top: 40px;">
+                    Sohbet başlatıldı.
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="chat-input-footer">
+            {% if (ticket.ticket_status)|lower == 'active' %}
+                <form id="ticketMessageForm" class="chat-input-form" onsubmit="submitRoomMessage(event)">
+                    <input type="text" id="messageInputField" class="chat-input-field" placeholder="Mesajınızı buraya yazın..." autocomplete="off" required>
+                    <button type="submit" class="chat-send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            {% elif (ticket.ticket_status)|lower == 'waiting' %}
+                <div class="chat-waiting-banner">
+                    <i class="fa-solid fa-clock" style="color: #f59e0b;"></i>
+                    Bilet gönderildi, yönetici onayı beklemededir. Onay sonrasında mesaj yazabilirsiniz.
+                </div>
+            {% else %}
+                <div class="chat-locked-banner">
+                    <i class="fa-solid fa-lock" style="color: #ef4444;"></i>
+                    Bu bilet kapatılmıştır. Kapatılan destek taleplerine tekrar mesaj gönderilemez.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function scrollToBottom() {
+        const chatBody = document.getElementById("chatMessagesBody");
+        if (chatBody) {
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    }
+    
+    document.addEventListener("DOMContentLoaded", scrollToBottom);
+
+    async function submitRoomMessage(event) {
+        event.preventDefault();
+        
+        const inputField = document.getElementById("messageInputField");
+        if (!inputField) return;
+        
+        const messageText = inputField.value.trim();
+        if (!messageText) return;
+
+        const ticketId = "{{ ticket.id }}";
+        
+        try {
+            const response = await fetch(`/tickets/room/${ticketId}/messages`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: messageText })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const errData = await response.json();
+                alert("Hata: " + (errData.detail || "Mesaj iletilemedi."));
+            }
+        } catch (error) {
+            console.error("Network error:", error);
+        }
+    }
+</script>
+{% endblock %}

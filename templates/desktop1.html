@@ -20,11 +20,12 @@
     
     .main-container { max-width: 1200px; margin: 40px auto; display: flex; gap: 50px; padding: 0 20px; }
 
-    .content-area { flex: 2; }
-    .title-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .title-header h1 { font-size: 34px; margin: 0; letter-spacing: -1px; }
+    .content-area { flex: 2; min-width: 0; } /* Mobil taşmayı engellemek için min-width eklendi */
+    .title-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; }
+    .title-header h1 { font-size: 34px; margin: 0; letter-spacing: -1px; word-break: break-word; }
     
     /* 🎯 GENEL ACTIONS VE HOVER ÇAKIŞMALARINI ENGELLEYEN YENİ CSS DÜZENLEMESİ */
+    .actions { display: flex; align-items: center; flex-shrink: 0; }
     .actions i { cursor: pointer; padding: 10px; border-radius: 50%; color: var(--text-muted); }
     .actions i:hover { background: #f1f2f6; color: var(--primary-blue); }
 
@@ -45,13 +46,13 @@
     .image-box img { width: 100%; height: 500px; object-fit: cover; display: block; transition: transform 0.5s; }
     .image-box:hover img { transform: scale(1.03); }
 
-    .property-meta { display: flex; gap: 20px; font-size: 16px; color: var(--text-muted); margin-bottom: 30px; padding-bottom: 25px; border-bottom: 1px solid var(--border); }
+    .property-meta { display: flex; gap: 20px; font-size: 16px; color: var(--text-muted); margin-bottom: 30px; padding-bottom: 25px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 
     .description-text h3 { font-size: 22px; margin-bottom: 15px; }
-    .description-text p { line-height: 1.8; color: #444; font-size: 16px; }
+    .description-text p { line-height: 1.8; color: #444; font-size: 16px; word-break: break-word; }
 
     .property-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 30px 0; padding: 20px; background: #fcfcfc; border-radius: 12px; border: 1px solid var(--border); }
-    .detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .detail-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; gap: 10px; }
     .detail-label { font-weight: 600; color: var(--text-muted); }
 
     /* Ratings Bölümü */
@@ -96,49 +97,50 @@
     .details-btn:hover { background: #f1f2f6; border-color: var(--text-muted); }
 
     .rating-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 25px; }
-    .rating-item { display: flex; align-items: center; justify-content: space-between; }
-    .bar-container { flex: 1; height: 5px; background: #e0e0e0; margin: 0 20px; border-radius: 10px; position: relative; }
+    .rating-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .bar-container { flex: 1; height: 5px; background: #e0e0e0; margin: 0 20px; border-radius: 10px; position: relative; min-width: 50px; }
     .bar-fill { position: absolute; height: 100%; background: var(--text-main); border-radius: 10px; }
 
     /* Yorumlar */
     .comment-card { margin-top: 35px; border-bottom: 1px solid var(--border); padding-bottom: 25px; }
     .user-info { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; }
-    .user-info img { width: 50px; height: 50px; border-radius: 50%; background: #eee; object-fit: cover; }
-    .comment-body { line-height: 1.6; color: #555; font-size: 15px; }
+    .user-info img { width: 50px; height: 50px; border-radius: 50%; background: #eee; object-fit: cover; flex-shrink: 0; }
+    .comment-body { line-height: 1.6; color: #555; font-size: 15px; word-break: break-word; }
 
     .add-review { margin-top: 30px; padding: 25px; border: 1px solid var(--border); border-radius: 16px; }
-    .review-input-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-    .add-review textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 15px; outline: none; font-family: inherit; font-size: 15px; min-height: 100px; margin-top: 10px; }
+    .review-input-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+    .add-review textarea { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 15px; outline: none; font-family: inherit; font-size: 15px; min-height: 100px; margin-top: 10px; resize: vertical; }
 
     /* Sağ Sidebar & Rezervasyon */
-    .sidebar { flex: 1; }
+    .sidebar { flex: 1; min-width: 0; }
     .booking-widget { position: sticky; top: 120px; border: 1px solid var(--border); border-radius: 20px; padding: 30px; box-shadow: var(--shadow); background: white; }
-    .price-info { font-size: 26px; font-weight: 800; margin-bottom: 25px; }
+    .price-info { font-size: 26px; font-weight: 800; margin-bottom: 25px; word-break: break-word; }
     .selection-box { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 25px; cursor: pointer; overflow: hidden; }
     .date-row { display: flex; border-bottom: 1px solid var(--border); }
-    .date-item { flex: 1; padding: 15px; }
+    .date-item { flex: 1; padding: 15px; min-width: 0; }
     .date-item:hover, .guest-item:hover { background: #f9f9f9; }
     .date-item label, .guest-item label { display: block; font-size: 11px; font-weight: 800; color: #000; margin-bottom: 5px; }
     .guest-item { padding: 15px; }
 
-    .request-button { width: 100%; background: var(--primary-blue); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 4px 15px var(--theme-light); }
+    .request-button { width: 100%; background: var(--primary-blue); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 4px 15px var(--theme-light); display: inline-block; text-align: center; }
     .request-button:hover { filter: brightness(1.1); transform: translateY(-3px); }
 
     /* Publisher */
-    .publisher-card { margin-top: 40px; margin-bottom: 40px; padding: 25px; background: #fff; border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: space-between; }
-    .pub-info img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary-blue); padding: 2px; }
-    .msg-btn { border: 2px solid var(--primary-blue); color: var(--primary-blue); padding: 12px 24px; border-radius: 10px; background: transparent; cursor: pointer; font-weight: 700; }
+    .publisher-card { margin-top: 40px; margin-bottom: 40px; padding: 25px; background: #fff; border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .pub-info { display: flex; align-items: center; gap: 15px; }
+    .pub-info img { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--primary-blue); padding: 2px; flex-shrink: 0; }
+    .msg-btn { border: 2px solid var(--primary-blue); color: var(--primary-blue); padding: 12px 24px; border-radius: 10px; background: transparent; cursor: pointer; font-weight: 700; flex-shrink: 0; }
     .msg-btn:hover { background: var(--primary-blue); color: white; }
 
     /* MODALS & OVERLAY */
     .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 1999; }
-    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 35px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 2000; width: 440px; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 35px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 2000; width: 100%; max-width: 440px; box-sizing: border-box; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; }
     .modal-header h4 { margin: 0; font-size: 18px; font-weight: 700; }
-    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-muted); }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-muted); padding: 5px; line-height: 1; }
 
     /* Evaluation Modal Stars */
-    .eval-star-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .eval-star-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
     .eval-stars { color: #ccc; font-size: 18px; display: flex; gap: 4px; }
     .eval-stars i { cursor: pointer; }
     .eval-stars i.active { color: var(--star-yellow); }
@@ -154,9 +156,37 @@
     .day.disabled { color: #ccc; cursor: not-allowed; }
 
     /* Guest Counter */
-    .guest-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+    .guest-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; gap: 15px; }
     .counter { display: flex; align-items: center; gap: 15px; }
     .counter button { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 18px; line-height: 1; }
+
+    /* 📱 RESPONSIVE MEDIA QUERIES (MOBİL VE TABLET UYUMLULUĞU) */
+    @media (max-width: 991px) {
+        .main-container { flex-direction: column; gap: 30px; margin: 20px auto; }
+        .content-area { flex: none; width: 100%; }
+        .sidebar { flex: none; width: 100%; }
+        .booking-widget { position: static; padding: 20px; }
+        .image-box img { height: 350px; }
+    }
+
+    @media (max-width: 767px) {
+        .title-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .title-header h1 { font-size: 26px; }
+        .property-details-grid { grid-template-columns: 1fr; padding: 15px; }
+        .rating-grid { grid-template-columns: 1fr; gap: 15px; }
+        .bar-container { margin: 0 10px; }
+        .publisher-card { flex-direction: column; align-items: flex-start; padding: 20px; }
+        .msg-btn { width: 100%; text-align: center; margin-top: 5px; }
+        .image-box img { height: 250px; }
+        .modal { padding: 20px; width: 92%; }
+    }
+
+    @media (max-width: 480px) {
+        .property-meta { gap: 10px; font-size: 14px; }
+        .ratings-section { padding: 20px; }
+        .weekdays, .day { font-size: 12px; }
+        .counter button { width: 30px; height: 30px; }
+    }
 </style>
 {% endblock %}
 
@@ -177,7 +207,7 @@
     </div>
 </div>
 
-<div class="modal" id="evaluation-modal" style="width: 480px;">
+<div class="modal" id="evaluation-modal" style="max-width: 480px;">
     <div class="modal-header">
         <h4>Detailed Evaluation</h4>
         <span class="close-modal" onclick="closeAll()">&times;</span>
@@ -243,7 +273,7 @@
             <button type="button" onclick="changeGuest('pet', 1)">+</button>
         </div>
     </div>
-    <button class="request-button" onclick="closeAll()" style="margin-top:10px;">Favorite</button>
+    <button class="request-button" onclick="closeAll()" style="margin-top:10px;">Apply</button>
 </div>
 
 {% include "includes/chat_widget.html" %}
