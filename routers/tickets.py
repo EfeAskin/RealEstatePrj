@@ -191,13 +191,23 @@ async def get_ticket_room(ticket_id: int, request: Request):
             """)
         else:
             # Odaya giren kişi agent veya user ise sol tarafta da sadece KENDİ biletlerini görür.
+            # Kullanıcının kendi biletlerini, bilet sıra numarasını ve biletin son mesajını çekiyoruz
             cursor.execute("""
-                SELECT id, subject, ticket_type, ticket_status, created_at 
-                FROM tickets 
-                WHERE sender_id = %s 
-                ORDER BY created_at DESC
+                SELECT t.id, t.subject, t.ticket_type, t.ticket_status, t.created_at,
+                       ROW_NUMBER() OVER (PARTITION BY t.sender_id ORDER BY t.created_at ASC) as user_ticket_no,
+                       CASE 
+                           WHEN LENGTH(lm.message_text) > 35 THEN LEFT(lm.message_text, 35) || '...'
+                           ELSE lm.message_text 
+                       END as last_message_preview
+                FROM tickets t
+                LEFT JOIN LATERAL (
+                    SELECT message_text FROM ticket_messages 
+                    WHERE ticket_id = t.id 
+                    ORDER BY sent_at DESC LIMIT 1
+                ) lm ON TRUE
+                WHERE t.sender_id = %s
+                ORDER BY t.created_at DESC
             """, (user_id,))
-            
         sidebar_tickets = cursor.fetchall()
         
         # Odaya ait mesaj geçmişini çekiyoruz
