@@ -1,25 +1,27 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
-.env
-.vscode/
+.venv/
 
-# İşletim sistemi tarafından oluşturulan gereksiz dosyalar
+# Secrets — copy .env.example to .env and fill it in locally
+.env
+
+# Editors / OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
 
-# Eğer kullanıyorsan veri tabanı yedekleri (isteğe bağlı)
+# Database backups
 *.bak
 
-# Generated graph output (graphify) - excluded from code review
+# Local tooling output
 graphify-out/
-
-.claude
 .claude/
-
-# Local-only helper/maintenance scripts and migrations — not pushed to GitHub
-scripts/
-
-# Claude Code project instructions (local only)
 CLAUDE.md
+
+# Local-only data tools (import from the reference DB / scrape source listings)
+scripts/import_from_other_db.py
+scripts/enrich_from_101evler.py

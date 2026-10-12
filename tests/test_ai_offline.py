@@ -8,9 +8,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from services.place_aliases import normalize_places
-from services.document_builder import build_document
-from services import openai_client, ai_config, query_pipeline
+from app.services.place_aliases import normalize_places
+from app.services.document_builder import build_document
+from app.services import openai_client, ai_config, query_pipeline
 
 
 def check(name, cond):

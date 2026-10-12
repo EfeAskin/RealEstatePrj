@@ -22,10 +22,10 @@ query → (1) normalize     place aliases (TR/EN, North Cyprus + Turkey)
 
 | Stage | Responsibility | File | Runs at |
 |---|---|---|---|
-| 1 | TR→EN place normalization | `services/place_aliases.py` | query time |
-| 2 | NL → validated filter dict (GPT) | `services/constraint_extractor.py` | query time |
-| 3 | Hard-filter candidate set (+relax) | `services/query_pipeline.py` | query time |
-| 4 | Vector rerank | `services/query_pipeline.py` / `routers/property_filter.py` | query time |
+| 1 | TR→EN place normalization | `app/services/place_aliases.py` | query time |
+| 2 | NL → validated filter dict (GPT) | `app/services/constraint_extractor.py` | query time |
+| 3 | Hard-filter candidate set (+relax) | `app/services/query_pipeline.py` | query time |
+| 4 | Vector rerank | `app/services/query_pipeline.py` / `app/routers/property_filter.py` | query time |
 | — | Build & store listing vectors | `scripts/backfill_embeddings.py` | index time (async) |
 
 **Graceful degradation** (all implemented): GPT fails → skip hard filters, still rerank;
@@ -36,7 +36,7 @@ and retry; nothing ever 500s.
 
 ## 2. Database mapping (our flat schema)
 
-Semantic content embedded per property (`services/document_builder.py`):
+Semantic content embedded per property (`app/services/document_builder.py`):
 `name`, `property_type`, `listing_type`, `room_count`/`beds`/`baths`, `net_m2`/`gross_m2`,
 `city`/`district`/`country`, `heating`, `building_age`, `description`, and the **bilingual
 feature names** from `property_features → features` (e.g. `Balcony`, `Deniz Manzarası`).
@@ -51,7 +51,7 @@ AI columns/tables (Neon branch, migrations `001`+`002`):
 ## 3. Stage 1 — place normalization (our data is bilingual + two countries)
 
 Unlike the reference (TRNC only), our data spans **North Cyprus and mainland Turkey** with
-mixed spellings. `services/place_aliases.py` canonicalizes Turkish/variant spellings to the
+mixed spellings. `app/services/place_aliases.py` canonicalizes Turkish/variant spellings to the
 English forms stored in our `city`/`district` columns: `Girne→Kyrenia`, `Lefkoşa→Nicosia`,
 `Gazimağusa→Famagusta`, `Muğla→Mugla`, `Kaş→Kas`, etc. Because OpenAI embeddings are
 multilingual and GPT handles Turkish natively, we **skip a separate translation model** —
@@ -59,7 +59,7 @@ aliasing + multilingual models cover it.
 
 ## 4. Stage 2 — GPT constraint extraction
 
-`services/constraint_extractor.py` builds a system prompt injecting **our real values**
+`app/services/constraint_extractor.py` builds a system prompt injecting **our real values**
 (`listing_type: rent|sale`, `property_type: Apartment|Villa|Penthouse`, and the live
 distinct city/district list pulled from the DB and cached). GPT returns JSON; we **never
 trust it directly** — `validate_filters()` re-checks every field (type, range, whitelist)
@@ -87,7 +87,7 @@ time** (that kills latency) — only in the async backfill.
 
 ---
 
-## 7. Recommendation engine (`services/recommendations.py`)
+## 7. Recommendation engine (`app/services/recommendations.py`)
 
 Cold-start aware (we have only a handful of favorites):
 - **New item** → `similar_properties(id)`: vector nearest-neighbours. No user data needed.
@@ -111,7 +111,7 @@ Endpoints: `GET /api/recommendations`, `GET /api/properties/{id}/similar`.
 - [x] `embedding` column + HNSW index + `embedding_status`
 - [x] `user_preferences`, `user_events`, `search_logs`
 - [x] Extended TR+Turkey place-alias table
-- [x] Provider isolated in `services/openai_client.py` (key-gated)
+- [x] Provider isolated in `app/services/openai_client.py` (key-gated)
 
 **Indexing — DONE (code), pending key to run**
 - [x] Composite document builder

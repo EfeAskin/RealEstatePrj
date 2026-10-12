@@ -1,196 +1,271 @@
-# 🏠 CypInvEst - Real Estate Management System
+# CypInvEst — AI-Powered Real Estate Platform
 
-**CypInvEst** is a modern, high-performance real estate platform built with FastAPI. The project implements a Role-Based Access Control (RBAC) system with three distinct user personas: **User**, **Agent**, and **Admin**.
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.135-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)
+![pgvector](https://img.shields.io/badge/pgvector-HNSW-336791)
+![OpenAI](https://img.shields.io/badge/OpenAI-embeddings%20%2B%20GPT-412991?logo=openai&logoColor=white)
+
+CypInvEst is a full-stack real estate marketplace for **North Cyprus and Turkey**. Buyers and renters search listings, save favourites and message agents. Agents publish and manage properties. Admins approve listings and handle support tickets.
+
+On top of that sits an **AI layer**. You can search in plain English or Turkish, for example *"cheap 2+1 flat with sea view in Girne under 150k USD"*, and get results ranked by meaning. There's also a conversational property assistant and a content-based recommendation engine. If no OpenAI key is configured, the app still runs and search falls back to keyword matching.
 
 ---
 
-## 📂 Project Structure & Architecture
-The project directory is organized into a modular structure as follows:
+## Table of contents
+
+- [Features](#features)
+- [How the AI search works](#how-the-ai-search-works)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Getting started](#getting-started)
+- [Scripts](#scripts)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+- [Architecture notes](#architecture-notes)
+- [Team](#team)
+
+---
+
+## Features
+
+**For users**
+- Browse and filter listings by type, price, rooms, location and amenities, with several sort orders
+- **AI semantic search** that accepts natural-language queries in English, Turkish or a mix of both
+- **AI chat assistant** (`/aichat`) that finds listings conversationally, with saved, ChatGPT-style conversation threads
+- "Similar listings" on property pages and personalised recommendations
+- Favourites, real-time user↔agent messaging and support tickets
+
+**For agents**
+- Publish listings with multiple photos and a cover image, plus date-based rental pricing
+- Manage your own properties and incoming customer requests
+- A profile that adapts to your role (company and IBAN fields for agents)
+
+**For admins**
+- A listing approval workflow (pending → active / inactive)
+- User and property management, a dashboard, and system and sales logs
+- A support-ticket inbox with per-ticket chat rooms
+
+**Platform**
+- Role-based access control (**User / Agent / Admin**) with bcrypt-hashed passwords
+- Prices stored in **GBP, TRY, EUR or USD**, compared through live, cached exchange rates
+- A responsive "glassmorphism" UI with a mobile web view
+
+---
+
+## How the AI search works
+
+```
+"cheap 2+1 flat with sea view in Girne under 150k USD"
+        │
+ [1] place normalisation      girne → Kyrenia                     (dictionary, no API call)
+ [2] constraint extraction    GPT → {type, beds, city, max_price, currency, …}
+                              every field re-validated against real DB values
+ [3] SQL candidate filter     hard filters + currency-aware price; relaxes if too few results
+ [4] hybrid rerank            0.70·cosine(pgvector HNSW) + 0.15·keyword + 0.10·rating + 0.05·recency
+ [5] relevance gate + rerank  drops off-topic queries; optional GPT precision rerank
+        │
+     ranked listings
+```
+
+Each property is turned into a descriptive sentence built from its structured fields and its bilingual amenity names. That sentence is embedded with `text-embedding-3-small` (1536 dimensions) and stored in a `vector(1536)` column with an HNSW cosine index. Every AI step **fails soft**: if a step errors, search drops back to the next simpler path instead of failing.
+
+For the full walkthrough, see **[docs/AI_SEARCH.md](docs/AI_SEARCH.md)**.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Backend | FastAPI, Uvicorn, Jinja2 server-rendered templates |
+| Database | PostgreSQL on [Neon](https://neon.tech) (serverless), `psycopg2` connection pool |
+| Vector search | `pgvector` (HNSW index, cosine distance), `pg_trgm`, `unaccent` |
+| AI | OpenAI `text-embedding-3-small` (embeddings), `gpt-4o-mini` (query parsing, chat, rerank) |
+| Auth | Cookie sessions, bcrypt password hashing, role-based access |
+| Frontend | HTML/CSS/vanilla JS, responsive layout |
+
+---
+
+## Project structure
 
 ```text
 RealEstatePrj/
-├── backend.py             # FastAPI Backend Entry Point
-├── database.py            # Data Persistence & Hash Logic
-├── requirements.txt       # Project Dependencies (bcrypt, fastapi, Pillow, aiofiles etc.)
-├── .gitignore             # Files ignored by Git (venv, pycache, sensitive data)
-├── README.md              # Project Documentation
-├── static/                # Static Assets
-│   ├── css/
-│   │   └── style.css      # Stylesheets (Glassmorphism)
-│   ├── htmlfotos/         # Project Images, Backgrounds & Property Photos
-│   └── js/                # Client-side Logic & Modals
-├── routers/               # Modular Route Handlers (registered in backend.py)
-│   ├── auth.py            # Authentication (Login/Register)
-│   ├── profile.py         # Profile & Role Management
-│   ├── listings.py        # Property listings, detail page & reviews
-│   ├── property_filter.py # /search — filtering + AI semantic search
-│   ├── ai_search.py       # JSON AI endpoints (/api/ai-search, recommendations)
-│   ├── admin.py           # Admin panel (approval, user/property management)
-│   ├── favorites.py       # Saved properties
-│   ├── chat.py / messages.py / pages.py / properties.py
-├── db/                    # Data layer
-│   ├── connection.py      # Neon pooled connection (ThreadedConnectionPool)
-│   ├── properties.py      # Property/agent SQL data-access
-│   └── auth_user.py / db_admin.py
-├── database.py            # Re-exports db/* + request-scoped auth helpers
-├── services/              # AI layer (semantic search + recommendations)
-│   ├── openai_client.py   # The ONLY module that calls OpenAI
-│   ├── query_pipeline.py  # 4-stage search (normalize→GPT→filter→pgvector rerank)
-│   ├── constraint_extractor.py / document_builder.py / recommendations.py
-│   ├── place_aliases.py / currency.py / ai_config.py
-├── scripts/               # Migrations + data tooling
-│   ├── migrations/        # *.sql schema migrations (run via run_migration.py)
-│   ├── backfill_embeddings.py    # generate property embeddings
-│   └── import_from_other_db.py / enrich_from_101evler.py
-└── templates/             # Jinja2 HTML Templates
-    ├── setrole.html       # Landing / Role Selection
-    ├── choose_role.html   # Alternative Role Selection
-    ├── userlogin.html     # User Authentication
-    ├── userregister.html  # User Registration
-    ├── agentlogin.html    # Agent Authentication
-    ├── agentregister.html # Agent Registration
-    ├── adminlogin.html    # Admin Authentication
-    ├── home.html          # Main Dashboard
-    ├── about.html         # About Page
-    ├── search.html        # Property Search Page
-    ├── desktop1.html      # Detailed Property View (Main)
-    ├── profile_base.html  # Base Layout for Profile Pages
-    ├── personal_info.html # Personal Data Management
-    ├── messages.html      # Messaging System (In-Progress)
-    ├── favourites.html    # Saved Properties
-    ├── transactions.html  # User Transaction History
-    ├── properties.html    # Agent's Property Management
-    ├── requests.html      # Agent's Customer Requests
-    ├── payment.html       # Payment & Booking Calculation
-    ├── dashboard.html     # Admin Overview
-    ├── users.html         # Admin User Management
-    ├── approving.html     # Admin Property Approval
-    ├── system_logs.html   # Admin System Logs
-    ├── sales_logs.html    # Admin Sales Reports
-    └── includes/          # Reusable Template Components
-        ├── property_header.html
-        ├── property_features.html
-        ├── property_reviews.html
-        └── property_sidebar.html
+├── app/                        # The FastAPI application (Python package)
+│   ├── main.py                 # App entry point: middleware, static mounts, router registration
+│   ├── paths.py                # Absolute paths for templates / static / uploads
+│   ├── database.py             # Data-access facade + request-scoped auth helpers
+│   ├── db/                     # SQL data-access layer
+│   │   ├── connection.py       #   pooled Neon connection (ThreadedConnectionPool)
+│   │   ├── auth_user.py        #   users, login, registration
+│   │   ├── properties.py       #   listings, images, features, agents
+│   │   └── db_admin.py         #   approvals, logs, admin queries
+│   ├── routers/                # HTTP routes, one module per feature
+│   │   ├── auth.py  pages.py  listings.py  properties.py  property_filter.py
+│   │   ├── profile.py  favorites.py  chat.py  messages.py  tickets.py  admin.py
+│   │   ├── ai_search.py        #   JSON AI endpoints (search, similar, recommendations)
+│   │   └── aichat.py           #   conversational AI assistant + chat history
+│   ├── services/               # AI layer
+│   │   ├── openai_client.py    #   embeddings, GPT extraction, relevance gate, rerank
+│   │   ├── query_pipeline.py   #   the multi-stage semantic search orchestrator
+│   │   ├── constraint_extractor.py  document_builder.py  recommendations.py
+│   │   └── place_aliases.py  currency.py  ai_config.py
+│   ├── templates/              # Jinja2 pages (+ includes/ for shared components)
+│   └── static/                 # CSS and images (htmlfotos/ holds uploaded photos)
+├── scripts/
+│   ├── schema.sql              # Full DB schema; use it to set up a fresh database
+│   ├── seed_features.sql       # Amenity checklist reference data
+│   ├── migrations/             # Incremental migrations (001–006) for existing databases
+│   ├── run_migration.py        # Applies a .sql file to DATABASE_URL
+│   ├── backfill_embeddings.py  # Generates/refreshes property embeddings
+│   └── validate_pgvector.py    # End-to-end pgvector check (rolled back, writes nothing)
+├── tests/
+│   └── test_ai_offline.py      # AI logic tests; no DB, network or API key needed
+├── docs/                       # AI search deep-dive, design notes
+├── .env.example                # Template for your local .env
+└── requirements.txt
+```
 
-##🚀 Quick Start for Developers
-1. Prerequisites
-Ensure you have Python 3.8+ installed on your machine.
+---
 
-2. Install Dependencies
-Run the following command to install the required libraries:
-pip install -r requirements.txt
+## Getting started
 
-Core Libraries:
+### 1. Prerequisites
 
-➠fastapi: Backend framework.
+- **Python 3.10+** (developed on 3.11)
+- A **PostgreSQL** database with the `pgvector` extension. A free [Neon](https://neon.tech) project is the easiest option because pgvector is built in.
+- *(Optional)* An **OpenAI API key** to enable the AI features
 
-➠uvicorn: ASGI server.
+### 2. Clone and install
 
-➠jinja2: Template engine.
-
-➠bcrypt: Secure password hashing.
-
-➠python-multipart: Parsing form data.
-
-➠ Pillow: Image processing and optimization.
-
-➠ aiofiles: Asynchronous file operations for photo storage.
-
-3. Running the Server
-Execute the application using Uvicorn with the reload flag enabled for development:
-uvicorn backend:app --reload
-
-The application will be available at: http://127.0.0.1:8000
-
-🔑 Core Technologies & Logic
-➢ Backend (FastAPI): Modular architecture using APIRouter for clean code separation. Routes are organized into auth, profile, and listings.
-
-➢ Database (Neon DB): Utilizing Neon Serverless PostgreSQL (with the `pgvector` extension) for reliable, scalable, cloud-based persistence. Access goes through a pooled connection (`db/connection.py`, `ThreadedConnectionPool`) — there is no in-memory storage.
-
-➢ AI Layer (OpenAI + pgvector): Natural-language semantic search and content-based recommendations. Queries are normalized, parsed into structured hard-filters by GPT, filtered in SQL, then re-ranked by vector similarity (pgvector HNSW). All OpenAI access is isolated in `services/openai_client.py` and degrades gracefully to keyword search when no API key is configured.
-
-➢ Security: Passwords are never stored in plain text. Utilizing bcrypt for hashing and verification.
-
-➢ Frontend (Jinja2 & Glassmorphism): Dynamic data injection with modular includes/ structure for scalable UI development. The UI features a modern Glassmorphism aesthetic with role-specific color palettes:
-
-    ➥Blue: User
-
-    ➥Orange: Agent
-
-    ➥Red: Admin
-
-➢Authentication & Role Logic:
-
-    ➥Persistence: All users/sessions live in Neon PostgreSQL; cookie-based sessions (`user_id` cookie) resolved per request via `database.get_user_from_request()`.
-
-    ➥Dynamic Profiles: Profile fields adapt based on the role (e.g., IBAN/Company for Agents).
-
-    ➥Role Switching: Users can upgrade to Agent status via a secure verification process.
-
-👥 Team Contribution Guidelines
-1.Modular Routing: Do not clutter backend.py. Define new routes in their respective files under the routers/ directory and include them in backend.py using app.include_router().
-
-2.HTML Forms: Ensure the name attribute of HTML input fields matches the FastAPI Form(...) parameter names exactly to avoid 422 Unprocessable Entity errors.
-
-3.Component-Based UI: For complex pages like desktop1.html, use the includes/ directory to break down the UI into manageable parts.
-
-4.Dependency Management: If you install a new package, immediately update the requirements file: pip freeze > requirements.txt.
-
-5.Database Migrations: Since we are using Neon DB, ensure any schema changes are reflected in database.py or through migration scripts.
-
-🤝 Team Collaboration (How to Contribute)
-To maintain the stability of the main branch, all development must occur on the demoproject branch. Do not push directly to main.
-
-1. Setup & Sync:
-
-git clone [https://github.com/EfeAskin/RealEstatePrj.git](https://github.com/EfeAskin/RealEstatePrj.git)
+```bash
+git clone https://github.com/EfeAskin/RealEstatePrj.git
 cd RealEstatePrj
-git checkout demoproject
 
-2. Daily Workflow
-Always pull the latest changes before you start coding to avoid merge conflicts:
+python -m venv venv
+# Windows (PowerShell)
+.\venv\Scripts\Activate.ps1
+# macOS / Linux
+source venv/bin/activate
 
-git pull origin demoproject
+pip install -r requirements.txt
+```
 
-3. Committing Changes
+### 3. Configure environment variables
 
-git status
-git add .
-git commit -m "feat: explain what you added"
-git push origin demoproject
+Copy the template and fill in your values:
 
-4. Safety Rules
-🠒Branch Protection: Never push directly to main.
+```bash
+cp .env.example .env        # Windows: copy .env.example .env
+```
 
-🠒Environment Files: Do not commit .env files or sensitive API keys.
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string, e.g. `postgresql://user:pass@host.neon.tech/db?sslmode=require` |
+| `OPENAI_API_KEY` | optional | Turns on semantic search, recommendations and the AI chat |
 
-🠒Merge Requests: Do not merge demoproject into main without consulting the repository owner.
+### 4. Create the database schema
 
-⚠️ Warning: Do not merge demoproject into main without consulting the repository owner.
+On a **new, empty** database, create every table and load the amenity list:
 
-📈 Roadmap
-[x] Base Authentication & Role Selection System.
+```bash
+python scripts/run_migration.py scripts/schema.sql
+python scripts/run_migration.py scripts/seed_features.sql
+```
 
-[x] Secure Password Hashing (Bcrypt).
+> `schema.sql` already includes migrations `001–006`. Run the files in `scripts/migrations/` only when you're upgrading an older database that already has data.
 
-[x] Cloud Database Integration (Neon PostgreSQL).
+### 5. Run the app
 
-[x] Modular Routing & Component-Based UI (Includes).
+```bash
+uvicorn app.main:app --reload
+```
 
-[x] Multiple Photo Upload & Property Image Gallery.
+Open **http://127.0.0.1:8000**, pick a role, and register.
 
-[x] Advanced Search Engine & Property Filtering.
+### 6. Enable the AI features (optional)
 
-[x] Agent Property Upload & Management Portal.
+Add `OPENAI_API_KEY` to `.env`. Once you have some listings, generate their embeddings:
 
-[x] Administrative Approval & Verification Workflow.
+```bash
+python scripts/backfill_embeddings.py          # only new or changed listings
+python scripts/backfill_embeddings.py --all    # force a full re-embed
+```
 
-[x] AI Semantic Search & Recommendation Engine (OpenAI + pgvector).
+Then try a natural-language query on `/search`, chat with the assistant at `/aichat`, or call the JSON API:
 
-[ ] Onboarding preferences UI to seed personalized recommendations.
+```
+GET /api/ai-search?q=3 bedroom villa with pool in Kyrenia
+GET /api/properties/{id}/similar
+GET /api/recommendations              (requires login)
+```
 
-[ ] Behavioral recommendation signals (views/favorites weighting).
+### 7. Create an admin account
 
-📧 Contact
-For any technical queries or architectural discussions, please reach out to the repository owner.
+Admins can't sign up from the UI. Register a normal user first, then promote that account in SQL:
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'you@example.com';
+```
+
+Then sign in at `/login/admin`.
+
+---
+
+## Scripts
+
+Run these from the project root with the virtual environment active.
+
+| Command | What it does |
+|---|---|
+| `python scripts/run_migration.py <file.sql>` | Applies a SQL file to `DATABASE_URL` and prints the target host first |
+| `python scripts/backfill_embeddings.py [--all]` | Embeds listings that are new or changed. Idempotent and resumable. |
+| `python scripts/validate_pgvector.py` | Checks pgvector ranking end-to-end without OpenAI; the transaction is rolled back |
+| `python tests/test_ai_offline.py` | Runs the offline AI test suite |
+
+---
+
+## Testing
+
+```bash
+python tests/test_ai_offline.py
+```
+
+This covers place normalisation, embedding-document building, candidate-SQL generation (location robustness), the hybrid ranking SQL, the LLM rerank helpers, the relevance gate and graceful degradation without a key. It needs no database, network or API key, and prints `PASS`/`FAIL` per check followed by `ALL PASS`.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `ModuleNotFoundError` | Activate the virtual environment and run `pip install -r requirements.txt` |
+| `ModuleNotFoundError: No module named 'app'` | Run commands from the project root, not from inside `app/` |
+| `Port 8000 is already in use` | Start on another port: `uvicorn app.main:app --reload --port 8001` |
+| Database connection errors | Check `DATABASE_URL` in `.env`. Neon URLs must end with `?sslmode=require`. |
+| `type "vector" does not exist` | Enable pgvector on your Postgres; Neon has it built in |
+| Search only does keyword matching | `OPENAI_API_KEY` is missing or invalid, or the embeddings haven't been backfilled yet |
+| `UnicodeEncodeError` on Windows | Set `PYTHONIOENCODING=utf-8` before running scripts that print Turkish text |
+
+---
+
+## Architecture notes
+
+- **Request flow.** `app/main.py` builds the app, mounts `/static`, and registers every router. An HTTP middleware resolves the logged-in user from the `user_id` cookie once per request, using a short-TTL cache, and exposes it to templates. Static requests skip the database entirely.
+- **Data layer.** `app/db/connection.py` owns a `ThreadedConnectionPool`. `conn.close()` returns the connection to the pool instead of closing the socket. `app/database.py` re-exports the data-access functions plus the request-scoped auth helpers `get_user_from_request`, `can_user_modify_property` and `is_admin_user`.
+- **Flat schema.** A single `properties` table holds free-text geography (`city` / `district` / `country`) and the `embedding vector(1536)` column. Prices are stored in each listing's own currency (`price_normalized` + `currency_code`), so every price comparison converts currencies first.
+- **Images.** Uploaded files go to `app/static/htmlfotos/`. The database stores a relative path such as `htmlfotos/<file>`. Imported listings can use absolute `http(s)` URLs instead.
+- **Graceful AI degradation.** `ai_config.ai_enabled()` is true only when a key is set and the SDK imports. Every AI call returns `None`/`[]` on failure, and the routes fall back to keyword `ILIKE` search.
+
+---
+
+## Team
+
+Built as a team project by:
+
+- **Kamil Efe Aşkın** ([@EfeAskin](https://github.com/EfeAskin)): platform, UI/UX, authentication, admin panel, messaging, support tickets
+- **Begench Tekayev** ([@begench-tek](https://github.com/begench-tek)): AI semantic search and recommendation engine, AI chat assistant and history, database migrations and performance
+
+### Contributing
+
+Day-to-day development happens on the `demoproject` branch, and changes reach `main` through pull requests reviewed by the repository owner. Never commit `.env` or API keys.
